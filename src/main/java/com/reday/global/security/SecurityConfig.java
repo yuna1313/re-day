@@ -11,10 +11,19 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.reday.global.security.jwt.JwtAuthenticationFilter;
+
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
 	/**
 	 * 애플리케이션의 HTTP 보안 규칙을 설정합니다.
@@ -38,9 +47,18 @@ public class SecurityConfig {
 			.formLogin(AbstractHttpConfigurer::disable)
 			.httpBasic(AbstractHttpConfigurer::disable)
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.exceptionHandling(exception -> exception
+				.authenticationEntryPoint((request, response, authException) ->
+					response.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+				.accessDeniedHandler((request, response, accessDeniedException) ->
+					response.sendError(HttpServletResponse.SC_FORBIDDEN))
+			)
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(
-					"/api/auth/**",
+					"/auth/login",
+					"/auth/signup",
+					"/api/auth/login",
+					"/api/auth/signup",
 					"/swagger-ui.html",
 					"/swagger-ui/**",
 					"/v3/api-docs/**",
@@ -48,6 +66,7 @@ public class SecurityConfig {
 				).permitAll()
 				.anyRequest().authenticated()
 			)
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 			.build();
 	}
 
