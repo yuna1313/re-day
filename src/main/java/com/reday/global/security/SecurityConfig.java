@@ -2,6 +2,7 @@ package com.reday.global.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,6 +14,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.reday.global.exception.ErrorCode;
+import com.reday.global.response.ApiResponse;
 import com.reday.global.security.jwt.JwtAuthenticationFilter;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	/**
 	 * 애플리케이션의 HTTP 보안 규칙을 설정합니다.
@@ -49,9 +54,9 @@ public class SecurityConfig {
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.exceptionHandling(exception -> exception
 				.authenticationEntryPoint((request, response, authException) ->
-					response.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+					writeErrorResponse(response, ErrorCode.UNAUTHORIZED))
 				.accessDeniedHandler((request, response, accessDeniedException) ->
-					response.sendError(HttpServletResponse.SC_FORBIDDEN))
+					writeErrorResponse(response, ErrorCode.FORBIDDEN))
 			)
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(
@@ -100,5 +105,12 @@ public class SecurityConfig {
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
+	}
+
+	private void writeErrorResponse(HttpServletResponse response, ErrorCode errorCode) throws java.io.IOException {
+		response.setStatus(errorCode.getHttpStatus().value());
+		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+		response.setCharacterEncoding("UTF-8");
+		objectMapper.writeValue(response.getWriter(), ApiResponse.error(errorCode));
 	}
 }
