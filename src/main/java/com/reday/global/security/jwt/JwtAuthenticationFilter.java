@@ -2,6 +2,7 @@ package com.reday.global.security.jwt;
 
 import java.io.IOException;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -12,6 +13,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.reday.global.exception.ErrorCode;
+import com.reday.global.response.ApiResponse;
 import com.reday.global.security.CustomUserDetailsService;
 
 import io.jsonwebtoken.JwtException;
@@ -29,6 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final JwtTokenProvider jwtTokenProvider;
 	private final CustomUserDetailsService customUserDetailsService;
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	/**
 	 * 요청마다 Authorization 헤더의 Bearer access token을 확인하고 인증 정보를 SecurityContext에 저장합니다.
@@ -53,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		if (StringUtils.hasText(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
 			try {
 				if (!jwtTokenProvider.validateAccessToken(token)) {
-					response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+					writeUnauthorizedResponse(response);
 					return;
 				}
 
@@ -67,7 +72,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 				SecurityContextHolder.getContext().setAuthentication(authentication);
 			} catch (AuthenticationException | JwtException | IllegalArgumentException e) {
-				response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+				writeUnauthorizedResponse(response);
 				return;
 			}
 		}
@@ -89,5 +94,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			return authorizationHeader.substring(BEARER_PREFIX.length());
 		}
 		return null;
+	}
+
+	/**
+	 * JWT 인증 실패 응답을 공통 API 응답 형식으로 작성합니다.
+	 *
+	 * @param response 현재 HTTP 응답
+	 * @throws IOException 응답 본문 작성 중 입출력 오류가 발생한 경우
+	 */
+	private void writeUnauthorizedResponse(HttpServletResponse response) throws IOException {
+		response.setStatus(ErrorCode.UNAUTHORIZED.getHttpStatus().value());
+		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+		response.setCharacterEncoding("UTF-8");
+		objectMapper.writeValue(response.getWriter(), ApiResponse.error(ErrorCode.UNAUTHORIZED));
 	}
 }
