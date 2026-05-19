@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum ErrorCode implements ResponseCode {
+public enum ErrorCode implements ErrorResponseCode {
 
 	INVALID_INPUT_VALUE(HttpStatus.OK, "COMMON_INVALID_INPUT_VALUE_FAIL", "입력값이 올바르지 않습니다."),
 	INVALID_REQUEST_BODY(HttpStatus.OK, "COMMON_INVALID_REQUEST_BODY_FAIL", "요청 본문이 올바르지 않습니다."),

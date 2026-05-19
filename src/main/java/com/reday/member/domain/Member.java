@@ -15,14 +15,14 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "members")
+@Table(name = "member")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "member_idx")
-	private Long memberIdx;
+	private Integer memberIdx;
 
 	@Column(nullable = false, length = 50)
 	private String nickname;
@@ -41,4 +41,15 @@ public class Member {
 
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
+
+	private Member(String nickname, String email, String encodedPassword) {
+		this.nickname = nickname;
+		this.email = email;
+		this.password = encodedPassword;
+		this.createdAt = LocalDateTime.now();
+	}
+
+	public static Member create(String nickname, String email, String encodedPassword) {
+		return new Member(nickname, email, encodedPassword);
+	}
 }
