@@ -4,11 +4,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.reday.auth.application.AuthService;
 import com.reday.auth.dto.EmailVerificationSendRequest;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.SignupResponse;
 import com.reday.auth.response.AuthResponseCode;
-import com.reday.auth.service.AuthService;
 import com.reday.global.response.ApiResponse;
 
 import lombok.RequiredArgsConstructor;

@@ -1,14 +1,15 @@
-package com.reday.auth.service;
+package com.reday.auth.application;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.reday.auth.application.port.EmailSender;
+import com.reday.auth.application.port.EmailVerificationStore;
+import com.reday.auth.application.port.VerificationCodeGenerator;
 import com.reday.auth.dto.EmailVerificationSendRequest;
 import com.reday.auth.exception.AuthErrorCode;
 import com.reday.global.exception.BusinessException;
@@ -18,9 +19,16 @@ class AuthServiceTest {
 
 	private final MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
 	private final PasswordEncoder passwordEncoder = org.mockito.Mockito.mock(PasswordEncoder.class);
-	@SuppressWarnings("unchecked")
-	private final ObjectProvider<JavaMailSender> mailSenderProvider = org.mockito.Mockito.mock(ObjectProvider.class);
-	private final AuthService authService = new AuthService(memberRepository, passwordEncoder, mailSenderProvider);
+	private final EmailSender emailSender = org.mockito.Mockito.mock(EmailSender.class);
+	private final EmailVerificationStore emailVerificationStore = org.mockito.Mockito.mock(EmailVerificationStore.class);
+	private final VerificationCodeGenerator verificationCodeGenerator = org.mockito.Mockito.mock(VerificationCodeGenerator.class);
+	private final AuthService authService = new AuthService(
+		memberRepository,
+		passwordEncoder,
+		emailSender,
+		emailVerificationStore,
+		verificationCodeGenerator
+	);
 
 	/**
 	 * 최상위 도메인이 없는 이메일은 인증코드 발송 전에 형식 오류로 거부합니다.
