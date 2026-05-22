@@ -1,0 +1,37 @@
+package com.reday.auth.service;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import com.reday.auth.dto.EmailVerificationSendRequest;
+import com.reday.auth.exception.AuthErrorCode;
+import com.reday.global.exception.BusinessException;
+import com.reday.member.repository.MemberRepository;
+
+class AuthServiceTest {
+
+	private final MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
+	private final PasswordEncoder passwordEncoder = org.mockito.Mockito.mock(PasswordEncoder.class);
+	@SuppressWarnings("unchecked")
+	private final ObjectProvider<JavaMailSender> mailSenderProvider = org.mockito.Mockito.mock(ObjectProvider.class);
+	private final AuthService authService = new AuthService(memberRepository, passwordEncoder, mailSenderProvider);
+
+	/**
+	 * 최상위 도메인이 없는 이메일은 인증코드 발송 전에 형식 오류로 거부합니다.
+	 */
+	@Test
+	void sendEmailVerificationRejectsEmailWithoutTopLevelDomain() {
+		assertThatThrownBy(() -> authService.sendEmailVerification(new EmailVerificationSendRequest("yuna1313@naver")))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.INVALID_EMAIL_FORMAT);
+
+		verify(memberRepository, never()).existsByEmail("yuna1313@naver");
+	}
+}
