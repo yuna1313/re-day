@@ -12,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 public enum AuthErrorCode implements ErrorResponseCode {
 
 	SIGNUP_FAIL(HttpStatus.OK, "AUTH_SIGNUP_FAIL", "회원가입에 실패하였습니다."),
+	LOGIN_FAIL(HttpStatus.UNAUTHORIZED, "AUTH_LOGIN_FAIL", "로그인에 실패하였습니다."),
+	INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH_INVALID_CREDENTIALS_FAIL", "이메일 또는 비밀번호가 올바르지 않습니다."),
+	EMAIL_NOT_VERIFIED(HttpStatus.FORBIDDEN, "AUTH_EMAIL_NOT_VERIFIED_FAIL", "이메일 인증이 완료되지 않았습니다."),
 	EMAIL_DUPLICATED(HttpStatus.OK, "AUTH_EMAIL_DUPLICATED_FAIL", "이미 사용 중인 이메일입니다."),
 	INVALID_EMAIL_FORMAT(HttpStatus.OK, "AUTH_INVALID_EMAIL_FORMAT_FAIL", "이메일 형식이 올바르지 않습니다."),
 	INVALID_PASSWORD_FORMAT(HttpStatus.OK, "AUTH_INVALID_PASSWORD_FORMAT_FAIL", "비밀번호 형식이 올바르지 않습니다."),

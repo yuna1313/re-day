@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.reday.auth.application.AuthService;
 import com.reday.auth.dto.EmailVerificationSendRequest;
 import com.reday.auth.dto.EmailVerificationVerifyRequest;
+import com.reday.auth.dto.LoginRequest;
+import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.SignupResponse;
 import com.reday.auth.response.AuthResponseCode;
@@ -36,5 +38,11 @@ public class AuthController {
 	public ApiResponse<Void> verifyEmailVerification(@RequestBody EmailVerificationVerifyRequest request) {
 		authService.verifyEmailVerification(request);
 		return ApiResponse.success(AuthResponseCode.EMAIL_VERIFIED);
+	}
+
+	@PostMapping("/api/v1/auth/login")
+	public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
+		LoginResponse response = authService.login(request);
+		return ApiResponse.success(AuthResponseCode.LOGIN_SUCCESS, response);
 	}
 }

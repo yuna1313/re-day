@@ -31,4 +31,12 @@ public interface EmailVerificationStore {
 	 * @param email 인증을 완료한 이메일
 	 */
 	void complete(Email email);
+
+	/**
+	 * 이메일 인증 완료 여부를 확인합니다.
+	 *
+	 * @param email 확인할 이메일
+	 * @return 이메일 인증이 완료되었으면 true
+	 */
+	boolean isVerified(Email email);
 }

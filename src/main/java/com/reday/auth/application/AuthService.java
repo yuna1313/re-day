@@ -5,6 +5,10 @@ import java.time.LocalDateTime;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,10 +23,13 @@ import com.reday.auth.domain.RawPassword;
 import com.reday.auth.domain.VerificationCode;
 import com.reday.auth.dto.EmailVerificationSendRequest;
 import com.reday.auth.dto.EmailVerificationVerifyRequest;
+import com.reday.auth.dto.LoginRequest;
+import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.SignupResponse;
 import com.reday.auth.exception.AuthErrorCode;
 import com.reday.global.exception.BusinessException;
+import com.reday.global.security.jwt.JwtTokenProvider;
 import com.reday.member.domain.Member;
 import com.reday.member.repository.MemberRepository;
 
@@ -40,6 +47,8 @@ public class AuthService {
 	private final EmailSender emailSender;
 	private final EmailVerificationStore emailVerificationStore;
 	private final VerificationCodeGenerator verificationCodeGenerator;
+	private final AuthenticationManager authenticationManager;
+	private final JwtTokenProvider jwtTokenProvider;
 
 	/**
 	 * 회원가입 요청을 검증하고 신규 회원을 저장합니다.
@@ -59,6 +68,9 @@ public class AuthService {
 		log.info("[signup] 이메일 존재하는지 여부 확인");
 		if (memberRepository.existsByEmail(email)) {
 			throw new BusinessException(AuthErrorCode.EMAIL_DUPLICATED);
+		}
+		if (!emailVerificationStore.isVerified(signupFields.email())) {
+			throw new BusinessException(AuthErrorCode.EMAIL_NOT_VERIFIED);
 		}
 
 		Member member = Member.create(
@@ -117,6 +129,56 @@ public class AuthService {
 		verification.verify(inputCode, LocalDateTime.now());
 		emailVerificationStore.complete(email);
 		log.info("[verifyEmailVerification] 이메일 인증 완료: {}", email.value());
+	}
+
+	/**
+	 * 이메일과 비밀번호를 검증하고 JWT 토큰을 발급합니다.
+	 *
+	 * @param request 로그인 요청 정보
+	 * @return 발급된 토큰과 로그인 회원 정보
+	 */
+	public LoginResponse login(LoginRequest request) {
+		log.info("[login] 로그인 요청");
+		if (request == null) {
+			throw new BusinessException(AuthErrorCode.LOGIN_FAIL);
+		}
+
+		Email email = Email.of(request.email());
+		Authentication authentication = authenticate(email, request.password());
+		Member member = memberRepository.findByEmail(email.value())
+			.orElseThrow(() -> new BusinessException(AuthErrorCode.LOGIN_FAIL));
+		if (!member.isEmailVerified()) {
+			throw new BusinessException(AuthErrorCode.EMAIL_NOT_VERIFIED);
+		}
+
+		String accessToken = jwtTokenProvider.createAccessToken(authentication);
+		String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
+
+		log.info("[login] 로그인 성공: {}", email.value());
+		return new LoginResponse(
+			accessToken,
+			refreshToken,
+			new LoginResponse.MemberInfo(member.getMemberIdx(), member.getNickname(), member.getEmail())
+		);
+	}
+
+	/**
+	 * Spring Security 인증 매니저를 통해 이메일과 비밀번호를 검증합니다.
+	 *
+	 * @param email 로그인 이메일
+	 * @param password 로그인 비밀번호
+	 * @return 인증 완료 객체
+	 * @throws BusinessException 인증에 실패한 경우
+	 */
+	private Authentication authenticate(Email email, String password) {
+		try {
+			return authenticationManager.authenticate(
+				new UsernamePasswordAuthenticationToken(email.value(), password)
+			);
+		} catch (AuthenticationException exception) {
+			log.warn("[authenticate] 로그인 인증 실패: {}", email.value());
+			throw new BusinessException(AuthErrorCode.INVALID_CREDENTIALS);
+		}
 	}
 
 	/**

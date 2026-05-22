@@ -2,6 +2,7 @@ package com.reday.auth.infrastructure;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import com.reday.auth.domain.EmailVerification;
 public class InMemoryEmailVerificationStore implements EmailVerificationStore {
 
 	private final Map<String, EmailVerification> emailVerifications = new ConcurrentHashMap<>();
+	private final Set<String> verifiedEmails = ConcurrentHashMap.newKeySet();
 
 	/**
 	 * 메모리에 저장된 이메일 인증 정보를 조회합니다.
@@ -47,5 +49,17 @@ public class InMemoryEmailVerificationStore implements EmailVerificationStore {
 	@Override
 	public void complete(Email email) {
 		emailVerifications.remove(email.value());
+		verifiedEmails.add(email.value());
+	}
+
+	/**
+	 * 메모리에 저장된 이메일 인증 완료 여부를 확인합니다.
+	 *
+	 * @param email 확인할 이메일
+	 * @return 이메일 인증이 완료되었으면 true
+	 */
+	@Override
+	public boolean isVerified(Email email) {
+		return verifiedEmails.contains(email.value());
 	}
 }
