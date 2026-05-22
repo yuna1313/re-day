@@ -24,4 +24,11 @@ public interface EmailVerificationStore {
 	 * @param emailVerification 저장할 이메일 인증 정보
 	 */
 	void save(EmailVerification emailVerification);
+
+	/**
+	 * 이메일 인증 완료 후 저장된 인증 정보를 제거합니다.
+	 *
+	 * @param email 인증을 완료한 이메일
+	 */
+	void complete(Email email);
 }

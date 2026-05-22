@@ -70,4 +70,21 @@ public record EmailVerification(
 	public boolean isWithinRequestWindow(LocalDateTime now, Duration requestWindow) {
 		return requestWindowStartedAt.plus(requestWindow).isAfter(now);
 	}
+
+	/**
+	 * 입력한 인증코드가 저장된 인증코드와 일치하고 만료되지 않았는지 검증합니다.
+	 *
+	 * @param inputCode 사용자가 입력한 인증코드
+	 * @param now 검증 시각
+	 * @throws BusinessException 인증코드가 만료되었거나 일치하지 않는 경우
+	 */
+	public void verify(VerificationCode inputCode, LocalDateTime now) {
+		if (expiresAt.isBefore(now) || expiresAt.isEqual(now)) {
+			throw new BusinessException(AuthErrorCode.VERIFICATION_CODE_EXPIRED);
+		}
+
+		if (!code.equals(inputCode)) {
+			throw new BusinessException(AuthErrorCode.INVALID_VERIFICATION_CODE);
+		}
+	}
 }

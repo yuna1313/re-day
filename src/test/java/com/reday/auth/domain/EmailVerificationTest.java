@@ -85,4 +85,58 @@ class EmailVerificationTest {
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())
 			.isEqualTo(AuthErrorCode.TOO_MANY_VERIFICATION_REQUESTS);
 	}
+
+	/**
+	 * 저장된 인증코드와 입력한 인증코드가 같고 만료되지 않았으면 검증에 성공합니다.
+	 */
+	@Test
+	void verifySucceedsWhenCodeMatchesAndNotExpired() {
+		LocalDateTime now = LocalDateTime.of(2026, 5, 22, 15, 0);
+		EmailVerification verification = EmailVerification.create(
+			Email.of("yuna1313@naver.com"),
+			VerificationCode.of("123456"),
+			now,
+			TTL
+		);
+
+		verification.verify(VerificationCode.of("123456"), now.plusMinutes(4));
+	}
+
+	/**
+	 * 저장된 인증코드와 입력한 인증코드가 다르면 검증에 실패합니다.
+	 */
+	@Test
+	void verifyRejectsMismatchedCode() {
+		LocalDateTime now = LocalDateTime.of(2026, 5, 22, 15, 0);
+		EmailVerification verification = EmailVerification.create(
+			Email.of("yuna1313@naver.com"),
+			VerificationCode.of("123456"),
+			now,
+			TTL
+		);
+
+		assertThatThrownBy(() -> verification.verify(VerificationCode.of("654321"), now.plusMinutes(4)))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.INVALID_VERIFICATION_CODE);
+	}
+
+	/**
+	 * 인증코드 유효 시간이 지나면 검증에 실패합니다.
+	 */
+	@Test
+	void verifyRejectsExpiredCode() {
+		LocalDateTime now = LocalDateTime.of(2026, 5, 22, 15, 0);
+		EmailVerification verification = EmailVerification.create(
+			Email.of("yuna1313@naver.com"),
+			VerificationCode.of("123456"),
+			now,
+			TTL
+		);
+
+		assertThatThrownBy(() -> verification.verify(VerificationCode.of("123456"), now.plusMinutes(6)))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.VERIFICATION_CODE_EXPIRED);
+	}
 }

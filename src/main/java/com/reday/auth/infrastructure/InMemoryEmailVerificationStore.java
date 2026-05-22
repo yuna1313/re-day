@@ -38,4 +38,14 @@ public class InMemoryEmailVerificationStore implements EmailVerificationStore {
 	public void save(EmailVerification emailVerification) {
 		emailVerifications.put(emailVerification.email().value(), emailVerification);
 	}
+
+	/**
+	 * 이메일 인증 완료 후 메모리에 저장된 인증 정보를 제거합니다.
+	 *
+	 * @param email 인증을 완료한 이메일
+	 */
+	@Override
+	public void complete(Email email) {
+		emailVerifications.remove(email.value());
+	}
 }

@@ -18,6 +18,7 @@ import com.reday.auth.domain.Nickname;
 import com.reday.auth.domain.RawPassword;
 import com.reday.auth.domain.VerificationCode;
 import com.reday.auth.dto.EmailVerificationSendRequest;
+import com.reday.auth.dto.EmailVerificationVerifyRequest;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.SignupResponse;
 import com.reday.auth.exception.AuthErrorCode;
@@ -94,6 +95,28 @@ public class AuthService {
 		emailSender.sendVerificationCode(email, verification.code());
 		emailVerificationStore.save(verification);
 		log.info("[sendEmailVerification] 이메일 인증코드 발송 완료: {}", email.value());
+	}
+
+	/**
+	 * 이메일 인증코드를 검증하고 인증을 완료합니다.
+	 *
+	 * @param request 이메일 인증코드 확인 요청
+	 */
+	public void verifyEmailVerification(EmailVerificationVerifyRequest request) {
+		log.info("[verifyEmailVerification] 이메일 인증코드 확인 요청");
+		if (request == null) {
+			log.warn("[verifyEmailVerification] 요청 본문 누락");
+			throw new BusinessException(AuthErrorCode.EMAIL_VERIFY_FAIL);
+		}
+
+		Email email = Email.of(request.email());
+		VerificationCode inputCode = VerificationCode.of(request.verificationCode());
+		EmailVerification verification = emailVerificationStore.findByEmail(email)
+			.orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_VERIFICATION_CODE));
+
+		verification.verify(inputCode, LocalDateTime.now());
+		emailVerificationStore.complete(email);
+		log.info("[verifyEmailVerification] 이메일 인증 완료: {}", email.value());
 	}
 
 	/**
