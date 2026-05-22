@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -115,6 +116,25 @@ public class JwtTokenProvider {
 	 */
 	public boolean validateRefreshToken(String token) {
 		return validateTokenType(token, REFRESH_TOKEN_TYPE);
+	}
+
+	/**
+	 * refresh token이 만료되었는지 확인합니다.
+	 *
+	 * 토큰 형식이나 서명이 잘못된 경우는 만료가 아니라 유효하지 않은 토큰으로 처리하기 위해 false를 반환합니다.
+	 *
+	 * @param token 만료 여부를 확인할 refresh token
+	 * @return 만료된 refresh token이면 true
+	 */
+	public boolean isExpiredRefreshToken(String token) {
+		try {
+			parseClaims(token);
+			return false;
+		} catch (ExpiredJwtException exception) {
+			return REFRESH_TOKEN_TYPE.equals(exception.getClaims().get(TOKEN_TYPE_CLAIM, String.class));
+		} catch (JwtException | IllegalArgumentException exception) {
+			return false;
+		}
 	}
 
 	/**

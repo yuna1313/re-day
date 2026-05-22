@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.reday.auth.application.port.EmailSender;
 import com.reday.auth.application.port.EmailVerificationStore;
+import com.reday.auth.application.port.RefreshTokenStore;
 import com.reday.auth.application.port.VerificationCodeGenerator;
 import com.reday.auth.domain.Email;
 import com.reday.auth.domain.EmailVerification;
@@ -29,6 +30,8 @@ import com.reday.auth.dto.EmailVerificationVerifyRequest;
 import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.SignupRequest;
+import com.reday.auth.dto.TokenRefreshRequest;
+import com.reday.auth.dto.TokenRefreshResponse;
 import com.reday.auth.exception.AuthErrorCode;
 import com.reday.global.exception.BusinessException;
 import com.reday.global.security.jwt.JwtTokenProvider;
@@ -42,6 +45,7 @@ class AuthServiceTest {
 	private final EmailSender emailSender = org.mockito.Mockito.mock(EmailSender.class);
 	private final EmailVerificationStore emailVerificationStore = org.mockito.Mockito.mock(EmailVerificationStore.class);
 	private final VerificationCodeGenerator verificationCodeGenerator = org.mockito.Mockito.mock(VerificationCodeGenerator.class);
+	private final RefreshTokenStore refreshTokenStore = org.mockito.Mockito.mock(RefreshTokenStore.class);
 	private final AuthenticationManager authenticationManager = org.mockito.Mockito.mock(AuthenticationManager.class);
 	private final JwtTokenProvider jwtTokenProvider = org.mockito.Mockito.mock(JwtTokenProvider.class);
 	private final AuthService authService = new AuthService(
@@ -50,6 +54,7 @@ class AuthServiceTest {
 		emailSender,
 		emailVerificationStore,
 		verificationCodeGenerator,
+		refreshTokenStore,
 		authenticationManager,
 		jwtTokenProvider
 	);
@@ -146,6 +151,7 @@ class AuthServiceTest {
 		assertThat(response.refreshToken()).isEqualTo("refresh-token");
 		assertThat(response.member().nickname()).isEqualTo("유나");
 		assertThat(response.member().email()).isEqualTo("yuna1313@naver.com");
+		verify(refreshTokenStore, times(1)).save("yuna1313@naver.com", "refresh-token");
 	}
 
 	/**
@@ -180,5 +186,68 @@ class AuthServiceTest {
 			.isInstanceOf(BusinessException.class)
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())
 			.isEqualTo(AuthErrorCode.EMAIL_NOT_VERIFIED);
+	}
+
+	/**
+	 * 유효하고 저장된 refresh token이면 access token과 refresh token을 새로 발급합니다.
+	 */
+	@Test
+	void refreshTokenSucceedsWithStoredRefreshToken() {
+		when(jwtTokenProvider.isExpiredRefreshToken("old-refresh-token")).thenReturn(false);
+		when(jwtTokenProvider.validateRefreshToken("old-refresh-token")).thenReturn(true);
+		when(jwtTokenProvider.getEmail("old-refresh-token")).thenReturn("yuna1313@naver.com");
+		when(refreshTokenStore.matches("yuna1313@naver.com", "old-refresh-token")).thenReturn(true);
+		when(memberRepository.existsByEmail("yuna1313@naver.com")).thenReturn(true);
+		when(jwtTokenProvider.createAccessToken("yuna1313@naver.com")).thenReturn("new-access-token");
+		when(jwtTokenProvider.createRefreshToken("yuna1313@naver.com")).thenReturn("new-refresh-token");
+
+		TokenRefreshResponse response = authService.refreshToken(new TokenRefreshRequest("old-refresh-token"));
+
+		assertThat(response.accessToken()).isEqualTo("new-access-token");
+		assertThat(response.refreshToken()).isEqualTo("new-refresh-token");
+		verify(refreshTokenStore, times(1)).save("yuna1313@naver.com", "new-refresh-token");
+	}
+
+	/**
+	 * 형식이 잘못되었거나 refresh 타입이 아닌 토큰은 재발급할 수 없습니다.
+	 */
+	@Test
+	void refreshTokenRejectsInvalidRefreshToken() {
+		when(jwtTokenProvider.isExpiredRefreshToken("invalid-refresh-token")).thenReturn(false);
+		when(jwtTokenProvider.validateRefreshToken("invalid-refresh-token")).thenReturn(false);
+
+		assertThatThrownBy(() -> authService.refreshToken(new TokenRefreshRequest("invalid-refresh-token")))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
+	}
+
+	/**
+	 * 만료된 refresh token은 재발급할 수 없습니다.
+	 */
+	@Test
+	void refreshTokenRejectsExpiredRefreshToken() {
+		when(jwtTokenProvider.isExpiredRefreshToken("expired-refresh-token")).thenReturn(true);
+
+		assertThatThrownBy(() -> authService.refreshToken(new TokenRefreshRequest("expired-refresh-token")))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
+	}
+
+	/**
+	 * 서버에 저장된 refresh token과 일치하지 않으면 폐기된 토큰으로 처리합니다.
+	 */
+	@Test
+	void refreshTokenRejectsRevokedRefreshToken() {
+		when(jwtTokenProvider.isExpiredRefreshToken("revoked-refresh-token")).thenReturn(false);
+		when(jwtTokenProvider.validateRefreshToken("revoked-refresh-token")).thenReturn(true);
+		when(jwtTokenProvider.getEmail("revoked-refresh-token")).thenReturn("yuna1313@naver.com");
+		when(refreshTokenStore.matches("yuna1313@naver.com", "revoked-refresh-token")).thenReturn(false);
+
+		assertThatThrownBy(() -> authService.refreshToken(new TokenRefreshRequest("revoked-refresh-token")))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.REFRESH_TOKEN_REVOKED);
 	}
 }

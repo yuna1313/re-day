@@ -12,9 +12,11 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.reday.auth.application.port.EmailSender;
 import com.reday.auth.application.port.EmailVerificationStore;
+import com.reday.auth.application.port.RefreshTokenStore;
 import com.reday.auth.application.port.VerificationCodeGenerator;
 import com.reday.auth.domain.Email;
 import com.reday.auth.domain.EmailVerification;
@@ -27,6 +29,8 @@ import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.SignupResponse;
+import com.reday.auth.dto.TokenRefreshRequest;
+import com.reday.auth.dto.TokenRefreshResponse;
 import com.reday.auth.exception.AuthErrorCode;
 import com.reday.global.exception.BusinessException;
 import com.reday.global.security.jwt.JwtTokenProvider;
@@ -47,6 +51,7 @@ public class AuthService {
 	private final EmailSender emailSender;
 	private final EmailVerificationStore emailVerificationStore;
 	private final VerificationCodeGenerator verificationCodeGenerator;
+	private final RefreshTokenStore refreshTokenStore;
 	private final AuthenticationManager authenticationManager;
 	private final JwtTokenProvider jwtTokenProvider;
 
@@ -153,6 +158,7 @@ public class AuthService {
 
 		String accessToken = jwtTokenProvider.createAccessToken(authentication);
 		String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
+		refreshTokenStore.save(email.value(), refreshToken);
 
 		log.info("[login] 로그인 성공: {}", email.value());
 		return new LoginResponse(
@@ -160,6 +166,42 @@ public class AuthService {
 			refreshToken,
 			new LoginResponse.MemberInfo(member.getMemberIdx(), member.getNickname(), member.getEmail())
 		);
+	}
+
+	/**
+	 * refresh token을 검증하고 access token과 refresh token을 재발급합니다.
+	 *
+	 * @param request 토큰 재발급 요청
+	 * @return 재발급된 access token과 refresh token
+	 */
+	public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
+		log.info("[refreshToken] 토큰 재발급 요청");
+		if (request == null || !StringUtils.hasText(request.refreshToken())) {
+			throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+		}
+
+		String requestedRefreshToken = request.refreshToken();
+		if (jwtTokenProvider.isExpiredRefreshToken(requestedRefreshToken)) {
+			throw new BusinessException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
+		}
+		if (!jwtTokenProvider.validateRefreshToken(requestedRefreshToken)) {
+			throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+		}
+
+		String email = jwtTokenProvider.getEmail(requestedRefreshToken);
+		if (!refreshTokenStore.matches(email, requestedRefreshToken)) {
+			throw new BusinessException(AuthErrorCode.REFRESH_TOKEN_REVOKED);
+		}
+		if (!memberRepository.existsByEmail(email)) {
+			throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+		}
+
+		String accessToken = jwtTokenProvider.createAccessToken(email);
+		String refreshToken = jwtTokenProvider.createRefreshToken(email);
+		refreshTokenStore.save(email, refreshToken);
+		log.info("[refreshToken] 토큰 재발급 완료: {}", email);
+
+		return new TokenRefreshResponse(accessToken, refreshToken);
 	}
 
 	/**
