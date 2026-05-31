@@ -1,8 +1,8 @@
 package com.reday.member.application;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.StringUtils;
 
 import com.reday.auth.domain.RawPassword;
@@ -14,9 +14,11 @@ import com.reday.member.exception.MemberErrorCode;
 import com.reday.member.repository.MemberRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MemberService {
 
 	private final MemberRepository memberRepository;
@@ -31,14 +33,21 @@ public class MemberService {
 	 */
 	@Transactional(readOnly = true)
 	public MemberMeResponse getMyInfo(String email) {
+		log.info("[getMyInfo] 내 정보 조회 요청: {}", email);
 		Member member = memberRepository.findByEmail(email)
-			.orElseThrow(() -> new BusinessException(MemberErrorCode.NOT_FOUND));
+			.orElseThrow(() -> {
+				log.warn("[getMyInfo] 회원 정보 없음: {}", email);
+				return new BusinessException(MemberErrorCode.NOT_FOUND);
+			});
 
-		return new MemberMeResponse(
+		MemberMeResponse response = new MemberMeResponse(
 			member.getMemberIdx(),
 			member.getNickname(),
 			member.getEmail()
 		);
+		log.info("[getMyInfo] 내 정보 조회 완료: {}", email);
+
+		return response;
 	}
 
 	/**
@@ -50,19 +59,36 @@ public class MemberService {
 	 */
 	@Transactional
 	public void changePassword(String email, PasswordChangeRequest request) {
+		log.info("[changePassword] 비밀번호 변경 요청: {}", email);
 		Member member = memberRepository.findByEmail(email)
-			.orElseThrow(() -> new BusinessException(MemberErrorCode.NOT_FOUND));
+			.orElseThrow(() -> {
+				log.warn("[changePassword] 회원 정보 없음: {}", email);
+				return new BusinessException(MemberErrorCode.NOT_FOUND);
+			});
 
-		if (request == null || !StringUtils.hasText(request.currentPassword())
-			|| !passwordEncoder.matches(request.currentPassword(), member.getPassword())) {
+		if (request == null) {
+			log.warn("[changePassword] 요청 본문 누락: {}", email);
 			throw new BusinessException(MemberErrorCode.INVALID_CURRENT_PASSWORD);
 		}
 
+		if (!StringUtils.hasText(request.currentPassword())) {
+			log.warn("[changePassword] 현재 비밀번호 누락: {}", email);
+			throw new BusinessException(MemberErrorCode.INVALID_CURRENT_PASSWORD);
+		}
+
+		if (!passwordEncoder.matches(request.currentPassword(), member.getPassword())) {
+			log.warn("[changePassword] 현재 비밀번호 검증 실패: {}", email);
+			throw new BusinessException(MemberErrorCode.INVALID_CURRENT_PASSWORD);
+		}
+
+		log.info("[changePassword] 새 비밀번호 형식 검증: {}", email);
 		RawPassword newPassword = RawPassword.of(request.newPassword(), request.newPassword());
 		if (passwordEncoder.matches(newPassword.value(), member.getPassword())) {
+			log.warn("[changePassword] 새 비밀번호가 현재 비밀번호와 동일: {}", email);
 			throw new BusinessException(MemberErrorCode.SAME_AS_OLD_PASSWORD);
 		}
 
 		member.changePassword(passwordEncoder.encode(newPassword.value()));
+		log.info("[changePassword] 비밀번호 변경 완료: {}", email);
 	}
 }
