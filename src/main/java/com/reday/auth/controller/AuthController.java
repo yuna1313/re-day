@@ -9,6 +9,7 @@ import com.reday.auth.dto.EmailVerificationSendRequest;
 import com.reday.auth.dto.EmailVerificationVerifyRequest;
 import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
+import com.reday.auth.dto.LogoutRequest;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.SignupResponse;
 import com.reday.auth.dto.TokenRefreshRequest;
@@ -52,5 +53,11 @@ public class AuthController {
 	public ApiResponse<TokenRefreshResponse> refreshToken(@RequestBody TokenRefreshRequest request) {
 		TokenRefreshResponse response = authService.refreshToken(request);
 		return ApiResponse.success(AuthResponseCode.TOKEN_REFRESHED, response);
+	}
+
+	@PostMapping("/api/v1/auth/logout")
+	public ApiResponse<Void> logout(@RequestBody LogoutRequest request) {
+		authService.logout(request);
+		return ApiResponse.success(AuthResponseCode.LOGOUT_SUCCESS);
 	}
 }

@@ -29,6 +29,7 @@ import com.reday.auth.dto.EmailVerificationSendRequest;
 import com.reday.auth.dto.EmailVerificationVerifyRequest;
 import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
+import com.reday.auth.dto.LogoutRequest;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.TokenRefreshRequest;
 import com.reday.auth.dto.TokenRefreshResponse;
@@ -246,6 +247,48 @@ class AuthServiceTest {
 		when(refreshTokenStore.matches("yuna1313@naver.com", "revoked-refresh-token")).thenReturn(false);
 
 		assertThatThrownBy(() -> authService.refreshToken(new TokenRefreshRequest("revoked-refresh-token")))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.REFRESH_TOKEN_REVOKED);
+	}
+
+	/**
+	 * 유효하고 저장된 refresh token이면 서버에서 refresh token을 제거해 로그아웃합니다.
+	 */
+	@Test
+	void logoutSucceedsWithStoredRefreshToken() {
+		when(jwtTokenProvider.validateRefreshToken("refresh-token")).thenReturn(true);
+		when(jwtTokenProvider.getEmail("refresh-token")).thenReturn("yuna1313@naver.com");
+		when(refreshTokenStore.matches("yuna1313@naver.com", "refresh-token")).thenReturn(true);
+
+		authService.logout(new LogoutRequest("refresh-token"));
+
+		verify(refreshTokenStore, times(1)).revoke("yuna1313@naver.com");
+	}
+
+	/**
+	 * 유효하지 않은 refresh token으로는 로그아웃할 수 없습니다.
+	 */
+	@Test
+	void logoutRejectsInvalidRefreshToken() {
+		when(jwtTokenProvider.validateRefreshToken("invalid-refresh-token")).thenReturn(false);
+
+		assertThatThrownBy(() -> authService.logout(new LogoutRequest("invalid-refresh-token")))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
+	}
+
+	/**
+	 * 이미 서버 저장소에서 제거된 refresh token은 폐기된 토큰으로 처리합니다.
+	 */
+	@Test
+	void logoutRejectsRevokedRefreshToken() {
+		when(jwtTokenProvider.validateRefreshToken("revoked-refresh-token")).thenReturn(true);
+		when(jwtTokenProvider.getEmail("revoked-refresh-token")).thenReturn("yuna1313@naver.com");
+		when(refreshTokenStore.matches("yuna1313@naver.com", "revoked-refresh-token")).thenReturn(false);
+
+		assertThatThrownBy(() -> authService.logout(new LogoutRequest("revoked-refresh-token")))
 			.isInstanceOf(BusinessException.class)
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())
 			.isEqualTo(AuthErrorCode.REFRESH_TOKEN_REVOKED);

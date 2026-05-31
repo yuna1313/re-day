@@ -14,6 +14,7 @@ public enum AuthErrorCode implements ErrorResponseCode {
 	SIGNUP_FAIL(HttpStatus.OK, "AUTH_SIGNUP_FAIL", "회원가입에 실패하였습니다."),
 	LOGIN_FAIL(HttpStatus.UNAUTHORIZED, "AUTH_LOGIN_FAIL", "로그인에 실패하였습니다."),
 	TOKEN_REFRESH_FAIL(HttpStatus.UNAUTHORIZED, "AUTH_TOKEN_REFRESH_FAIL", "토큰 재발급에 실패하였습니다."),
+	LOGOUT_FAIL(HttpStatus.UNAUTHORIZED, "AUTH_LOGOUT_FAIL", "로그아웃에 실패하였습니다."),
 	INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH_INVALID_CREDENTIALS_FAIL", "이메일 또는 비밀번호가 올바르지 않습니다."),
 	INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_INVALID_REFRESH_TOKEN_FAIL", "유효하지 않은 리프레시 토큰입니다."),
 	REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "AUTH_REFRESH_TOKEN_EXPIRED_FAIL", "리프레시 토큰이 만료되었습니다."),

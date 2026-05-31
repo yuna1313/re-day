@@ -27,6 +27,7 @@ import com.reday.auth.dto.EmailVerificationSendRequest;
 import com.reday.auth.dto.EmailVerificationVerifyRequest;
 import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
+import com.reday.auth.dto.LogoutRequest;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.SignupResponse;
 import com.reday.auth.dto.TokenRefreshRequest;
@@ -202,6 +203,31 @@ public class AuthService {
 		log.info("[refreshToken] 토큰 재발급 완료: {}", email);
 
 		return new TokenRefreshResponse(accessToken, refreshToken);
+	}
+
+	/**
+	 * refresh token을 검증하고 서버 저장소에서 제거해 로그아웃 처리합니다.
+	 *
+	 * @param request 로그아웃 요청
+	 */
+	public void logout(LogoutRequest request) {
+		log.info("[logout] 로그아웃 요청");
+		if (request == null || !StringUtils.hasText(request.refreshToken())) {
+			throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+		}
+
+		String refreshToken = request.refreshToken();
+		if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+			throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+		}
+
+		String email = jwtTokenProvider.getEmail(refreshToken);
+		if (!refreshTokenStore.matches(email, refreshToken)) {
+			throw new BusinessException(AuthErrorCode.REFRESH_TOKEN_REVOKED);
+		}
+
+		refreshTokenStore.revoke(email);
+		log.info("[logout] 로그아웃 완료: {}", email);
 	}
 
 	/**

@@ -21,4 +21,11 @@ public interface RefreshTokenStore {
 	 * @return 저장된 refresh token과 일치하면 true
 	 */
 	boolean matches(String email, String refreshToken);
+
+	/**
+	 * 회원 이메일 기준으로 저장된 refresh token을 제거합니다.
+	 *
+	 * @param email refresh token 소유자 이메일
+	 */
+	void revoke(String email);
 }

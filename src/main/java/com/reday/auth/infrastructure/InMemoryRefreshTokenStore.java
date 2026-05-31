@@ -37,4 +37,14 @@ public class InMemoryRefreshTokenStore implements RefreshTokenStore {
 	public boolean matches(String email, String refreshToken) {
 		return refreshToken.equals(refreshTokens.get(email));
 	}
+
+	/**
+	 * 회원 이메일 기준으로 메모리에 저장된 refresh token을 제거합니다.
+	 *
+	 * @param email refresh token 소유자 이메일
+	 */
+	@Override
+	public void revoke(String email) {
+		refreshTokens.remove(email);
+	}
 }
