@@ -144,6 +144,7 @@ class AuthServiceTest {
 			.thenReturn(authentication);
 		when(jwtTokenProvider.createAccessToken(authentication)).thenReturn("access-token");
 		when(jwtTokenProvider.createRefreshToken(authentication)).thenReturn("refresh-token");
+		when(jwtTokenProvider.getExpiresAt("refresh-token")).thenReturn(LocalDateTime.of(2026, 6, 1, 0, 0));
 		when(memberRepository.findByEmail("yuna1313@naver.com")).thenReturn(Optional.of(member));
 
 		LoginResponse response = authService.login(request);
@@ -152,7 +153,11 @@ class AuthServiceTest {
 		assertThat(response.refreshToken()).isEqualTo("refresh-token");
 		assertThat(response.member().nickname()).isEqualTo("유나");
 		assertThat(response.member().email()).isEqualTo("yuna1313@naver.com");
-		verify(refreshTokenStore, times(1)).save("yuna1313@naver.com", "refresh-token");
+		verify(refreshTokenStore, times(1)).save(
+			"yuna1313@naver.com",
+			"refresh-token",
+			LocalDateTime.of(2026, 6, 1, 0, 0)
+		);
 	}
 
 	/**
@@ -201,12 +206,17 @@ class AuthServiceTest {
 		when(memberRepository.existsByEmail("yuna1313@naver.com")).thenReturn(true);
 		when(jwtTokenProvider.createAccessToken("yuna1313@naver.com")).thenReturn("new-access-token");
 		when(jwtTokenProvider.createRefreshToken("yuna1313@naver.com")).thenReturn("new-refresh-token");
+		when(jwtTokenProvider.getExpiresAt("new-refresh-token")).thenReturn(LocalDateTime.of(2026, 6, 1, 0, 0));
 
 		TokenRefreshResponse response = authService.refreshToken(new TokenRefreshRequest("old-refresh-token"));
 
 		assertThat(response.accessToken()).isEqualTo("new-access-token");
 		assertThat(response.refreshToken()).isEqualTo("new-refresh-token");
-		verify(refreshTokenStore, times(1)).save("yuna1313@naver.com", "new-refresh-token");
+		verify(refreshTokenStore, times(1)).save(
+			"yuna1313@naver.com",
+			"new-refresh-token",
+			LocalDateTime.of(2026, 6, 1, 0, 0)
+		);
 	}
 
 	/**

@@ -159,7 +159,7 @@ public class AuthService {
 
 		String accessToken = jwtTokenProvider.createAccessToken(authentication);
 		String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
-		refreshTokenStore.save(email.value(), refreshToken);
+		refreshTokenStore.save(email.value(), refreshToken, jwtTokenProvider.getExpiresAt(refreshToken));
 
 		log.info("[login] 로그인 성공: {}", email.value());
 		return new LoginResponse(
@@ -199,7 +199,7 @@ public class AuthService {
 
 		String accessToken = jwtTokenProvider.createAccessToken(email);
 		String refreshToken = jwtTokenProvider.createRefreshToken(email);
-		refreshTokenStore.save(email, refreshToken);
+		refreshTokenStore.save(email, refreshToken, jwtTokenProvider.getExpiresAt(refreshToken));
 		log.info("[refreshToken] 토큰 재발급 완료: {}", email);
 
 		return new TokenRefreshResponse(accessToken, refreshToken);

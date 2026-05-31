@@ -3,6 +3,8 @@ package com.reday.global.security.jwt;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -147,6 +149,16 @@ public class JwtTokenProvider {
 	 */
 	public String getEmail(String token) {
 		return parseClaims(token).getSubject();
+	}
+
+	/**
+	 * 토큰에 저장된 만료 일시를 조회합니다.
+	 *
+	 * @param token 만료 일시를 조회할 JWT
+	 * @return 토큰 만료 일시
+	 */
+	public LocalDateTime getExpiresAt(String token) {
+		return LocalDateTime.ofInstant(parseClaims(token).getExpiration().toInstant(), ZoneId.systemDefault());
 	}
 
 	/**

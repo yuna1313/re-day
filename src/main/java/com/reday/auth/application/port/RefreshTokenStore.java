@@ -1,5 +1,7 @@
 package com.reday.auth.application.port;
 
+import java.time.LocalDateTime;
+
 /**
  * refresh token을 저장하고 검증하기 위한 포트입니다.
  */
@@ -11,7 +13,7 @@ public interface RefreshTokenStore {
 	 * @param email refresh token 소유자 이메일
 	 * @param refreshToken 저장할 refresh token
 	 */
-	void save(String email, String refreshToken);
+	void save(String email, String refreshToken, LocalDateTime expiresAt);
 
 	/**
 	 * 전달된 refresh token이 서버에 저장된 최신 토큰과 일치하는지 확인합니다.
