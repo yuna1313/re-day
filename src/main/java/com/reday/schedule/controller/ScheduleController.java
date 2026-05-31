@@ -2,12 +2,16 @@ package com.reday.schedule.controller;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.reday.global.response.ApiResponse;
 import com.reday.global.security.UserPrincipal;
 import com.reday.schedule.application.ScheduleService;
+import com.reday.schedule.dto.ScheduleCreateRequest;
+import com.reday.schedule.dto.ScheduleCreateResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
 import com.reday.schedule.response.ScheduleResponseCode;
 
@@ -42,5 +46,21 @@ public class ScheduleController {
 			endDate
 		);
 		return ApiResponse.success(ScheduleResponseCode.LIST_SUCCESS, response);
+	}
+
+	/**
+	 * 로그인한 사용자의 새 일정을 생성합니다.
+	 *
+	 * @param userPrincipal JWT 인증 필터가 SecurityContext에 저장한 사용자 정보
+	 * @param request 일정 생성 요청
+	 * @return 일정 생성 성공 응답
+	 */
+	@PostMapping("/api/v1/schedules")
+	public ApiResponse<ScheduleCreateResponse> createSchedule(
+		@AuthenticationPrincipal UserPrincipal userPrincipal,
+		@RequestBody ScheduleCreateRequest request
+	) {
+		ScheduleCreateResponse response = scheduleService.createSchedule(userPrincipal.getMemberIdx(), request);
+		return ApiResponse.success(ScheduleResponseCode.CREATED, response);
 	}
 }

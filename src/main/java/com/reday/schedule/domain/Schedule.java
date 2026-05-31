@@ -29,7 +29,7 @@ public class Schedule {
 	@Column(name = "member_idx", nullable = false)
 	private Integer memberIdx;
 
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false, length = 500)
 	private String title;
 
 	@Column(name = "start_at", nullable = false)
@@ -82,7 +82,38 @@ public class Schedule {
 		this.memo = memo;
 		this.status = status;
 		this.completedAt = completedAt;
+		this.createdAt = LocalDateTime.now();
 		this.deferCount = deferCount;
+	}
+
+	/**
+	 * 사용자가 새로 등록한 대기 상태 일정을 생성합니다.
+	 *
+	 * @param memberIdx 일정 소유 회원 식별자
+	 * @param title 일정 제목
+	 * @param startAt 시작 일시
+	 * @param estimatedMinutes 예상 소요 시간
+	 * @param memo 메모
+	 * @return 대기 상태의 새 일정 엔티티
+	 */
+	public static Schedule createNew(
+		Integer memberIdx,
+		String title,
+		LocalDateTime startAt,
+		Integer estimatedMinutes,
+		String memo
+	) {
+		return new Schedule(
+			memberIdx,
+			title,
+			startAt,
+			estimatedMinutes,
+			null,
+			memo,
+			ScheduleStatus.PENDING,
+			null,
+			0
+		);
 	}
 
 	/**

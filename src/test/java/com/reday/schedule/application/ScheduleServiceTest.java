@@ -2,16 +2,20 @@ package com.reday.schedule.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.reday.global.exception.BusinessException;
 import com.reday.schedule.domain.Schedule;
 import com.reday.schedule.domain.ScheduleStatus;
+import com.reday.schedule.dto.ScheduleCreateRequest;
+import com.reday.schedule.dto.ScheduleCreateResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
 import com.reday.schedule.exception.ScheduleErrorCode;
 import com.reday.schedule.repository.ScheduleRepository;
@@ -89,5 +93,70 @@ class ScheduleServiceTest {
 			.isInstanceOf(BusinessException.class)
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())
 			.isEqualTo(ScheduleErrorCode.INVALID_DATE_RANGE);
+	}
+
+	/**
+	 * 일정 생성 요청 값이 유효하면 대기 상태 일정을 저장하고 생성된 일정 식별자를 반환합니다.
+	 */
+	@Test
+	void createScheduleSucceedsWithValidRequest() {
+		Schedule savedSchedule = Schedule.createNew(
+			1,
+			"운동하기",
+			LocalDateTime.of(2026, 1, 9, 8, 0),
+			30,
+			"아침 유산소"
+		);
+		ReflectionTestUtils.setField(savedSchedule, "scheduleIdx", 101);
+		when(scheduleRepository.save(any(Schedule.class))).thenReturn(savedSchedule);
+
+		ScheduleCreateResponse response = scheduleService.createSchedule(
+			1,
+			new ScheduleCreateRequest(" 운동하기 ", "2026-01-09 08:00:00", 30, "아침 유산소")
+		);
+
+		assertThat(response.scheduleId()).isEqualTo(101);
+	}
+
+	/**
+	 * 제목이 비어 있으면 일정 생성을 거부합니다.
+	 */
+	@Test
+	void createScheduleRejectsBlankTitle() {
+		assertThatThrownBy(() -> scheduleService.createSchedule(
+			1,
+			new ScheduleCreateRequest(" ", "2026-01-09 08:00:00", 30, null)
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.INVALID_TITLE);
+	}
+
+	/**
+	 * 시작 일시 형식이 올바르지 않으면 일정 생성을 거부합니다.
+	 */
+	@Test
+	void createScheduleRejectsInvalidStartAt() {
+		assertThatThrownBy(() -> scheduleService.createSchedule(
+			1,
+			new ScheduleCreateRequest("운동하기", "2026/01/09 08:00:00", 30, null)
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.INVALID_START_AT);
+	}
+
+	/**
+	 * 예상 소요 시간이 0 이하이면 일정 생성을 거부합니다.
+	 */
+	@Test
+	void createScheduleRejectsInvalidEstimatedMinutes() {
+		assertThatThrownBy(() -> scheduleService.createSchedule(
+			1,
+			new ScheduleCreateRequest("운동하기", "2026-01-09 08:00:00", 0, null)
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.INVALID_ESTIMATED_MINUTES);
 	}
 }

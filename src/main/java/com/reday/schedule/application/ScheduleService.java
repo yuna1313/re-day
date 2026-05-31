@@ -14,6 +14,8 @@ import org.springframework.util.StringUtils;
 import com.reday.global.exception.BusinessException;
 import com.reday.schedule.domain.Schedule;
 import com.reday.schedule.domain.ScheduleViewType;
+import com.reday.schedule.dto.ScheduleCreateRequest;
+import com.reday.schedule.dto.ScheduleCreateResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
 import com.reday.schedule.exception.ScheduleErrorCode;
 import com.reday.schedule.repository.ScheduleRepository;
@@ -28,6 +30,8 @@ public class ScheduleService {
 
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
 	private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+	private static final int MAX_TITLE_LENGTH = 500;
+	private static final int MAX_ESTIMATED_MINUTES = 1440;
 
 	private final ScheduleRepository scheduleRepository;
 
@@ -76,6 +80,39 @@ public class ScheduleService {
 	}
 
 	/**
+	 * 로그인한 사용자의 새 일정을 생성합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param request 일정 생성 요청
+	 * @return 생성된 일정 식별자 응답
+	 * @throws BusinessException 제목, 시작 일시, 예상 시간이 올바르지 않을 때 발생
+	 */
+	@Transactional
+	public ScheduleCreateResponse createSchedule(Integer memberIdx, ScheduleCreateRequest request) {
+		log.info("[createSchedule] 일정 생성 요청: memberIdx={}", memberIdx);
+		if (request == null) {
+			log.warn("[createSchedule] 요청 본문 누락: memberIdx={}", memberIdx);
+			throw new BusinessException(ScheduleErrorCode.CREATE_FAIL);
+		}
+
+		String title = validateTitle(memberIdx, request.title());
+		LocalDateTime startAt = parseStartAt(memberIdx, request.startAt());
+		Integer estimatedMinutes = validateEstimatedMinutes(memberIdx, request.estimatedMinutes());
+
+		Schedule schedule = Schedule.createNew(
+			memberIdx,
+			title,
+			startAt,
+			estimatedMinutes,
+			request.memo()
+		);
+		Schedule savedSchedule = scheduleRepository.save(schedule);
+		log.info("[createSchedule] 일정 생성 완료: memberIdx={}, scheduleId={}", memberIdx, savedSchedule.getScheduleIdx());
+
+		return new ScheduleCreateResponse(savedSchedule.getScheduleIdx());
+	}
+
+	/**
 	 * 일정 엔티티를 목록 응답 항목으로 변환합니다.
 	 *
 	 * @param schedule 일정 엔티티
@@ -92,6 +129,72 @@ public class ScheduleService {
 			formatDateTime(schedule.getCompletedAt()),
 			defaultZero(schedule.getDeferCount())
 		);
+	}
+
+	/**
+	 * 일정 제목을 검증하고 저장 가능한 값으로 정리합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param title 요청 제목
+	 * @return 앞뒤 공백이 제거된 제목
+	 * @throws BusinessException 제목이 비어 있거나 허용 길이를 초과할 때 발생
+	 */
+	private String validateTitle(Integer memberIdx, String title) {
+		if (!StringUtils.hasText(title)) {
+			log.warn("[validateTitle] 일정 제목 누락: memberIdx={}", memberIdx);
+			throw new BusinessException(ScheduleErrorCode.INVALID_TITLE);
+		}
+
+		String trimmedTitle = title.trim();
+		if (trimmedTitle.length() > MAX_TITLE_LENGTH) {
+			log.warn("[validateTitle] 일정 제목 길이 초과: memberIdx={}, length={}", memberIdx, trimmedTitle.length());
+			throw new BusinessException(ScheduleErrorCode.INVALID_TITLE);
+		}
+
+		return trimmedTitle;
+	}
+
+	/**
+	 * 일정 시작 일시 문자열을 날짜 시간 값으로 변환합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param startAt 요청 시작 일시
+	 * @return 변환된 시작 일시
+	 * @throws BusinessException 시작 일시가 없거나 형식이 올바르지 않을 때 발생
+	 */
+	private LocalDateTime parseStartAt(Integer memberIdx, String startAt) {
+		if (!StringUtils.hasText(startAt)) {
+			log.warn("[parseStartAt] 시작 일시 누락: memberIdx={}", memberIdx);
+			throw new BusinessException(ScheduleErrorCode.INVALID_START_AT);
+		}
+
+		try {
+			return LocalDateTime.parse(startAt, DATE_TIME_FORMATTER);
+		} catch (DateTimeParseException exception) {
+			log.warn("[parseStartAt] 시작 일시 형식 오류: memberIdx={}, startAt={}", memberIdx, startAt);
+			throw new BusinessException(ScheduleErrorCode.INVALID_START_AT);
+		}
+	}
+
+	/**
+	 * 예상 소요 시간을 검증합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param estimatedMinutes 요청 예상 소요 시간
+	 * @return 검증된 예상 소요 시간
+	 * @throws BusinessException 예상 소요 시간이 없거나 허용 범위를 벗어났을 때 발생
+	 */
+	private Integer validateEstimatedMinutes(Integer memberIdx, Integer estimatedMinutes) {
+		if (estimatedMinutes == null || estimatedMinutes <= 0 || estimatedMinutes > MAX_ESTIMATED_MINUTES) {
+			log.warn(
+				"[validateEstimatedMinutes] 예상 시간 오류: memberIdx={}, estimatedMinutes={}",
+				memberIdx,
+				estimatedMinutes
+			);
+			throw new BusinessException(ScheduleErrorCode.INVALID_ESTIMATED_MINUTES);
+		}
+
+		return estimatedMinutes;
 	}
 
 	/**
