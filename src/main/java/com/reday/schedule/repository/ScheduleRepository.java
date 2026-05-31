@@ -2,6 +2,7 @@ package com.reday.schedule.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -22,4 +23,13 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 		LocalDateTime startAt,
 		LocalDateTime endAt
 	);
+
+	/**
+	 * 수정 대상 일정이 로그인 사용자에게 속하고 삭제되지 않았는지 확인하며 조회합니다.
+	 *
+	 * @param scheduleIdx 일정 식별자
+	 * @param memberIdx 일정 소유 회원 식별자
+	 * @return 삭제되지 않은 사용자 소유 일정
+	 */
+	Optional<Schedule> findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(Integer scheduleIdx, Integer memberIdx);
 }

@@ -153,4 +153,25 @@ public class Schedule {
 			deferCount
 		);
 	}
+
+	/**
+	 * 일정의 기본 정보를 수정합니다.
+	 *
+	 * @param title 수정할 일정 제목
+	 * @param startAt 수정할 시작 일시
+	 * @param estimatedMinutes 수정할 예상 소요 시간
+	 * @param memo 수정할 메모
+	 */
+	public void update(
+		String title,
+		LocalDateTime startAt,
+		Integer estimatedMinutes,
+		String memo
+	) {
+		this.title = title;
+		this.startAt = startAt;
+		this.estimatedMinutes = estimatedMinutes;
+		this.memo = memo;
+		this.updatedAt = LocalDateTime.now();
+	}
 }

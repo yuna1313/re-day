@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -17,6 +18,7 @@ import com.reday.schedule.domain.ScheduleStatus;
 import com.reday.schedule.dto.ScheduleCreateRequest;
 import com.reday.schedule.dto.ScheduleCreateResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
+import com.reday.schedule.dto.ScheduleUpdateRequest;
 import com.reday.schedule.exception.ScheduleErrorCode;
 import com.reday.schedule.repository.ScheduleRepository;
 
@@ -154,6 +156,76 @@ class ScheduleServiceTest {
 		assertThatThrownBy(() -> scheduleService.createSchedule(
 			1,
 			new ScheduleCreateRequest("운동하기", "2026-01-09 08:00:00", 0, null)
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.INVALID_ESTIMATED_MINUTES);
+	}
+
+	/**
+	 * 수정 대상 일정이 로그인 사용자에게 속하면 일정 기본 정보를 변경합니다.
+	 */
+	@Test
+	void updateScheduleSucceedsWithOwnedSchedule() {
+		Schedule schedule = Schedule.createNew(
+			1,
+			"운동하기",
+			LocalDateTime.of(2026, 1, 9, 8, 0),
+			30,
+			"아침 유산소"
+		);
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(101, 1))
+			.thenReturn(Optional.of(schedule));
+
+		scheduleService.updateSchedule(
+			1,
+			101,
+			new ScheduleUpdateRequest("NCS 문제 풀기", "2026-01-09 13:30:00", 60, "자료해석 20문제")
+		);
+
+		assertThat(schedule.getTitle()).isEqualTo("NCS 문제 풀기");
+		assertThat(schedule.getStartAt()).isEqualTo(LocalDateTime.of(2026, 1, 9, 13, 30));
+		assertThat(schedule.getEstimatedMinutes()).isEqualTo(60);
+		assertThat(schedule.getMemo()).isEqualTo("자료해석 20문제");
+	}
+
+	/**
+	 * 수정 대상 일정이 없으면 일정 없음 오류로 처리합니다.
+	 */
+	@Test
+	void updateScheduleRejectsMissingSchedule() {
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(999, 1))
+			.thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> scheduleService.updateSchedule(
+			1,
+			999,
+			new ScheduleUpdateRequest("운동하기", "2026-01-09 08:00:00", 30, null)
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.NOT_FOUND);
+	}
+
+	/**
+	 * 수정 요청의 예상 소요 시간이 올바르지 않으면 일정 수정을 거부합니다.
+	 */
+	@Test
+	void updateScheduleRejectsInvalidEstimatedMinutes() {
+		Schedule schedule = Schedule.createNew(
+			1,
+			"운동하기",
+			LocalDateTime.of(2026, 1, 9, 8, 0),
+			30,
+			null
+		);
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(101, 1))
+			.thenReturn(Optional.of(schedule));
+
+		assertThatThrownBy(() -> scheduleService.updateSchedule(
+			1,
+			101,
+			new ScheduleUpdateRequest("운동하기", "2026-01-09 08:00:00", 0, null)
 		))
 			.isInstanceOf(BusinessException.class)
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())

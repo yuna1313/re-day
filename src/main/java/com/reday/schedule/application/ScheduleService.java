@@ -17,6 +17,7 @@ import com.reday.schedule.domain.ScheduleViewType;
 import com.reday.schedule.dto.ScheduleCreateRequest;
 import com.reday.schedule.dto.ScheduleCreateResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
+import com.reday.schedule.dto.ScheduleUpdateRequest;
 import com.reday.schedule.exception.ScheduleErrorCode;
 import com.reday.schedule.repository.ScheduleRepository;
 
@@ -110,6 +111,36 @@ public class ScheduleService {
 		log.info("[createSchedule] 일정 생성 완료: memberIdx={}, scheduleId={}", memberIdx, savedSchedule.getScheduleIdx());
 
 		return new ScheduleCreateResponse(savedSchedule.getScheduleIdx());
+	}
+
+	/**
+	 * 로그인한 사용자의 기존 일정을 수정합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param scheduleId 수정할 일정 식별자
+	 * @param request 일정 수정 요청
+	 * @throws BusinessException 수정 대상이 없거나 요청 값이 올바르지 않을 때 발생
+	 */
+	@Transactional
+	public void updateSchedule(Integer memberIdx, Integer scheduleId, ScheduleUpdateRequest request) {
+		log.info("[updateSchedule] 일정 수정 요청: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+		if (request == null) {
+			log.warn("[updateSchedule] 요청 본문 누락: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+			throw new BusinessException(ScheduleErrorCode.UPDATE_FAIL);
+		}
+
+		Schedule schedule = scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(scheduleId, memberIdx)
+			.orElseThrow(() -> {
+				log.warn("[updateSchedule] 수정 대상 일정 없음: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+				return new BusinessException(ScheduleErrorCode.NOT_FOUND);
+			});
+
+		String title = validateTitle(memberIdx, request.title());
+		LocalDateTime startAt = parseStartAt(memberIdx, request.startAt());
+		Integer estimatedMinutes = validateEstimatedMinutes(memberIdx, request.estimatedMinutes());
+
+		schedule.update(title, startAt, estimatedMinutes, request.memo());
+		log.info("[updateSchedule] 일정 수정 완료: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
 	}
 
 	/**
