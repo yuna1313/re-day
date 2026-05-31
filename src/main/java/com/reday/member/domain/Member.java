@@ -76,4 +76,13 @@ public class Member {
 	public static Member createUnverified(String nickname, String email, String encodedPassword) {
 		return new Member(nickname, email, encodedPassword, false);
 	}
+
+	/**
+	 * 회원의 비밀번호를 새로 암호화된 비밀번호로 변경합니다.
+	 *
+	 * @param encodedPassword 새로 암호화된 비밀번호
+	 */
+	public void changePassword(String encodedPassword) {
+		this.password = encodedPassword;
+	}
 }
