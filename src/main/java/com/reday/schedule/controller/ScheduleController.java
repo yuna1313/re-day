@@ -14,6 +14,7 @@ import com.reday.global.security.UserPrincipal;
 import com.reday.schedule.application.ScheduleService;
 import com.reday.schedule.dto.ScheduleCreateRequest;
 import com.reday.schedule.dto.ScheduleCreateResponse;
+import com.reday.schedule.dto.ScheduleDetailResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
 import com.reday.schedule.dto.ScheduleUpdateRequest;
 import com.reday.schedule.response.ScheduleResponseCode;
@@ -65,6 +66,22 @@ public class ScheduleController {
 	) {
 		ScheduleCreateResponse response = scheduleService.createSchedule(userPrincipal.getMemberIdx(), request);
 		return ApiResponse.success(ScheduleResponseCode.CREATED, response);
+	}
+
+	/**
+	 * 로그인한 사용자의 일정 상세 정보를 조회합니다.
+	 *
+	 * @param userPrincipal JWT 인증 필터가 SecurityContext에 저장한 사용자 정보
+	 * @param scheduleId 조회할 일정 식별자
+	 * @return 일정 상세 조회 성공 응답
+	 */
+	@GetMapping("/api/v1/schedules/{scheduleId}")
+	public ApiResponse<ScheduleDetailResponse> getScheduleDetail(
+		@AuthenticationPrincipal UserPrincipal userPrincipal,
+		@PathVariable Integer scheduleId
+	) {
+		ScheduleDetailResponse response = scheduleService.getScheduleDetail(userPrincipal.getMemberIdx(), scheduleId);
+		return ApiResponse.success(ScheduleResponseCode.DETAIL_SUCCESS, response);
 	}
 
 	/**

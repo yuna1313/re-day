@@ -13,12 +13,15 @@ import org.springframework.util.StringUtils;
 
 import com.reday.global.exception.BusinessException;
 import com.reday.schedule.domain.Schedule;
+import com.reday.schedule.domain.ScheduleActionLog;
 import com.reday.schedule.domain.ScheduleViewType;
 import com.reday.schedule.dto.ScheduleCreateRequest;
 import com.reday.schedule.dto.ScheduleCreateResponse;
+import com.reday.schedule.dto.ScheduleDetailResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
 import com.reday.schedule.dto.ScheduleUpdateRequest;
 import com.reday.schedule.exception.ScheduleErrorCode;
+import com.reday.schedule.repository.ScheduleActionLogRepository;
 import com.reday.schedule.repository.ScheduleRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,7 @@ public class ScheduleService {
 	private static final int MAX_ESTIMATED_MINUTES = 1440;
 
 	private final ScheduleRepository scheduleRepository;
+	private final ScheduleActionLogRepository scheduleActionLogRepository;
 
 	/**
 	 * 로그인한 사용자의 일정 목록을 조회합니다.
@@ -114,6 +118,33 @@ public class ScheduleService {
 	}
 
 	/**
+	 * 로그인한 사용자의 일정 상세 정보를 조회합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param scheduleId 조회할 일정 식별자
+	 * @return 일정 상세 조회 응답
+	 * @throws BusinessException 조회 대상 일정이 없을 때 발생
+	 */
+	@Transactional(readOnly = true)
+	public ScheduleDetailResponse getScheduleDetail(Integer memberIdx, Integer scheduleId) {
+		log.info("[getScheduleDetail] 일정 상세 조회 요청: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+		Schedule schedule = scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(scheduleId, memberIdx)
+			.orElseThrow(() -> {
+				log.warn("[getScheduleDetail] 조회 대상 일정 없음: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+				return new BusinessException(ScheduleErrorCode.NOT_FOUND);
+			});
+		List<ScheduleActionLog> actionLogs = scheduleActionLogRepository.findByScheduleIdxOrderByActionAtAsc(scheduleId);
+
+		log.info(
+			"[getScheduleDetail] 일정 상세 조회 완료: memberIdx={}, scheduleId={}, actionLogCount={}",
+			memberIdx,
+			scheduleId,
+			actionLogs.size()
+		);
+		return toDetailResponse(schedule, actionLogs);
+	}
+
+	/**
 	 * 로그인한 사용자의 기존 일정을 수정합니다.
 	 *
 	 * @param memberIdx 로그인 사용자 식별자
@@ -159,6 +190,47 @@ public class ScheduleService {
 			schedule.getStatus().name(),
 			formatDateTime(schedule.getCompletedAt()),
 			defaultZero(schedule.getDeferCount())
+		);
+	}
+
+	/**
+	 * 일정 엔티티를 상세 조회 응답으로 변환합니다.
+	 *
+	 * @param schedule 일정 엔티티
+	 * @return 일정 상세 조회 응답
+	 */
+	private ScheduleDetailResponse toDetailResponse(Schedule schedule, List<ScheduleActionLog> actionLogs) {
+		return new ScheduleDetailResponse(
+			schedule.getScheduleIdx(),
+			schedule.getTitle(),
+			formatDateTime(schedule.getStartAt()),
+			schedule.getEstimatedMinutes(),
+			schedule.getActualMinutes(),
+			schedule.getMemo(),
+			schedule.getStatus().name(),
+			formatDateTime(schedule.getCompletedAt()),
+			formatDateTime(schedule.getCreatedAt()),
+			formatDateTime(schedule.getUpdatedAt()),
+			defaultZero(schedule.getDeferCount()),
+			actionLogs.stream()
+				.map(this::toDeferLogResponse)
+				.toList()
+		);
+	}
+
+	/**
+	 * 일정 처리 로그 엔티티를 상세 조회 응답의 로그 항목으로 변환합니다.
+	 *
+	 * @param actionLog 일정 처리 로그 엔티티
+	 * @return 일정 처리 로그 응답 항목
+	 */
+	private ScheduleDetailResponse.DeferLog toDeferLogResponse(ScheduleActionLog actionLog) {
+		return new ScheduleDetailResponse.DeferLog(
+			actionLog.getScheduleActionLogIdx(),
+			actionLog.getActionType().name(),
+			actionLog.getDeferReasonCode(),
+			actionLog.getDeferReasonDetail(),
+			formatDateTime(actionLog.getActionAt())
 		);
 	}
 

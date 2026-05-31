@@ -14,18 +14,24 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.reday.global.exception.BusinessException;
 import com.reday.schedule.domain.Schedule;
+import com.reday.schedule.domain.ScheduleActionLog;
+import com.reday.schedule.domain.ScheduleActionType;
 import com.reday.schedule.domain.ScheduleStatus;
 import com.reday.schedule.dto.ScheduleCreateRequest;
 import com.reday.schedule.dto.ScheduleCreateResponse;
+import com.reday.schedule.dto.ScheduleDetailResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
 import com.reday.schedule.dto.ScheduleUpdateRequest;
 import com.reday.schedule.exception.ScheduleErrorCode;
+import com.reday.schedule.repository.ScheduleActionLogRepository;
 import com.reday.schedule.repository.ScheduleRepository;
 
 class ScheduleServiceTest {
 
 	private final ScheduleRepository scheduleRepository = org.mockito.Mockito.mock(ScheduleRepository.class);
-	private final ScheduleService scheduleService = new ScheduleService(scheduleRepository);
+	private final ScheduleActionLogRepository scheduleActionLogRepository =
+		org.mockito.Mockito.mock(ScheduleActionLogRepository.class);
+	private final ScheduleService scheduleService = new ScheduleService(scheduleRepository, scheduleActionLogRepository);
 
 	/**
 	 * 조회 기간에 포함된 로그인 사용자의 일정 목록을 시작 일시 오름차순으로 조회합니다.
@@ -230,5 +236,66 @@ class ScheduleServiceTest {
 			.isInstanceOf(BusinessException.class)
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())
 			.isEqualTo(ScheduleErrorCode.INVALID_ESTIMATED_MINUTES);
+	}
+
+	/**
+	 * 로그인 사용자의 일정 상세 정보와 일정 처리 로그 목록을 함께 조회합니다.
+	 */
+	@Test
+	void getScheduleDetailSucceedsWithActionLogs() {
+		Schedule schedule = Schedule.create(
+			1,
+			"운동하기",
+			LocalDateTime.of(2026, 1, 9, 8, 0),
+			15,
+			20,
+			"아침 스트레칭",
+			ScheduleStatus.DONE,
+			LocalDateTime.of(2026, 1, 9, 8, 25),
+			1
+		);
+		ReflectionTestUtils.setField(schedule, "scheduleIdx", 101);
+		ReflectionTestUtils.setField(schedule, "createdAt", LocalDateTime.of(2026, 1, 8, 22, 10));
+		ReflectionTestUtils.setField(schedule, "updatedAt", LocalDateTime.of(2026, 1, 9, 8, 25));
+		ScheduleActionLog actionLog = ScheduleActionLog.create(
+			101,
+			ScheduleActionType.DEFERRED,
+			"NO_TIME",
+			null,
+			LocalDateTime.of(2026, 1, 9, 7, 55)
+		);
+		ReflectionTestUtils.setField(actionLog, "scheduleActionLogIdx", 1001);
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(101, 1))
+			.thenReturn(Optional.of(schedule));
+		when(scheduleActionLogRepository.findByScheduleIdxOrderByActionAtAsc(101))
+			.thenReturn(List.of(actionLog));
+
+		ScheduleDetailResponse response = scheduleService.getScheduleDetail(1, 101);
+
+		assertThat(response.scheduleId()).isEqualTo(101);
+		assertThat(response.title()).isEqualTo("운동하기");
+		assertThat(response.startAt()).isEqualTo("2026-01-09 08:00:00");
+		assertThat(response.createdAt()).isEqualTo("2026-01-08 22:10:00");
+		assertThat(response.updatedAt()).isEqualTo("2026-01-09 08:25:00");
+		assertThat(response.deferCount()).isEqualTo(1);
+		assertThat(response.deferLogs()).hasSize(1);
+		assertThat(response.deferLogs().get(0).actionLogId()).isEqualTo(1001);
+		assertThat(response.deferLogs().get(0).actionType()).isEqualTo("DEFERRED");
+		assertThat(response.deferLogs().get(0).deferReasonCode()).isEqualTo("NO_TIME");
+		assertThat(response.deferLogs().get(0).actionAt()).isEqualTo("2026-01-09 07:55:00");
+	}
+
+	/**
+	 * 상세 조회 대상 일정이 없으면 일정 없음 오류로 처리합니다.
+	 */
+	@Test
+	void getScheduleDetailRejectsMissingSchedule() {
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(999, 1))
+			.thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> scheduleService.getScheduleDetail(1, 999))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.NOT_FOUND);
 	}
 }
