@@ -23,6 +23,8 @@ import com.reday.schedule.dto.ScheduleCompleteRequest;
 import com.reday.schedule.dto.ScheduleCompleteResponse;
 import com.reday.schedule.dto.ScheduleCreateRequest;
 import com.reday.schedule.dto.ScheduleCreateResponse;
+import com.reday.schedule.dto.ScheduleDeferRequest;
+import com.reday.schedule.dto.ScheduleDeferResponse;
 import com.reday.schedule.dto.ScheduleDetailResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
 import com.reday.schedule.dto.ScheduleUpdateRequest;
@@ -356,6 +358,122 @@ class ScheduleServiceTest {
 			.isInstanceOf(BusinessException.class)
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())
 			.isEqualTo(ScheduleErrorCode.INVALID_ACTUAL_MINUTES);
+	}
+
+	/**
+	 * 미루기 대상 일정이 로그인 사용자에게 속하면 시작 일시와 미루기 횟수를 갱신하고 처리 로그를 저장합니다.
+	 */
+	@Test
+	void deferScheduleSucceedsWithOwnedPendingSchedule() {
+		Schedule schedule = Schedule.create(
+			1,
+			"?대룞?섍린",
+			LocalDateTime.of(2026, 1, 9, 13, 30),
+			30,
+			null,
+			null,
+			ScheduleStatus.PENDING,
+			null,
+			1
+		);
+		ReflectionTestUtils.setField(schedule, "scheduleIdx", 102);
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(102, 1))
+			.thenReturn(Optional.of(schedule));
+
+		ScheduleDeferResponse response = scheduleService.deferSchedule(
+			1,
+			102,
+			new ScheduleDeferRequest("NO_TIME", null, "2026-01-09 20:00:00")
+		);
+
+		assertThat(schedule.getStartAt()).isEqualTo(LocalDateTime.of(2026, 1, 9, 20, 0));
+		assertThat(schedule.getDeferCount()).isEqualTo(2);
+		assertThat(schedule.getUpdatedAt()).isNotNull();
+		assertThat(response.scheduleId()).isEqualTo(102);
+		assertThat(response.status()).isEqualTo("PENDING");
+		assertThat(response.startAt()).isEqualTo("2026-01-09 20:00:00");
+		assertThat(response.deferCount()).isEqualTo(2);
+		ArgumentCaptor<ScheduleActionLog> actionLogCaptor = ArgumentCaptor.forClass(ScheduleActionLog.class);
+		verify(scheduleActionLogRepository).save(actionLogCaptor.capture());
+		assertThat(actionLogCaptor.getValue().getScheduleIdx()).isEqualTo(102);
+		assertThat(actionLogCaptor.getValue().getActionType()).isEqualTo(ScheduleActionType.DEFERRED);
+		assertThat(actionLogCaptor.getValue().getDeferReasonCode()).isEqualTo("NO_TIME");
+		assertThat(actionLogCaptor.getValue().getDeferReasonDetail()).isNull();
+		assertThat(actionLogCaptor.getValue().getActionAt()).isEqualTo(schedule.getUpdatedAt());
+	}
+
+	/**
+	 * 이미 완료된 일정은 미루기 처리하지 않습니다.
+	 */
+	@Test
+	void deferScheduleRejectsAlreadyDoneSchedule() {
+		Schedule schedule = Schedule.create(
+			1,
+			"?대룞?섍린",
+			LocalDateTime.of(2026, 1, 9, 8, 0),
+			30,
+			25,
+			null,
+			ScheduleStatus.DONE,
+			LocalDateTime.of(2026, 1, 9, 8, 25),
+			0
+		);
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(101, 1))
+			.thenReturn(Optional.of(schedule));
+
+		assertThatThrownBy(() -> scheduleService.deferSchedule(
+			1,
+			101,
+			new ScheduleDeferRequest("NO_TIME", null, "2026-01-09 20:00:00")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.ALREADY_DONE);
+	}
+
+	/**
+	 * 허용되지 않은 미루기 사유 코드는 거부합니다.
+	 */
+	@Test
+	void deferScheduleRejectsInvalidDeferReasonCode() {
+		assertThatThrownBy(() -> scheduleService.deferSchedule(
+			1,
+			102,
+			new ScheduleDeferRequest("UNKNOWN", null, "2026-01-09 20:00:00")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.INVALID_DEFER_REASON);
+	}
+
+	/**
+	 * CUSTOM 사유인데 상세 사유가 없으면 거부합니다.
+	 */
+	@Test
+	void deferScheduleRejectsCustomReasonWithoutDetail() {
+		assertThatThrownBy(() -> scheduleService.deferSchedule(
+			1,
+			102,
+			new ScheduleDeferRequest("CUSTOM", " ", "2026-01-09 20:00:00")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.DEFER_REASON_DETAIL_REQUIRED);
+	}
+
+	/**
+	 * 변경할 시작 일시 형식이 올바르지 않으면 거부합니다.
+	 */
+	@Test
+	void deferScheduleRejectsInvalidNewStartAt() {
+		assertThatThrownBy(() -> scheduleService.deferSchedule(
+			1,
+			102,
+			new ScheduleDeferRequest("NO_TIME", null, "2026/01/09 20:00:00")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.INVALID_NEW_START_AT);
 	}
 
 	/**

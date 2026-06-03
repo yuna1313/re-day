@@ -17,6 +17,8 @@ import com.reday.schedule.dto.ScheduleCompleteRequest;
 import com.reday.schedule.dto.ScheduleCompleteResponse;
 import com.reday.schedule.dto.ScheduleCreateRequest;
 import com.reday.schedule.dto.ScheduleCreateResponse;
+import com.reday.schedule.dto.ScheduleDeferRequest;
+import com.reday.schedule.dto.ScheduleDeferResponse;
 import com.reday.schedule.dto.ScheduleDetailResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
 import com.reday.schedule.dto.ScheduleUpdateRequest;
@@ -141,5 +143,27 @@ public class ScheduleController {
 			request
 		);
 		return ApiResponse.success(ScheduleResponseCode.COMPLETED, response);
+	}
+
+	/**
+	 * 로그인한 사용자의 기존 일정을 미루고 미루기 사유를 기록합니다.
+	 *
+	 * @param userPrincipal JWT 인증 필터가 SecurityContext에 저장한 사용자 정보
+	 * @param scheduleId 미루기 처리할 일정 식별자
+	 * @param request 일정 미루기 처리 요청
+	 * @return 일정 미루기 처리 성공 응답
+	 */
+	@PostMapping("/api/v1/schedules/{scheduleId}/defer")
+	public ApiResponse<ScheduleDeferResponse> deferSchedule(
+		@AuthenticationPrincipal UserPrincipal userPrincipal,
+		@PathVariable Integer scheduleId,
+		@RequestBody ScheduleDeferRequest request
+	) {
+		ScheduleDeferResponse response = scheduleService.deferSchedule(
+			userPrincipal.getMemberIdx(),
+			scheduleId,
+			request
+		);
+		return ApiResponse.success(ScheduleResponseCode.DEFERRED, response);
 	}
 }

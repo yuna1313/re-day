@@ -14,7 +14,8 @@ public enum ScheduleResponseCode implements ResponseCode {
 	CREATED("SCHEDULE_CREATED", "일정이 등록되었습니다."),
 	UPDATED("SCHEDULE_UPDATED", "일정이 수정되었습니다."),
 	DELETED("SCHEDULE_DELETED", "일정이 삭제되었습니다."),
-	COMPLETED("SCHEDULE_COMPLETED", "일정이 완료 처리되었습니다.");
+	COMPLETED("SCHEDULE_COMPLETED", "일정이 완료 처리되었습니다."),
+	DEFERRED("SCHEDULE_DEFERRED", "일정이 미뤄졌습니다.");
 
 	private final String code;
 	private final String message;

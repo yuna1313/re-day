@@ -196,4 +196,17 @@ public class Schedule {
 		this.completedAt = completedTime;
 		this.updatedAt = completedTime;
 	}
+
+	/**
+	 * 일정을 미루고 미루기 횟수와 시작 일시를 갱신합니다.
+	 *
+	 * @param newStartAt 변경할 시작 일시. null이면 기존 시작 일시를 유지합니다.
+	 */
+	public void defer(LocalDateTime newStartAt) {
+		if (newStartAt != null) {
+			this.startAt = newStartAt;
+		}
+		this.deferCount = this.deferCount == null ? 1 : this.deferCount + 1;
+		this.updatedAt = LocalDateTime.now();
+	}
 }

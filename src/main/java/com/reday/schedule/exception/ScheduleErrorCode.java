@@ -15,13 +15,21 @@ public enum ScheduleErrorCode implements ErrorResponseCode {
 	UPDATE_FAIL(HttpStatus.OK, "SCH_UPDATE_FAIL", "일정 수정에 실패하였습니다."),
 	DELETE_FAIL(HttpStatus.OK, "SCH_DELETE_FAIL", "일정 삭제에 실패하였습니다."),
 	COMPLETE_FAIL(HttpStatus.OK, "SCH_COMPLETE_FAIL", "일정 완료 처리에 실패하였습니다."),
+	DEFER_FAIL(HttpStatus.OK, "SCH_DEFER_FAIL", "일정 미루기에 실패하였습니다."),
 	NOT_FOUND(HttpStatus.OK, "SCH_NOT_FOUND_FAIL", "일정을 찾을 수 없습니다."),
 	ALREADY_DONE(HttpStatus.OK, "SCH_ALREADY_DONE_FAIL", "이미 완료된 일정입니다."),
 	INVALID_DATE_RANGE(HttpStatus.OK, "SCH_INVALID_DATE_RANGE_FAIL", "조회 기간이 올바르지 않습니다."),
 	INVALID_TITLE(HttpStatus.OK, "SCH_INVALID_TITLE_FAIL", "일정 제목이 올바르지 않습니다."),
 	INVALID_START_AT(HttpStatus.OK, "SCH_INVALID_START_AT_FAIL", "시작 일시가 올바르지 않습니다."),
 	INVALID_ESTIMATED_MINUTES(HttpStatus.OK, "SCH_INVALID_ESTIMATED_MINUTES_FAIL", "예상 시간이 올바르지 않습니다."),
-	INVALID_ACTUAL_MINUTES(HttpStatus.OK, "SCH_INVALID_ACTUAL_MINUTES_FAIL", "실제 소요 시간이 올바르지 않습니다.");
+	INVALID_ACTUAL_MINUTES(HttpStatus.OK, "SCH_INVALID_ACTUAL_MINUTES_FAIL", "실제 소요 시간이 올바르지 않습니다."),
+	INVALID_DEFER_REASON(HttpStatus.OK, "SCH_INVALID_DEFER_REASON_FAIL", "미루기 사유가 올바르지 않습니다."),
+	DEFER_REASON_DETAIL_REQUIRED(
+		HttpStatus.OK,
+		"SCH_DEFER_REASON_DETAIL_REQUIRED_FAIL",
+		"미루기 상세 사유를 입력해주세요."
+	),
+	INVALID_NEW_START_AT(HttpStatus.OK, "SCH_INVALID_NEW_START_AT_FAIL", "변경할 시작 일시가 올바르지 않습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;

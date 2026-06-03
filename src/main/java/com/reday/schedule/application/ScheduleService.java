@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,8 @@ import com.reday.schedule.dto.ScheduleCompleteRequest;
 import com.reday.schedule.dto.ScheduleCompleteResponse;
 import com.reday.schedule.dto.ScheduleCreateRequest;
 import com.reday.schedule.dto.ScheduleCreateResponse;
+import com.reday.schedule.dto.ScheduleDeferRequest;
+import com.reday.schedule.dto.ScheduleDeferResponse;
 import com.reday.schedule.dto.ScheduleDetailResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
 import com.reday.schedule.dto.ScheduleUpdateRequest;
@@ -40,6 +43,14 @@ public class ScheduleService {
 	private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 	private static final int MAX_TITLE_LENGTH = 500;
 	private static final int MAX_ESTIMATED_MINUTES = 1440;
+	private static final int MAX_DEFER_REASON_DETAIL_LENGTH = 500;
+	private static final String CUSTOM_DEFER_REASON_CODE = "CUSTOM";
+	private static final Set<String> ALLOWED_DEFER_REASON_CODES = Set.of(
+		"NO_TIME",
+		"COULD_NOT_FOCUS",
+		"LONGER_THAN_EXPECTED",
+		CUSTOM_DEFER_REASON_CODE
+	);
 
 	private final ScheduleRepository scheduleRepository;
 	private final ScheduleActionLogRepository scheduleActionLogRepository;
@@ -255,6 +266,70 @@ public class ScheduleService {
 	}
 
 	/**
+	 * 로그인한 사용자의 기존 일정을 미루고 미루기 사유를 처리 로그에 기록합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param scheduleId 미루기 처리할 일정 식별자
+	 * @param request 일정 미루기 처리 요청
+	 * @return 일정 미루기 처리 응답
+	 * @throws BusinessException 미루기 대상 일정이 없거나 요청 값이 올바르지 않은 경우 발생
+	 */
+	@Transactional
+	public ScheduleDeferResponse deferSchedule(
+		Integer memberIdx,
+		Integer scheduleId,
+		ScheduleDeferRequest request
+	) {
+		log.info("[deferSchedule] 일정 미루기 요청: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+		if (request == null) {
+			log.warn("[deferSchedule] 요청 본문 누락: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+			throw new BusinessException(ScheduleErrorCode.DEFER_FAIL);
+		}
+
+		String deferReasonCode = validateDeferReasonCode(memberIdx, scheduleId, request.deferReasonCode());
+		String deferReasonDetail = validateDeferReasonDetail(
+			memberIdx,
+			scheduleId,
+			deferReasonCode,
+			request.deferReasonDetail()
+		);
+		LocalDateTime newStartAt = parseNewStartAt(memberIdx, scheduleId, request.newStartAt());
+		Schedule schedule = scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(scheduleId, memberIdx)
+			.orElseThrow(() -> {
+				log.warn("[deferSchedule] 미루기 대상 일정 없음: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+				return new BusinessException(ScheduleErrorCode.NOT_FOUND);
+			});
+
+		if (schedule.getStatus() == ScheduleStatus.DONE) {
+			log.warn("[deferSchedule] 이미 완료된 일정: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+			throw new BusinessException(ScheduleErrorCode.ALREADY_DONE);
+		}
+
+		schedule.defer(newStartAt);
+		scheduleActionLogRepository.save(ScheduleActionLog.create(
+			scheduleId,
+			ScheduleActionType.DEFERRED,
+			deferReasonCode,
+			deferReasonDetail,
+			schedule.getUpdatedAt()
+		));
+		log.info(
+			"[deferSchedule] 일정 미루기 완료: memberIdx={}, scheduleId={}, deferReasonCode={}, deferCount={}",
+			memberIdx,
+			scheduleId,
+			deferReasonCode,
+			schedule.getDeferCount()
+		);
+
+		return new ScheduleDeferResponse(
+			schedule.getScheduleIdx(),
+			schedule.getStatus().name(),
+			formatDateTime(schedule.getStartAt()),
+			defaultZero(schedule.getDeferCount())
+		);
+	}
+
+	/**
 	 * 일정 엔티티를 목록 응답 항목으로 변환합니다.
 	 *
 	 * @param schedule 일정 엔티티
@@ -401,6 +476,105 @@ public class ScheduleService {
 		}
 
 		return actualMinutes;
+	}
+
+	/**
+	 * 미루기 사유 코드를 검증합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param scheduleId 미루기 처리할 일정 식별자
+	 * @param deferReasonCode 요청 미루기 사유 코드
+	 * @return 검증된 미루기 사유 코드
+	 * @throws BusinessException 미루기 사유 코드가 없거나 허용되지 않은 경우 발생
+	 */
+	private String validateDeferReasonCode(Integer memberIdx, Integer scheduleId, String deferReasonCode) {
+		if (!StringUtils.hasText(deferReasonCode)) {
+			log.warn("[validateDeferReasonCode] 미루기 사유 누락: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+			throw new BusinessException(ScheduleErrorCode.INVALID_DEFER_REASON);
+		}
+
+		String trimmedDeferReasonCode = deferReasonCode.trim();
+		if (!ALLOWED_DEFER_REASON_CODES.contains(trimmedDeferReasonCode)) {
+			log.warn(
+				"[validateDeferReasonCode] 허용되지 않은 미루기 사유: memberIdx={}, scheduleId={}, deferReasonCode={}",
+				memberIdx,
+				scheduleId,
+				trimmedDeferReasonCode
+			);
+			throw new BusinessException(ScheduleErrorCode.INVALID_DEFER_REASON);
+		}
+
+		return trimmedDeferReasonCode;
+	}
+
+	/**
+	 * 미루기 상세 사유를 검증합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param scheduleId 미루기 처리할 일정 식별자
+	 * @param deferReasonCode 검증된 미루기 사유 코드
+	 * @param deferReasonDetail 요청 미루기 상세 사유
+	 * @return 검증된 미루기 상세 사유
+	 * @throws BusinessException CUSTOM 사유의 상세 사유가 없거나 길이가 허용 범위를 벗어난 경우 발생
+	 */
+	private String validateDeferReasonDetail(
+		Integer memberIdx,
+		Integer scheduleId,
+		String deferReasonCode,
+		String deferReasonDetail
+	) {
+		if (!StringUtils.hasText(deferReasonDetail)) {
+			if (CUSTOM_DEFER_REASON_CODE.equals(deferReasonCode)) {
+				log.warn(
+					"[validateDeferReasonDetail] CUSTOM 상세 사유 누락: memberIdx={}, scheduleId={}",
+					memberIdx,
+					scheduleId
+				);
+				throw new BusinessException(ScheduleErrorCode.DEFER_REASON_DETAIL_REQUIRED);
+			}
+
+			return null;
+		}
+
+		String trimmedDeferReasonDetail = deferReasonDetail.trim();
+		if (trimmedDeferReasonDetail.length() > MAX_DEFER_REASON_DETAIL_LENGTH) {
+			log.warn(
+				"[validateDeferReasonDetail] 미루기 상세 사유 길이 초과: memberIdx={}, scheduleId={}, length={}",
+				memberIdx,
+				scheduleId,
+				trimmedDeferReasonDetail.length()
+			);
+			throw new BusinessException(ScheduleErrorCode.DEFER_REASON_DETAIL_REQUIRED);
+		}
+
+		return trimmedDeferReasonDetail;
+	}
+
+	/**
+	 * 변경할 시작 일시를 검증하고 일시 값으로 변환합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param scheduleId 미루기 처리할 일정 식별자
+	 * @param newStartAt 요청 변경 시작 일시
+	 * @return 변환된 변경 시작 일시. 값이 없으면 null
+	 * @throws BusinessException 변경할 시작 일시 형식이 올바르지 않은 경우 발생
+	 */
+	private LocalDateTime parseNewStartAt(Integer memberIdx, Integer scheduleId, String newStartAt) {
+		if (!StringUtils.hasText(newStartAt)) {
+			return null;
+		}
+
+		try {
+			return LocalDateTime.parse(newStartAt, DATE_TIME_FORMATTER);
+		} catch (DateTimeParseException exception) {
+			log.warn(
+				"[parseNewStartAt] 변경 시작 일시 형식 오류: memberIdx={}, scheduleId={}, newStartAt={}",
+				memberIdx,
+				scheduleId,
+				newStartAt
+			);
+			throw new BusinessException(ScheduleErrorCode.INVALID_NEW_START_AT);
+		}
 	}
 
 	/**
