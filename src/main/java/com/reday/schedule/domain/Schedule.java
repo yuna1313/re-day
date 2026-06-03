@@ -183,4 +183,17 @@ public class Schedule {
 		this.deletedAt = deletedTime;
 		this.updatedAt = deletedTime;
 	}
+
+	/**
+	 * 일정을 완료 상태로 변경하고 실제 소요 시간과 완료 일시를 기록합니다.
+	 *
+	 * @param actualMinutes 실제 소요 시간
+	 */
+	public void complete(Integer actualMinutes) {
+		LocalDateTime completedTime = LocalDateTime.now();
+		this.status = ScheduleStatus.DONE;
+		this.actualMinutes = actualMinutes;
+		this.completedAt = completedTime;
+		this.updatedAt = completedTime;
+	}
 }

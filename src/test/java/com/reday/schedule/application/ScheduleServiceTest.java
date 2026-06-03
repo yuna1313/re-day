@@ -3,6 +3,7 @@ package com.reday.schedule.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.reday.global.exception.BusinessException;
@@ -17,6 +19,8 @@ import com.reday.schedule.domain.Schedule;
 import com.reday.schedule.domain.ScheduleActionLog;
 import com.reday.schedule.domain.ScheduleActionType;
 import com.reday.schedule.domain.ScheduleStatus;
+import com.reday.schedule.dto.ScheduleCompleteRequest;
+import com.reday.schedule.dto.ScheduleCompleteResponse;
 import com.reday.schedule.dto.ScheduleCreateRequest;
 import com.reday.schedule.dto.ScheduleCreateResponse;
 import com.reday.schedule.dto.ScheduleDetailResponse;
@@ -271,6 +275,87 @@ class ScheduleServiceTest {
 			.isInstanceOf(BusinessException.class)
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())
 			.isEqualTo(ScheduleErrorCode.NOT_FOUND);
+	}
+
+	/**
+	 * 완료 대상 일정이 로그인 사용자에게 속하면 DONE 상태와 실제 소요 시간을 저장합니다.
+	 */
+	@Test
+	void completeScheduleSucceedsWithOwnedPendingSchedule() {
+		Schedule schedule = Schedule.createNew(
+			1,
+			"?대룞?섍린",
+			LocalDateTime.of(2026, 1, 9, 8, 0),
+			30,
+			null
+		);
+		ReflectionTestUtils.setField(schedule, "scheduleIdx", 101);
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(101, 1))
+			.thenReturn(Optional.of(schedule));
+
+		ScheduleCompleteResponse response = scheduleService.completeSchedule(
+			1,
+			101,
+			new ScheduleCompleteRequest(25)
+		);
+
+		assertThat(schedule.getStatus()).isEqualTo(ScheduleStatus.DONE);
+		assertThat(schedule.getActualMinutes()).isEqualTo(25);
+		assertThat(schedule.getCompletedAt()).isNotNull();
+		assertThat(schedule.getUpdatedAt()).isEqualTo(schedule.getCompletedAt());
+		assertThat(response.scheduleId()).isEqualTo(101);
+		assertThat(response.status()).isEqualTo("DONE");
+		assertThat(response.actualMinutes()).isEqualTo(25);
+		assertThat(response.completedAt()).isNotNull();
+		ArgumentCaptor<ScheduleActionLog> actionLogCaptor = ArgumentCaptor.forClass(ScheduleActionLog.class);
+		verify(scheduleActionLogRepository).save(actionLogCaptor.capture());
+		assertThat(actionLogCaptor.getValue().getScheduleIdx()).isEqualTo(101);
+		assertThat(actionLogCaptor.getValue().getActionType()).isEqualTo(ScheduleActionType.DONE);
+		assertThat(actionLogCaptor.getValue().getActionAt()).isEqualTo(schedule.getCompletedAt());
+	}
+
+	/**
+	 * 이미 완료된 일정은 다시 완료 처리하지 않습니다.
+	 */
+	@Test
+	void completeScheduleRejectsAlreadyDoneSchedule() {
+		Schedule schedule = Schedule.create(
+			1,
+			"?대룞?섍린",
+			LocalDateTime.of(2026, 1, 9, 8, 0),
+			30,
+			25,
+			null,
+			ScheduleStatus.DONE,
+			LocalDateTime.of(2026, 1, 9, 8, 25),
+			0
+		);
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(101, 1))
+			.thenReturn(Optional.of(schedule));
+
+		assertThatThrownBy(() -> scheduleService.completeSchedule(
+			1,
+			101,
+			new ScheduleCompleteRequest(30)
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.ALREADY_DONE);
+	}
+
+	/**
+	 * 실제 소요 시간이 허용 범위를 벗어나면 완료 처리를 거부합니다.
+	 */
+	@Test
+	void completeScheduleRejectsInvalidActualMinutes() {
+		assertThatThrownBy(() -> scheduleService.completeSchedule(
+			1,
+			101,
+			new ScheduleCompleteRequest(0)
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.INVALID_ACTUAL_MINUTES);
 	}
 
 	/**

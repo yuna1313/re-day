@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.reday.global.response.ApiResponse;
 import com.reday.global.security.UserPrincipal;
 import com.reday.schedule.application.ScheduleService;
+import com.reday.schedule.dto.ScheduleCompleteRequest;
+import com.reday.schedule.dto.ScheduleCompleteResponse;
 import com.reday.schedule.dto.ScheduleCreateRequest;
 import com.reday.schedule.dto.ScheduleCreateResponse;
 import com.reday.schedule.dto.ScheduleDetailResponse;
@@ -117,5 +119,27 @@ public class ScheduleController {
 	) {
 		scheduleService.deleteSchedule(userPrincipal.getMemberIdx(), scheduleId);
 		return ApiResponse.success(ScheduleResponseCode.DELETED);
+	}
+
+	/**
+	 * 로그인한 사용자의 기존 일정을 완료 처리하고 실제 소요 시간을 저장합니다.
+	 *
+	 * @param userPrincipal JWT 인증 필터가 SecurityContext에 저장한 사용자 정보
+	 * @param scheduleId 완료 처리할 일정 식별자
+	 * @param request 일정 완료 처리 요청
+	 * @return 일정 완료 처리 성공 응답
+	 */
+	@PostMapping("/api/v1/schedules/{scheduleId}/complete")
+	public ApiResponse<ScheduleCompleteResponse> completeSchedule(
+		@AuthenticationPrincipal UserPrincipal userPrincipal,
+		@PathVariable Integer scheduleId,
+		@RequestBody ScheduleCompleteRequest request
+	) {
+		ScheduleCompleteResponse response = scheduleService.completeSchedule(
+			userPrincipal.getMemberIdx(),
+			scheduleId,
+			request
+		);
+		return ApiResponse.success(ScheduleResponseCode.COMPLETED, response);
 	}
 }

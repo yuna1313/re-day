@@ -14,7 +14,11 @@ import org.springframework.util.StringUtils;
 import com.reday.global.exception.BusinessException;
 import com.reday.schedule.domain.Schedule;
 import com.reday.schedule.domain.ScheduleActionLog;
+import com.reday.schedule.domain.ScheduleActionType;
+import com.reday.schedule.domain.ScheduleStatus;
 import com.reday.schedule.domain.ScheduleViewType;
+import com.reday.schedule.dto.ScheduleCompleteRequest;
+import com.reday.schedule.dto.ScheduleCompleteResponse;
 import com.reday.schedule.dto.ScheduleCreateRequest;
 import com.reday.schedule.dto.ScheduleCreateResponse;
 import com.reday.schedule.dto.ScheduleDetailResponse;
@@ -195,6 +199,62 @@ public class ScheduleService {
 	}
 
 	/**
+	 * 로그인한 사용자의 기존 일정을 완료 처리하고 실제 소요 시간을 저장합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param scheduleId 완료 처리할 일정 식별자
+	 * @param request 일정 완료 처리 요청
+	 * @return 일정 완료 처리 응답
+	 * @throws BusinessException 완료 대상 일정이 없거나 요청 값이 올바르지 않은 경우 발생
+	 */
+	@Transactional
+	public ScheduleCompleteResponse completeSchedule(
+		Integer memberIdx,
+		Integer scheduleId,
+		ScheduleCompleteRequest request
+	) {
+		log.info("[completeSchedule] 일정 완료 요청: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+		if (request == null) {
+			log.warn("[completeSchedule] 요청 본문 누락: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+			throw new BusinessException(ScheduleErrorCode.COMPLETE_FAIL);
+		}
+
+		Integer actualMinutes = validateActualMinutes(memberIdx, scheduleId, request.actualMinutes());
+		Schedule schedule = scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(scheduleId, memberIdx)
+			.orElseThrow(() -> {
+				log.warn("[completeSchedule] 완료 대상 일정 없음: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+				return new BusinessException(ScheduleErrorCode.NOT_FOUND);
+			});
+
+		if (schedule.getStatus() == ScheduleStatus.DONE) {
+			log.warn("[completeSchedule] 이미 완료된 일정: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+			throw new BusinessException(ScheduleErrorCode.ALREADY_DONE);
+		}
+
+		schedule.complete(actualMinutes);
+		scheduleActionLogRepository.save(ScheduleActionLog.create(
+			scheduleId,
+			ScheduleActionType.DONE,
+			null,
+			null,
+			schedule.getCompletedAt()
+		));
+		log.info(
+			"[completeSchedule] 일정 완료 처리 완료: memberIdx={}, scheduleId={}, actualMinutes={}",
+			memberIdx,
+			scheduleId,
+			actualMinutes
+		);
+
+		return new ScheduleCompleteResponse(
+			schedule.getScheduleIdx(),
+			schedule.getStatus().name(),
+			schedule.getActualMinutes(),
+			formatDateTime(schedule.getCompletedAt())
+		);
+	}
+
+	/**
 	 * 일정 엔티티를 목록 응답 항목으로 변환합니다.
 	 *
 	 * @param schedule 일정 엔티티
@@ -318,6 +378,29 @@ public class ScheduleService {
 		}
 
 		return estimatedMinutes;
+	}
+
+	/**
+	 * 실제 소요 시간을 검증합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param scheduleId 완료 처리할 일정 식별자
+	 * @param actualMinutes 요청 실제 소요 시간
+	 * @return 검증된 실제 소요 시간
+	 * @throws BusinessException 실제 소요 시간이 없거나 허용 범위를 벗어난 경우 발생
+	 */
+	private Integer validateActualMinutes(Integer memberIdx, Integer scheduleId, Integer actualMinutes) {
+		if (actualMinutes == null || actualMinutes <= 0 || actualMinutes > MAX_ESTIMATED_MINUTES) {
+			log.warn(
+				"[validateActualMinutes] 실제 소요 시간 오류: memberIdx={}, scheduleId={}, actualMinutes={}",
+				memberIdx,
+				scheduleId,
+				actualMinutes
+			);
+			throw new BusinessException(ScheduleErrorCode.INVALID_ACTUAL_MINUTES);
+		}
+
+		return actualMinutes;
 	}
 
 	/**
