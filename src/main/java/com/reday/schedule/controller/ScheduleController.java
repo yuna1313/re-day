@@ -1,6 +1,7 @@
 package com.reday.schedule.controller;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -100,5 +101,21 @@ public class ScheduleController {
 	) {
 		scheduleService.updateSchedule(userPrincipal.getMemberIdx(), scheduleId, request);
 		return ApiResponse.success(ScheduleResponseCode.UPDATED);
+	}
+
+	/**
+	 * 로그인한 사용자의 기존 일정을 실제 삭제하지 않고 삭제 일시를 기록합니다.
+	 *
+	 * @param userPrincipal JWT 인증 필터가 SecurityContext에 저장한 사용자 정보
+	 * @param scheduleId 삭제할 일정 식별자
+	 * @return 일정 삭제 성공 응답
+	 */
+	@DeleteMapping("/api/v1/schedules/{scheduleId}")
+	public ApiResponse<Void> deleteSchedule(
+		@AuthenticationPrincipal UserPrincipal userPrincipal,
+		@PathVariable Integer scheduleId
+	) {
+		scheduleService.deleteSchedule(userPrincipal.getMemberIdx(), scheduleId);
+		return ApiResponse.success(ScheduleResponseCode.DELETED);
 	}
 }

@@ -175,6 +175,26 @@ public class ScheduleService {
 	}
 
 	/**
+	 * 로그인한 사용자의 기존 일정을 실제 삭제하지 않고 삭제 일시를 기록합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param scheduleId 삭제할 일정 식별자
+	 * @throws BusinessException 삭제 대상 일정이 없거나 이미 삭제된 경우 발생
+	 */
+	@Transactional
+	public void deleteSchedule(Integer memberIdx, Integer scheduleId) {
+		log.info("[deleteSchedule] 일정 삭제 요청: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+		Schedule schedule = scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(scheduleId, memberIdx)
+			.orElseThrow(() -> {
+				log.warn("[deleteSchedule] 삭제 대상 일정 없음: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+				return new BusinessException(ScheduleErrorCode.NOT_FOUND);
+			});
+
+		schedule.delete();
+		log.info("[deleteSchedule] 일정 삭제 완료: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
+	}
+
+	/**
 	 * 일정 엔티티를 목록 응답 항목으로 변환합니다.
 	 *
 	 * @param schedule 일정 엔티티

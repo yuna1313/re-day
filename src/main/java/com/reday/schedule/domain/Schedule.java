@@ -174,4 +174,13 @@ public class Schedule {
 		this.memo = memo;
 		this.updatedAt = LocalDateTime.now();
 	}
+
+	/**
+	 * 일정을 실제로 삭제하지 않고 삭제 일시를 기록하여 삭제 상태로 변경합니다.
+	 */
+	public void delete() {
+		LocalDateTime deletedTime = LocalDateTime.now();
+		this.deletedAt = deletedTime;
+		this.updatedAt = deletedTime;
+	}
 }

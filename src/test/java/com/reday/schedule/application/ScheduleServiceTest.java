@@ -239,6 +239,41 @@ class ScheduleServiceTest {
 	}
 
 	/**
+	 * 삭제 대상 일정이 로그인 사용자에게 속하면 실제 삭제하지 않고 삭제 일시를 기록합니다.
+	 */
+	@Test
+	void deleteScheduleSucceedsWithOwnedSchedule() {
+		Schedule schedule = Schedule.createNew(
+			1,
+			"?대룞?섍린",
+			LocalDateTime.of(2026, 1, 9, 8, 0),
+			30,
+			null
+		);
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(101, 1))
+			.thenReturn(Optional.of(schedule));
+
+		scheduleService.deleteSchedule(1, 101);
+
+		assertThat(schedule.getDeletedAt()).isNotNull();
+		assertThat(schedule.getUpdatedAt()).isEqualTo(schedule.getDeletedAt());
+	}
+
+	/**
+	 * 삭제 대상 일정이 없거나 이미 삭제된 경우 일정 없음 오류로 처리합니다.
+	 */
+	@Test
+	void deleteScheduleRejectsMissingSchedule() {
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(999, 1))
+			.thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> scheduleService.deleteSchedule(1, 999))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.NOT_FOUND);
+	}
+
+	/**
 	 * 로그인 사용자의 일정 상세 정보와 일정 처리 로그 목록을 함께 조회합니다.
 	 */
 	@Test
