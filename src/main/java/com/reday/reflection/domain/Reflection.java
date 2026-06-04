@@ -58,4 +58,14 @@ public class Reflection {
 	public static Reflection create(Integer memberIdx, String content, LocalDate reflectionDate) {
 		return new Reflection(memberIdx, content, reflectionDate);
 	}
+
+	/**
+	 * 회고 내용을 수정하고 수정 일시를 기록합니다.
+	 *
+	 * @param content 수정할 회고 내용
+	 */
+	public void updateContent(String content) {
+		this.content = content;
+		this.updatedAt = LocalDateTime.now();
+	}
 }

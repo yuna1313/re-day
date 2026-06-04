@@ -22,6 +22,7 @@ import com.reday.reflection.dto.ReflectionCreateRequest;
 import com.reday.reflection.dto.ReflectionCreateResponse;
 import com.reday.reflection.dto.ReflectionDetailResponse;
 import com.reday.reflection.dto.ReflectionTodayResponse;
+import com.reday.reflection.dto.ReflectionUpdateRequest;
 import com.reday.reflection.exception.ReflectionErrorCode;
 import com.reday.reflection.repository.ReflectionRepository;
 import com.reday.schedule.domain.Schedule;
@@ -229,6 +230,64 @@ class ReflectionServiceTest {
 		assertThatThrownBy(() -> reflectionService.createReflection(
 			1,
 			new ReflectionCreateRequest("2026-01-09", " ")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.EMPTY_CONTENT);
+	}
+
+	/**
+	 * 수정 대상 회고가 로그인 사용자에게 속하면 회고 내용을 수정합니다.
+	 */
+	@Test
+	void updateReflectionSucceedsWithOwnedReflection() {
+		LocalDate reflectionDate = LocalDate.of(2026, 1, 9);
+		Reflection reflection = Reflection.create(1, "수정 전 내용", reflectionDate);
+		ReflectionTestUtils.setField(reflection, "reflectionIdx", 11);
+		when(reflectionRepository.findByReflectionIdxAndMemberIdx(11, 1))
+			.thenReturn(Optional.of(reflection));
+
+		reflectionService.updateReflection(
+			1,
+			11,
+			new ReflectionUpdateRequest(" 오늘은 운동을 늦게 했지만 그래도 해냈다. ")
+		);
+
+		assertThat(reflection.getContent()).isEqualTo("오늘은 운동을 늦게 했지만 그래도 해냈다.");
+		assertThat(reflection.getUpdatedAt()).isNotNull();
+	}
+
+	/**
+	 * 수정 대상 회고가 없으면 회고 없음 오류로 처리합니다.
+	 */
+	@Test
+	void updateReflectionRejectsMissingReflection() {
+		when(reflectionRepository.findByReflectionIdxAndMemberIdx(999, 1))
+			.thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> reflectionService.updateReflection(
+			1,
+			999,
+			new ReflectionUpdateRequest("오늘은 운동을 늦게 했지만 그래도 해냈다.")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.NOT_FOUND);
+	}
+
+	/**
+	 * 수정할 회고 내용이 비어 있으면 회고 수정을 거부합니다.
+	 */
+	@Test
+	void updateReflectionRejectsBlankContent() {
+		Reflection reflection = Reflection.create(1, "수정 전 내용", LocalDate.of(2026, 1, 9));
+		when(reflectionRepository.findByReflectionIdxAndMemberIdx(11, 1))
+			.thenReturn(Optional.of(reflection));
+
+		assertThatThrownBy(() -> reflectionService.updateReflection(
+			1,
+			11,
+			new ReflectionUpdateRequest(" ")
 		))
 			.isInstanceOf(BusinessException.class)
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())

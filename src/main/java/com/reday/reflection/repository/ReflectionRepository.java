@@ -26,4 +26,13 @@ public interface ReflectionRepository extends JpaRepository<Reflection, Long> {
 	 * @return 해당 날짜 회고 존재 여부
 	 */
 	boolean existsByMemberIdxAndReflectionDate(Integer memberIdx, LocalDate reflectionDate);
+
+	/**
+	 * 특정 회원이 작성한 특정 회고를 조회합니다.
+	 *
+	 * @param reflectionIdx 회고 식별자
+	 * @param memberIdx 회고 작성 회원 식별자
+	 * @return 회원이 작성한 회고
+	 */
+	Optional<Reflection> findByReflectionIdxAndMemberIdx(Integer reflectionIdx, Integer memberIdx);
 }

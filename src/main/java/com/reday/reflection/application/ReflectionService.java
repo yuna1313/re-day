@@ -17,6 +17,7 @@ import com.reday.reflection.dto.ReflectionCreateRequest;
 import com.reday.reflection.dto.ReflectionCreateResponse;
 import com.reday.reflection.dto.ReflectionDetailResponse;
 import com.reday.reflection.dto.ReflectionTodayResponse;
+import com.reday.reflection.dto.ReflectionUpdateRequest;
 import com.reday.reflection.exception.ReflectionErrorCode;
 import com.reday.reflection.repository.ReflectionRepository;
 import com.reday.schedule.domain.Schedule;
@@ -155,6 +156,33 @@ public class ReflectionService {
 		);
 
 		return new ReflectionCreateResponse(savedReflection.getReflectionIdx());
+	}
+
+	/**
+	 * 로그인한 사용자의 회고 내용을 수정합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param reflectionId 수정할 회고 식별자
+	 * @param request 회고 수정 요청
+	 * @throws BusinessException 수정 대상 회고가 없거나 내용이 올바르지 않은 경우 발생
+	 */
+	@Transactional
+	public void updateReflection(Integer memberIdx, Integer reflectionId, ReflectionUpdateRequest request) {
+		log.info("[updateReflection] 회고 수정 요청: memberIdx={}, reflectionId={}", memberIdx, reflectionId);
+		if (request == null) {
+			log.warn("[updateReflection] 요청 본문 누락: memberIdx={}, reflectionId={}", memberIdx, reflectionId);
+			throw new BusinessException(ReflectionErrorCode.UPDATE_FAIL);
+		}
+
+		Reflection reflection = reflectionRepository.findByReflectionIdxAndMemberIdx(reflectionId, memberIdx)
+			.orElseThrow(() -> {
+				log.warn("[updateReflection] 수정 대상 회고 없음: memberIdx={}, reflectionId={}", memberIdx, reflectionId);
+				return new BusinessException(ReflectionErrorCode.NOT_FOUND);
+			});
+		String content = validateContent(memberIdx, reflection.getReflectionDate(), request.content());
+
+		reflection.updateContent(content);
+		log.info("[updateReflection] 회고 수정 완료: memberIdx={}, reflectionId={}", memberIdx, reflectionId);
 	}
 
 	/**

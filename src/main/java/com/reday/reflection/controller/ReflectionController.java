@@ -2,6 +2,7 @@ package com.reday.reflection.controller;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,6 +15,7 @@ import com.reday.reflection.dto.ReflectionCreateRequest;
 import com.reday.reflection.dto.ReflectionCreateResponse;
 import com.reday.reflection.dto.ReflectionDetailResponse;
 import com.reday.reflection.dto.ReflectionTodayResponse;
+import com.reday.reflection.dto.ReflectionUpdateRequest;
 import com.reday.reflection.response.ReflectionResponseCode;
 
 import lombok.RequiredArgsConstructor;
@@ -68,5 +70,23 @@ public class ReflectionController {
 	) {
 		ReflectionCreateResponse response = reflectionService.createReflection(userPrincipal.getMemberIdx(), request);
 		return ApiResponse.success(ReflectionResponseCode.CREATED, response);
+	}
+
+	/**
+	 * 로그인한 사용자의 회고 내용을 수정합니다.
+	 *
+	 * @param userPrincipal JWT 인증 필터가 SecurityContext에 저장한 사용자 정보
+	 * @param reflectionId 수정할 회고 식별자
+	 * @param request 회고 수정 요청
+	 * @return 회고 수정 성공 응답
+	 */
+	@PatchMapping("/api/v1/reflections/{reflectionId}")
+	public ApiResponse<Void> updateReflection(
+		@AuthenticationPrincipal UserPrincipal userPrincipal,
+		@PathVariable Integer reflectionId,
+		@RequestBody ReflectionUpdateRequest request
+	) {
+		reflectionService.updateReflection(userPrincipal.getMemberIdx(), reflectionId, request);
+		return ApiResponse.success(ReflectionResponseCode.UPDATED);
 	}
 }
