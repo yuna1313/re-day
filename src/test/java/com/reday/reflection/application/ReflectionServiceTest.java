@@ -2,6 +2,8 @@ package com.reday.reflection.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -11,10 +13,13 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.reday.global.exception.BusinessException;
 import com.reday.reflection.domain.Reflection;
+import com.reday.reflection.dto.ReflectionCreateRequest;
+import com.reday.reflection.dto.ReflectionCreateResponse;
 import com.reday.reflection.dto.ReflectionDetailResponse;
 import com.reday.reflection.dto.ReflectionTodayResponse;
 import com.reday.reflection.exception.ReflectionErrorCode;
@@ -153,5 +158,80 @@ class ReflectionServiceTest {
 			.isInstanceOf(BusinessException.class)
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())
 			.isEqualTo(ReflectionErrorCode.INVALID_DATE);
+	}
+
+	/**
+	 * 회고 작성 요청 값이 유효하면 회고를 저장하고 생성된 회고 식별자를 반환합니다.
+	 */
+	@Test
+	void createReflectionSucceedsWithValidRequest() {
+		LocalDate reflectionDate = LocalDate.of(2026, 1, 9);
+		Reflection savedReflection = Reflection.create(
+			1,
+			"오늘은 운동을 늦게 했지만 그래도 해냈다.",
+			reflectionDate
+		);
+		ReflectionTestUtils.setField(savedReflection, "reflectionIdx", 11);
+		when(reflectionRepository.existsByMemberIdxAndReflectionDate(1, reflectionDate))
+			.thenReturn(false);
+		when(reflectionRepository.save(any(Reflection.class))).thenReturn(savedReflection);
+
+		ReflectionCreateResponse response = reflectionService.createReflection(
+			1,
+			new ReflectionCreateRequest("2026-01-09", " 오늘은 운동을 늦게 했지만 그래도 해냈다. ")
+		);
+
+		assertThat(response.reflectionId()).isEqualTo(11);
+		ArgumentCaptor<Reflection> reflectionCaptor = ArgumentCaptor.forClass(Reflection.class);
+		verify(reflectionRepository).save(reflectionCaptor.capture());
+		assertThat(reflectionCaptor.getValue().getMemberIdx()).isEqualTo(1);
+		assertThat(reflectionCaptor.getValue().getReflectionDate()).isEqualTo(reflectionDate);
+		assertThat(reflectionCaptor.getValue().getContent()).isEqualTo("오늘은 운동을 늦게 했지만 그래도 해냈다.");
+	}
+
+	/**
+	 * 같은 날짜에 이미 회고가 있으면 회고 작성을 거부합니다.
+	 */
+	@Test
+	void createReflectionRejectsAlreadyExistingReflectionDate() {
+		LocalDate reflectionDate = LocalDate.of(2026, 1, 9);
+		when(reflectionRepository.existsByMemberIdxAndReflectionDate(1, reflectionDate))
+			.thenReturn(true);
+
+		assertThatThrownBy(() -> reflectionService.createReflection(
+			1,
+			new ReflectionCreateRequest("2026-01-09", "오늘은 운동을 늦게 했지만 그래도 해냈다.")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.ALREADY_EXISTS);
+	}
+
+	/**
+	 * 회고 작성 날짜 형식이 올바르지 않으면 회고 작성을 거부합니다.
+	 */
+	@Test
+	void createReflectionRejectsInvalidDateFormat() {
+		assertThatThrownBy(() -> reflectionService.createReflection(
+			1,
+			new ReflectionCreateRequest("2026/01/09", "오늘은 운동을 늦게 했지만 그래도 해냈다.")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.INVALID_DATE);
+	}
+
+	/**
+	 * 회고 내용이 비어 있으면 회고 작성을 거부합니다.
+	 */
+	@Test
+	void createReflectionRejectsBlankContent() {
+		assertThatThrownBy(() -> reflectionService.createReflection(
+			1,
+			new ReflectionCreateRequest("2026-01-09", " ")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.EMPTY_CONTENT);
 	}
 }

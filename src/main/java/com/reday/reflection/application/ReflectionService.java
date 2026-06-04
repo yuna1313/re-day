@@ -9,9 +9,12 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.reday.global.exception.BusinessException;
 import com.reday.reflection.domain.Reflection;
+import com.reday.reflection.dto.ReflectionCreateRequest;
+import com.reday.reflection.dto.ReflectionCreateResponse;
 import com.reday.reflection.dto.ReflectionDetailResponse;
 import com.reday.reflection.dto.ReflectionTodayResponse;
 import com.reday.reflection.exception.ReflectionErrorCode;
@@ -121,6 +124,40 @@ public class ReflectionService {
 	}
 
 	/**
+	 * 로그인한 사용자의 회고를 작성합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param request 회고 작성 요청
+	 * @return 회고 작성 응답
+	 * @throws BusinessException 날짜나 내용이 올바르지 않거나 같은 날짜 회고가 이미 있는 경우 발생
+	 */
+	@Transactional
+	public ReflectionCreateResponse createReflection(Integer memberIdx, ReflectionCreateRequest request) {
+		log.info("[createReflection] 회고 작성 요청: memberIdx={}", memberIdx);
+		if (request == null) {
+			log.warn("[createReflection] 요청 본문 누락: memberIdx={}", memberIdx);
+			throw new BusinessException(ReflectionErrorCode.CREATE_FAIL);
+		}
+
+		LocalDate reflectionDate = parseReflectionDate(memberIdx, request.reflectionDate());
+		String content = validateContent(memberIdx, reflectionDate, request.content());
+		if (reflectionRepository.existsByMemberIdxAndReflectionDate(memberIdx, reflectionDate)) {
+			log.warn("[createReflection] 같은 날짜 회고 이미 존재: memberIdx={}, reflectionDate={}", memberIdx, reflectionDate);
+			throw new BusinessException(ReflectionErrorCode.ALREADY_EXISTS);
+		}
+
+		Reflection savedReflection = reflectionRepository.save(Reflection.create(memberIdx, content, reflectionDate));
+		log.info(
+			"[createReflection] 회고 작성 완료: memberIdx={}, reflectionDate={}, reflectionId={}",
+			memberIdx,
+			reflectionDate,
+			savedReflection.getReflectionIdx()
+		);
+
+		return new ReflectionCreateResponse(savedReflection.getReflectionIdx());
+	}
+
+	/**
 	 * 회고 엔티티를 오늘 회고 응답 항목으로 변환합니다.
 	 *
 	 * @param reflection 회고 엔티티
@@ -175,5 +212,23 @@ public class ReflectionService {
 			log.warn("[parseReflectionDate] 회고 날짜 형식 오류: memberIdx={}, date={}", memberIdx, date);
 			throw new BusinessException(ReflectionErrorCode.INVALID_DATE);
 		}
+	}
+
+	/**
+	 * 회고 내용을 검증하고 저장 가능한 값으로 정리합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param reflectionDate 회고 날짜
+	 * @param content 요청 회고 내용
+	 * @return 앞뒤 공백을 제거한 회고 내용
+	 * @throws BusinessException 회고 내용이 비어 있는 경우 발생
+	 */
+	private String validateContent(Integer memberIdx, LocalDate reflectionDate, String content) {
+		if (!StringUtils.hasText(content)) {
+			log.warn("[validateContent] 회고 내용 누락: memberIdx={}, reflectionDate={}", memberIdx, reflectionDate);
+			throw new BusinessException(ReflectionErrorCode.EMPTY_CONTENT);
+		}
+
+		return content.trim();
 	}
 }

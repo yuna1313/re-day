@@ -3,11 +3,15 @@ package com.reday.reflection.controller;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.reday.global.response.ApiResponse;
 import com.reday.global.security.UserPrincipal;
 import com.reday.reflection.application.ReflectionService;
+import com.reday.reflection.dto.ReflectionCreateRequest;
+import com.reday.reflection.dto.ReflectionCreateResponse;
 import com.reday.reflection.dto.ReflectionDetailResponse;
 import com.reday.reflection.dto.ReflectionTodayResponse;
 import com.reday.reflection.response.ReflectionResponseCode;
@@ -48,5 +52,21 @@ public class ReflectionController {
 	) {
 		ReflectionDetailResponse response = reflectionService.getReflectionByDate(userPrincipal.getMemberIdx(), date);
 		return ApiResponse.success(ReflectionResponseCode.DETAIL_SUCCESS, response);
+	}
+
+	/**
+	 * 로그인한 사용자의 회고를 작성합니다.
+	 *
+	 * @param userPrincipal JWT 인증 필터가 SecurityContext에 저장한 사용자 정보
+	 * @param request 회고 작성 요청
+	 * @return 회고 작성 성공 응답
+	 */
+	@PostMapping("/api/v1/reflections")
+	public ApiResponse<ReflectionCreateResponse> createReflection(
+		@AuthenticationPrincipal UserPrincipal userPrincipal,
+		@RequestBody ReflectionCreateRequest request
+	) {
+		ReflectionCreateResponse response = reflectionService.createReflection(userPrincipal.getMemberIdx(), request);
+		return ApiResponse.success(ReflectionResponseCode.CREATED, response);
 	}
 }
