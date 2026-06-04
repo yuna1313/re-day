@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.reday.schedule.domain.Schedule;
+import com.reday.schedule.domain.ScheduleStatus;
 
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
@@ -32,4 +33,20 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 	 * @return 삭제되지 않은 사용자 소유 일정
 	 */
 	Optional<Schedule> findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(Integer scheduleIdx, Integer memberIdx);
+
+	/**
+	 * 특정 회원의 특정 완료 일시 범위 안에 완료된 일정을 완료 일시 오름차순으로 조회합니다.
+	 *
+	 * @param memberIdx 일정 소유 회원 식별자
+	 * @param status 조회할 일정 상태
+	 * @param startAt 완료 일시 조회 시작
+	 * @param endAt 완료 일시 조회 종료
+	 * @return 완료 일시 범위 안에 포함되는 완료 일정 목록
+	 */
+	List<Schedule> findByMemberIdxAndDeletedAtIsNullAndStatusAndCompletedAtBetweenOrderByCompletedAtAsc(
+		Integer memberIdx,
+		ScheduleStatus status,
+		LocalDateTime startAt,
+		LocalDateTime endAt
+	);
 }
