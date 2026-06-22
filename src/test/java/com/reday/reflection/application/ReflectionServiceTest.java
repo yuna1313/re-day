@@ -1,0 +1,296 @@
+package com.reday.reflection.application;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.reday.global.exception.BusinessException;
+import com.reday.reflection.domain.Reflection;
+import com.reday.reflection.dto.ReflectionCreateRequest;
+import com.reday.reflection.dto.ReflectionCreateResponse;
+import com.reday.reflection.dto.ReflectionDetailResponse;
+import com.reday.reflection.dto.ReflectionTodayResponse;
+import com.reday.reflection.dto.ReflectionUpdateRequest;
+import com.reday.reflection.exception.ReflectionErrorCode;
+import com.reday.reflection.repository.ReflectionRepository;
+import com.reday.schedule.domain.Schedule;
+import com.reday.schedule.domain.ScheduleStatus;
+import com.reday.schedule.repository.ScheduleRepository;
+
+class ReflectionServiceTest {
+
+	private final ReflectionRepository reflectionRepository = org.mockito.Mockito.mock(ReflectionRepository.class);
+	private final ScheduleRepository scheduleRepository = org.mockito.Mockito.mock(ScheduleRepository.class);
+	private final ReflectionService reflectionService = new ReflectionService(reflectionRepository, scheduleRepository);
+
+	/**
+	 * 오늘 작성한 회고와 오늘 완료한 일정 목록을 함께 조회합니다.
+	 */
+	@Test
+	void getTodayReflectionSucceedsWithReflectionAndCompletedSchedules() {
+		LocalDate today = LocalDate.now();
+		Reflection reflection = Reflection.create(1, "운동은 시간이 안 맞아서 조금 늦게 했다...", today);
+		ReflectionTestUtils.setField(reflection, "reflectionIdx", 11);
+		Schedule schedule = Schedule.create(
+			1,
+			"운동하기",
+			LocalDateTime.of(today, LocalTime.of(8, 0)),
+			15,
+			20,
+			null,
+			ScheduleStatus.DONE,
+			LocalDateTime.of(today, LocalTime.of(8, 25)),
+			0
+		);
+		ReflectionTestUtils.setField(schedule, "scheduleIdx", 101);
+		when(reflectionRepository.findByMemberIdxAndReflectionDate(1, today))
+			.thenReturn(Optional.of(reflection));
+		when(scheduleRepository.findByMemberIdxAndDeletedAtIsNullAndStatusAndCompletedAtBetweenOrderByCompletedAtAsc(
+			1,
+			ScheduleStatus.DONE,
+			today.atStartOfDay(),
+			LocalDateTime.of(today, LocalTime.MAX)
+		)).thenReturn(List.of(schedule));
+
+		ReflectionTodayResponse response = reflectionService.getTodayReflection(1);
+
+		assertThat(response.reflection()).isNotNull();
+		assertThat(response.reflection().reflectionId()).isEqualTo(11);
+		assertThat(response.reflection().reflectionDate()).isEqualTo(today.toString());
+		assertThat(response.reflection().content()).isEqualTo("운동은 시간이 안 맞아서 조금 늦게 했다...");
+		assertThat(response.completedSchedules()).hasSize(1);
+		assertThat(response.completedSchedules().get(0).scheduleId()).isEqualTo(101);
+		assertThat(response.completedSchedules().get(0).title()).isEqualTo("운동하기");
+	}
+
+	/**
+	 * 오늘 작성한 회고가 없어도 오늘 완료한 일정 목록은 조회합니다.
+	 */
+	@Test
+	void getTodayReflectionSucceedsWithoutReflection() {
+		LocalDate today = LocalDate.now();
+		when(reflectionRepository.findByMemberIdxAndReflectionDate(1, today))
+			.thenReturn(Optional.empty());
+		when(scheduleRepository.findByMemberIdxAndDeletedAtIsNullAndStatusAndCompletedAtBetweenOrderByCompletedAtAsc(
+			1,
+			ScheduleStatus.DONE,
+			today.atStartOfDay(),
+			LocalDateTime.of(today, LocalTime.MAX)
+		)).thenReturn(List.of());
+
+		ReflectionTodayResponse response = reflectionService.getTodayReflection(1);
+
+		assertThat(response.reflection()).isNull();
+		assertThat(response.completedSchedules()).isEmpty();
+	}
+
+	/**
+	 * 특정 날짜의 회고와 해당 날짜에 완료한 일정 목록을 함께 조회합니다.
+	 */
+	@Test
+	void getReflectionByDateSucceedsWithCompletedSchedules() {
+		LocalDate reflectionDate = LocalDate.of(2026, 1, 9);
+		Reflection reflection = Reflection.create(1, "오늘은 운동을 늦게 했지만 그래도 해냈다.", reflectionDate);
+		ReflectionTestUtils.setField(reflection, "reflectionIdx", 11);
+		Schedule schedule = Schedule.create(
+			1,
+			"운동하기",
+			LocalDateTime.of(reflectionDate, LocalTime.of(8, 0)),
+			15,
+			20,
+			null,
+			ScheduleStatus.DONE,
+			LocalDateTime.of(reflectionDate, LocalTime.of(8, 25)),
+			0
+		);
+		ReflectionTestUtils.setField(schedule, "scheduleIdx", 101);
+		when(reflectionRepository.findByMemberIdxAndReflectionDate(1, reflectionDate))
+			.thenReturn(Optional.of(reflection));
+		when(scheduleRepository.findByMemberIdxAndDeletedAtIsNullAndStatusAndCompletedAtBetweenOrderByCompletedAtAsc(
+			1,
+			ScheduleStatus.DONE,
+			reflectionDate.atStartOfDay(),
+			LocalDateTime.of(reflectionDate, LocalTime.MAX)
+		)).thenReturn(List.of(schedule));
+
+		ReflectionDetailResponse response = reflectionService.getReflectionByDate(1, "2026-01-09");
+
+		assertThat(response.reflectionId()).isEqualTo(11);
+		assertThat(response.reflectionDate()).isEqualTo("2026-01-09");
+		assertThat(response.content()).isEqualTo("오늘은 운동을 늦게 했지만 그래도 해냈다.");
+		assertThat(response.completedSchedules()).hasSize(1);
+		assertThat(response.completedSchedules().get(0).scheduleId()).isEqualTo(101);
+		assertThat(response.completedSchedules().get(0).title()).isEqualTo("운동하기");
+	}
+
+	/**
+	 * 특정 날짜의 회고가 없으면 회고 없음 오류로 처리합니다.
+	 */
+	@Test
+	void getReflectionByDateRejectsMissingReflection() {
+		LocalDate reflectionDate = LocalDate.of(2026, 1, 9);
+		when(reflectionRepository.findByMemberIdxAndReflectionDate(1, reflectionDate))
+			.thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> reflectionService.getReflectionByDate(1, "2026-01-09"))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.NOT_FOUND);
+	}
+
+	/**
+	 * 날짜 형식이 올바르지 않으면 회고 날짜 오류로 처리합니다.
+	 */
+	@Test
+	void getReflectionByDateRejectsInvalidDateFormat() {
+		assertThatThrownBy(() -> reflectionService.getReflectionByDate(1, "2026/01/09"))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.INVALID_DATE);
+	}
+
+	/**
+	 * 회고 작성 요청 값이 유효하면 회고를 저장하고 생성된 회고 식별자를 반환합니다.
+	 */
+	@Test
+	void createReflectionSucceedsWithValidRequest() {
+		LocalDate reflectionDate = LocalDate.of(2026, 1, 9);
+		Reflection savedReflection = Reflection.create(
+			1,
+			"오늘은 운동을 늦게 했지만 그래도 해냈다.",
+			reflectionDate
+		);
+		ReflectionTestUtils.setField(savedReflection, "reflectionIdx", 11);
+		when(reflectionRepository.existsByMemberIdxAndReflectionDate(1, reflectionDate))
+			.thenReturn(false);
+		when(reflectionRepository.save(any(Reflection.class))).thenReturn(savedReflection);
+
+		ReflectionCreateResponse response = reflectionService.createReflection(
+			1,
+			new ReflectionCreateRequest("2026-01-09", " 오늘은 운동을 늦게 했지만 그래도 해냈다. ")
+		);
+
+		assertThat(response.reflectionId()).isEqualTo(11);
+		ArgumentCaptor<Reflection> reflectionCaptor = ArgumentCaptor.forClass(Reflection.class);
+		verify(reflectionRepository).save(reflectionCaptor.capture());
+		assertThat(reflectionCaptor.getValue().getMemberIdx()).isEqualTo(1);
+		assertThat(reflectionCaptor.getValue().getReflectionDate()).isEqualTo(reflectionDate);
+		assertThat(reflectionCaptor.getValue().getContent()).isEqualTo("오늘은 운동을 늦게 했지만 그래도 해냈다.");
+	}
+
+	/**
+	 * 같은 날짜에 이미 회고가 있으면 회고 작성을 거부합니다.
+	 */
+	@Test
+	void createReflectionRejectsAlreadyExistingReflectionDate() {
+		LocalDate reflectionDate = LocalDate.of(2026, 1, 9);
+		when(reflectionRepository.existsByMemberIdxAndReflectionDate(1, reflectionDate))
+			.thenReturn(true);
+
+		assertThatThrownBy(() -> reflectionService.createReflection(
+			1,
+			new ReflectionCreateRequest("2026-01-09", "오늘은 운동을 늦게 했지만 그래도 해냈다.")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.ALREADY_EXISTS);
+	}
+
+	/**
+	 * 회고 작성 날짜 형식이 올바르지 않으면 회고 작성을 거부합니다.
+	 */
+	@Test
+	void createReflectionRejectsInvalidDateFormat() {
+		assertThatThrownBy(() -> reflectionService.createReflection(
+			1,
+			new ReflectionCreateRequest("2026/01/09", "오늘은 운동을 늦게 했지만 그래도 해냈다.")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.INVALID_DATE);
+	}
+
+	/**
+	 * 회고 내용이 비어 있으면 회고 작성을 거부합니다.
+	 */
+	@Test
+	void createReflectionRejectsBlankContent() {
+		assertThatThrownBy(() -> reflectionService.createReflection(
+			1,
+			new ReflectionCreateRequest("2026-01-09", " ")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.EMPTY_CONTENT);
+	}
+
+	/**
+	 * 수정 대상 회고가 로그인 사용자에게 속하면 회고 내용을 수정합니다.
+	 */
+	@Test
+	void updateReflectionSucceedsWithOwnedReflection() {
+		LocalDate reflectionDate = LocalDate.of(2026, 1, 9);
+		Reflection reflection = Reflection.create(1, "수정 전 내용", reflectionDate);
+		ReflectionTestUtils.setField(reflection, "reflectionIdx", 11);
+		when(reflectionRepository.findByReflectionIdxAndMemberIdx(11, 1))
+			.thenReturn(Optional.of(reflection));
+
+		reflectionService.updateReflection(
+			1,
+			11,
+			new ReflectionUpdateRequest(" 오늘은 운동을 늦게 했지만 그래도 해냈다. ")
+		);
+
+		assertThat(reflection.getContent()).isEqualTo("오늘은 운동을 늦게 했지만 그래도 해냈다.");
+		assertThat(reflection.getUpdatedAt()).isNotNull();
+	}
+
+	/**
+	 * 수정 대상 회고가 없으면 회고 없음 오류로 처리합니다.
+	 */
+	@Test
+	void updateReflectionRejectsMissingReflection() {
+		when(reflectionRepository.findByReflectionIdxAndMemberIdx(999, 1))
+			.thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> reflectionService.updateReflection(
+			1,
+			999,
+			new ReflectionUpdateRequest("오늘은 운동을 늦게 했지만 그래도 해냈다.")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.NOT_FOUND);
+	}
+
+	/**
+	 * 수정할 회고 내용이 비어 있으면 회고 수정을 거부합니다.
+	 */
+	@Test
+	void updateReflectionRejectsBlankContent() {
+		Reflection reflection = Reflection.create(1, "수정 전 내용", LocalDate.of(2026, 1, 9));
+		when(reflectionRepository.findByReflectionIdxAndMemberIdx(11, 1))
+			.thenReturn(Optional.of(reflection));
+
+		assertThatThrownBy(() -> reflectionService.updateReflection(
+			1,
+			11,
+			new ReflectionUpdateRequest(" ")
+		))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ReflectionErrorCode.EMPTY_CONTENT);
+	}
+}
