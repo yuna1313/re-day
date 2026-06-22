@@ -5,11 +5,19 @@ import axios from 'axios'
 const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 
 const ACCESS_TOKEN_KEY = 'accessToken'
+const REFRESH_TOKEN_KEY = 'refreshToken'
 
 export const tokenStorage = {
-  get: () => localStorage.getItem(ACCESS_TOKEN_KEY),
-  set: (token) => localStorage.setItem(ACCESS_TOKEN_KEY, token),
-  clear: () => localStorage.removeItem(ACCESS_TOKEN_KEY),
+  getAccessToken: () => localStorage.getItem(ACCESS_TOKEN_KEY),
+  getRefreshToken: () => localStorage.getItem(REFRESH_TOKEN_KEY),
+  set: ({ accessToken, refreshToken }) => {
+    if (accessToken) localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
+    if (refreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+  },
+  clear: () => {
+    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
+  },
 }
 
 const client = axios.create({
@@ -20,7 +28,7 @@ const client = axios.create({
 
 // 요청 인터셉터: 저장된 JWT access token 을 Authorization 헤더에 자동 첨부한다.
 client.interceptors.request.use((config) => {
-  const token = tokenStorage.get()
+  const token = tokenStorage.getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
