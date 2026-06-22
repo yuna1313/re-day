@@ -1,5 +1,31 @@
+/* 구름 산스(Goorm Sans) 자체 호스팅.
+   public/fonts/ 에 아래 파일명으로 woff2 를 넣으면 적용된다.
+   (다운로드한 파일명이 다르면 url 경로만 맞춰주면 됨) */
+@font-face {
+  font-family: 'Goorm Sans';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/goorm-sans-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Goorm Sans';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/goorm-sans-medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Goorm Sans';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/goorm-sans-bold.woff2') format('woff2');
+}
+
 :root {
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  /* 'Goorm Sans' 적용, 로딩 전/실패 시 시스템 폰트로 폴백 */
+  font-family: 'Goorm Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   color-scheme: light dark;
 }
