@@ -57,11 +57,6 @@
   color: #9ca3af;
 }
 
-.login-input:focus {
-  border-color: #c7cdd6;
-  background: #eef0f3;
-}
-
 /* 비밀번호 표시/숨기기 토글 버튼 */
 .login-toggle {
   position: absolute;

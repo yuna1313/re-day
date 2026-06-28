@@ -1,0 +1,150 @@
+/* 회원가입 화면 — 로그인과 동일하게 모바일 우선, 넓은 화면에선 중앙 컬럼 */
+.signup-page {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.signup-logo {
+  margin: 24px 0 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #111;
+}
+
+.signup-desc {
+  margin: 40px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.signup-form {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.signup-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18px 16px;
+  background: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  /* iOS 입력 시 화면 확대 방지를 위해 16px 이상 유지 */
+  font-size: 16px;
+  color: #111;
+  outline: none;
+}
+
+.signup-input::placeholder {
+  color: #9ca3af;
+}
+
+/* 입력창 + 우측 버튼(인증번호/확인하기) 한 줄 배치 */
+.signup-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.signup-row .signup-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.signup-side-button {
+  flex-shrink: 0;
+  width: 96px;
+  border: none;
+  border-radius: 14px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 인증완료 상태 (비활성) */
+.signup-side-button--done {
+  background: #bcd3f7;
+  color: #fff;
+  cursor: default;
+}
+
+/* 비밀번호 입력란: 우측 토글 아이콘 공간 확보 */
+.signup-field {
+  position: relative;
+}
+
+.signup-field .signup-input {
+  padding-right: 48px;
+}
+
+.signup-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  display: flex;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.signup-error {
+  margin: -4px 2px 0;
+  font-size: 14px;
+  color: #ef4444;
+}
+
+/* 이용약관 동의 */
+.signup-terms {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  /* 라벨 클릭 시 텍스트가 드래그 선택되어 파랗게 보이는 것 방지 */
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.signup-checkbox {
+  width: 20px;
+  height: 20px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.signup-submit {
+  margin-top: 20px;
+  width: 100%;
+  padding: 18px;
+  border: none;
+  border-radius: 14px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.signup-submit:disabled {
+  background: #bcd3f7;
+  cursor: not-allowed;
+}

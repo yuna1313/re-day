@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { authApi } from '../api/auth'
 import { useAuth } from '../contexts/AuthContext'
+import { Eye, EyeOff } from 'lucide-react'
 import './LoginPage.css'
 
 function LoginPage() {
@@ -76,7 +77,7 @@ function LoginPage() {
             onClick={() => setShowPassword((prev) => !prev)}
             aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 표시'}
           >
-            {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+            {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
           </button>
         </div>
 
@@ -98,45 +99,6 @@ function LoginPage() {
         </button>
       </div>
     </div>
-  )
-}
-
-// 비밀번호 표시/숨기기 아이콘 (외부 아이콘 라이브러리 없이 인라인 SVG 사용)
-function EyeIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
-  )
-}
-
-function EyeOffIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M3 3l18 18M10.6 10.7a3 3 0 0 0 4.2 4.2M9.9 4.6A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a16.4 16.4 0 0 1-3.4 4.3M6.6 6.6A16.4 16.4 0 0 0 2 12s3.5 7 10 7a10.9 10.9 0 0 0 3-.4"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
   )
 }
 
