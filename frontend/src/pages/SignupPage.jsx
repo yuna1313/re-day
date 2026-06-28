@@ -132,7 +132,7 @@ function SignupPage() {
             onClick={handleRequestCode}
             disabled={!isEmailValid || sendCodeMutation.isPending}
           >
-            인증번호
+            인증번호 전송
           </button>
         </div>
 

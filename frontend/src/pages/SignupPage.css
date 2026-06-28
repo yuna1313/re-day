@@ -63,13 +63,14 @@
 
 .signup-side-button {
   flex-shrink: 0;
-  width: 96px;
+  width: 100px;
   border: none;
   border-radius: 14px;
   background: #3b82f6;
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
   outline: none;
   -webkit-tap-highlight-color: transparent;
