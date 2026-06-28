@@ -47,7 +47,7 @@ export const handlers = [
       return HttpResponse.json({
         success: false,
         code: 'AUTH_EMAIL_SEND_FAIL',
-        message: '이메일 인증코드 발송에 실패하였습니다.',
+        message: '이메일 인증번호 발송에 실패하였습니다.',
         data: null,
       })
     }
@@ -55,7 +55,30 @@ export const handlers = [
     return HttpResponse.json({
       success: true,
       code: 'AUTH_EMAIL_SENT',
-      message: '인증코드를 발송했습니다.',
+      message: '인증번호를 발송했습니다.',
+      data: null,
+    })
+  }),
+
+  // 이메일 인증코드 확인: POST /api/v1/auth/email/verify
+  // 실패도 HTTP 200 + success:false 로 내려온다.
+  http.post('/api/v1/auth/email/verify', async ({ request }) => {
+    const { verificationCode } = await request.json()
+
+    // 테스트용 정답 코드: 123456
+    if (verificationCode === '123456') {
+      return HttpResponse.json({
+        success: true,
+        code: 'AUTH_EMAIL_VERIFIED',
+        message: '이메일 인증이 완료되었습니다.',
+        data: null,
+      })
+    }
+
+    return HttpResponse.json({
+      success: false,
+      code: 'AUTH_EMAIL_VERIFY_FAIL',
+      message: '인증번호가 일치하지 않습니다.',
       data: null,
     })
   }),

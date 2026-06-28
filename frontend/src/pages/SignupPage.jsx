@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Eye, EyeOff } from 'lucide-react'
 import { authApi } from '../api/auth'
+import { getApiErrorMessage } from '../api/client'
 import './SignupPage.css'
 
 function SignupPage() {
@@ -34,10 +35,14 @@ function SignupPage() {
     sendCodeMutation.mutate({ email })
   }
 
+  // 이메일 인증코드 확인 (성공해야만 인증완료로 잠금, 실패면 버튼 유지)
+  const verifyCodeMutation = useMutation({
+    mutationFn: authApi.verifyEmailCode,
+    onSuccess: () => setIsEmailVerified(true),
+  })
+
   const handleVerifyCode = () => {
-    // TODO: 인증번호 확인 API 연동 예정
-    // 지금은 화면 흐름 확인용으로 인증완료 상태로만 전환한다.
-    setIsEmailVerified(true)
+    verifyCodeMutation.mutate({ email, verificationCode: code })
   }
 
   const handleSubmit = (event) => {
@@ -100,7 +105,9 @@ function SignupPage() {
           <p className="signup-hint">{sendCodeMutation.data.message}</p>
         )}
         {sendCodeMutation.isError && (
-          <p className="signup-error">{sendCodeMutation.error.message}</p>
+          <p className="signup-error">
+            {getApiErrorMessage(sendCodeMutation.error)}
+          </p>
         )}
 
         {/* 인증번호 입력 + 확인 */}
@@ -110,8 +117,12 @@ function SignupPage() {
             className="signup-input"
             placeholder="인증번호"
             value={code}
-            onChange={(event) => setCode(event.target.value)}
+            // 숫자만, 최대 6자리
+            onChange={(event) =>
+              setCode(event.target.value.replace(/\D/g, '').slice(0, 6))
+            }
             inputMode="numeric"
+            maxLength={6}
           />
           <button
             type="button"
@@ -121,11 +132,21 @@ function SignupPage() {
                 : 'signup-side-button'
             }
             onClick={handleVerifyCode}
-            disabled={isEmailVerified}
+            disabled={isEmailVerified || verifyCodeMutation.isPending || !code}
           >
             {isEmailVerified ? '인증완료' : '확인하기'}
           </button>
         </div>
+
+        {/* 인증코드 확인 결과 안내 */}
+        {verifyCodeMutation.isSuccess && (
+          <p className="signup-hint">{verifyCodeMutation.data.message}</p>
+        )}
+        {verifyCodeMutation.isError && (
+          <p className="signup-error">
+            {getApiErrorMessage(verifyCodeMutation.error)}
+          </p>
+        )}
 
         {/* 비밀번호 */}
         <div className="signup-field">

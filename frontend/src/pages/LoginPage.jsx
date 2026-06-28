@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { authApi } from '../api/auth'
+import { getApiErrorMessage } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
 import { Eye, EyeOff } from 'lucide-react'
 import './LoginPage.css'
@@ -36,8 +37,10 @@ function LoginPage() {
 
   // 서버가 내려준 실패 메시지를 우선 사용하고, 없으면 기본 문구를 보여준다.
   const errorMessage = loginMutation.isError
-    ? (loginMutation.error?.response?.data?.message ??
-      '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.')
+    ? getApiErrorMessage(
+        loginMutation.error,
+        '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.',
+      )
     : null
 
   return (

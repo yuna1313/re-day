@@ -71,6 +71,8 @@
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* 발송 중/이메일 미입력 등으로 비활성일 때 (인증완료 버튼은 제외) */

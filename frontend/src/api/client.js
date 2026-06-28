@@ -47,4 +47,18 @@ client.interceptors.response.use(
   },
 )
 
+// API 실패 시 사용자에게 보여줄 메시지를 통일된 방식으로 뽑아낸다.
+// - HTTP 에러(예: 401): 서버 메시지가 error.response.data.message 에 있음
+// - 200 + success:false: throwIfFailed 가 던진 Error 의 message 에 있음
+// 둘 다 없으면(네트워크 오류 등) fallback 을 사용한다.
+export function getApiErrorMessage(
+  error,
+  fallback = '요청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+) {
+  const serverMessage = error?.response?.data?.message
+  if (serverMessage) return serverMessage
+  if (error && !error.response && error.message) return error.message
+  return fallback
+}
+
 export default client

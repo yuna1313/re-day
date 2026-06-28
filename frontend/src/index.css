@@ -34,6 +34,14 @@
   box-sizing: border-box;
 }
 
+/* input·button 등 폼 요소는 폰트를 상속하지 않으므로 명시적으로 물려준다 */
+input,
+button,
+textarea,
+select {
+  font-family: inherit;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
