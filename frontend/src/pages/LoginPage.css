@@ -108,3 +108,18 @@
   font-size: 14px;
   cursor: pointer;
 }
+
+/* 회원가입 진입 안내 (로그인 버튼 아래 한 줄) */
+.login-signup {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.login-signup-link {
+  margin-left: 6px;
+  color: #3b82f6;
+  font-weight: 700;
+  text-decoration: none;
+}

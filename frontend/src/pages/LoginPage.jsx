@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { authApi } from '../api/auth'
 import { getApiErrorMessage } from '../api/client'
@@ -101,6 +101,13 @@ function LoginPage() {
           비밀번호를 잊어버렸어요.
         </button>
       </div>
+
+      <p className="login-signup">
+        아직 회원이 아니신가요?
+        <Link to="/signup" className="login-signup-link">
+          회원가입
+        </Link>
+      </p>
     </div>
   )
 }
