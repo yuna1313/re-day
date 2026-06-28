@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { Eye, EyeOff } from 'lucide-react'
+import { authApi } from '../api/auth'
 import './SignupPage.css'
 
 function SignupPage() {
@@ -10,15 +12,26 @@ function SignupPage() {
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [isEmailVerified, setIsEmailVerified] = useState(false)
+  const [emailTouched, setEmailTouched] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
+
+  // 이메일 형식 검증 (인증번호 발송 버튼 활성화 조건)
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  // 입력란을 벗어났고(touched), 입력값이 있는데 형식이 틀릴 때만 안내
+  const showEmailError = emailTouched && email.length > 0 && !isEmailValid
 
   // 프론트에서 비밀번호 일치 확인 (확인란을 입력했는데 서로 다를 때만 표시)
   const passwordMismatch =
     passwordConfirm.length > 0 && password !== passwordConfirm
 
+  // 이메일 인증코드 발송
+  const sendCodeMutation = useMutation({
+    mutationFn: authApi.sendEmailVerification,
+  })
+
   const handleRequestCode = () => {
-    // TODO: 이메일 인증번호 발송 API 연동 예정
+    sendCodeMutation.mutate({ email })
   }
 
   const handleVerifyCode = () => {
@@ -64,16 +77,31 @@ function SignupPage() {
             placeholder="이메일 주소"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            onBlur={() => setEmailTouched(true)}
             autoComplete="email"
           />
           <button
             type="button"
             className="signup-side-button"
             onClick={handleRequestCode}
+            disabled={!isEmailValid || sendCodeMutation.isPending}
           >
             인증번호
           </button>
         </div>
+
+        {/* 이메일 형식 안내 (입력란을 벗어났을 때만) */}
+        {showEmailError && (
+          <p className="signup-error">이메일 형식을 다시 한번 확인해주세요.</p>
+        )}
+
+        {/* 인증코드 발송 결과 안내 */}
+        {sendCodeMutation.isSuccess && (
+          <p className="signup-hint">{sendCodeMutation.data.message}</p>
+        )}
+        {sendCodeMutation.isError && (
+          <p className="signup-error">{sendCodeMutation.error.message}</p>
+        )}
 
         {/* 인증번호 입력 + 확인 */}
         <div className="signup-row">

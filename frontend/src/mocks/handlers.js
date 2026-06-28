@@ -36,4 +36,27 @@ export const handlers = [
       { status: 401 },
     )
   }),
+
+  // 이메일 인증코드 발송: POST /api/v1/auth/email/send-verification
+  // 실패도 HTTP 200 + success:false 로 내려온다.
+  http.post('/api/v1/auth/email/send-verification', async ({ request }) => {
+    const { email } = await request.json()
+
+    // 실패 케이스 테스트용: 이메일에 'fail' 이 들어가면 발송 실패로 응답
+    if (email.includes('fail')) {
+      return HttpResponse.json({
+        success: false,
+        code: 'AUTH_EMAIL_SEND_FAIL',
+        message: '이메일 인증코드 발송에 실패하였습니다.',
+        data: null,
+      })
+    }
+
+    return HttpResponse.json({
+      success: true,
+      code: 'AUTH_EMAIL_SENT',
+      message: '인증코드를 발송했습니다.',
+      data: null,
+    })
+  }),
 ]

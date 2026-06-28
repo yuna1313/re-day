@@ -73,6 +73,12 @@
   cursor: pointer;
 }
 
+/* 발송 중/이메일 미입력 등으로 비활성일 때 (인증완료 버튼은 제외) */
+.signup-side-button:disabled:not(.signup-side-button--done) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* 인증완료 상태 (비활성) */
 .signup-side-button--done {
   background: #bcd3f7;
@@ -106,6 +112,12 @@
   margin: -4px 2px 0;
   font-size: 14px;
   color: #ef4444;
+}
+
+.signup-hint {
+  margin: -4px 2px 0;
+  font-size: 14px;
+  color: #16a34a;
 }
 
 /* 이용약관 동의 */
