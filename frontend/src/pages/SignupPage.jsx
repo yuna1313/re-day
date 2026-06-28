@@ -3,6 +3,8 @@ import { useMutation } from '@tanstack/react-query'
 import { Eye, EyeOff } from 'lucide-react'
 import { authApi } from '../api/auth'
 import { getApiErrorMessage } from '../api/client'
+import { AGREEMENTS } from '../constants/agreements'
+import AgreementSheet from '../components/AgreementSheet'
 import './SignupPage.css'
 
 function SignupPage() {
@@ -11,11 +13,32 @@ function SignupPage() {
   const [code, setCode] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
-  const [agreeTerms, setAgreeTerms] = useState(false)
   const [isEmailVerified, setIsEmailVerified] = useState(false)
   const [emailTouched, setEmailTouched] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
+  // 약관별 동의 상태 { terms: false, privacy: false, marketing: false }
+  const [agreements, setAgreements] = useState(() =>
+    Object.fromEntries(AGREEMENTS.map((item) => [item.key, false])),
+  )
+  // '보기'로 상세를 띄울 약관 (null 이면 닫힘)
+  const [viewingAgreement, setViewingAgreement] = useState(null)
+
+  const isAllAgreed = AGREEMENTS.every((item) => agreements[item.key])
+  const isAllRequiredAgreed = AGREEMENTS.filter((item) => item.required).every(
+    (item) => agreements[item.key],
+  )
+
+  const handleToggleAll = (event) => {
+    const { checked } = event.target
+    setAgreements(
+      Object.fromEntries(AGREEMENTS.map((item) => [item.key, checked])),
+    )
+  }
+
+  const handleToggleAgreement = (key) => {
+    setAgreements((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
 
   // 이메일 형식 검증 (인증번호 발송 버튼 활성화 조건)
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -57,7 +80,7 @@ function SignupPage() {
     !password ||
     !passwordConfirm ||
     passwordMismatch ||
-    !agreeTerms
+    !isAllRequiredAgreed
 
   return (
     <div className="signup-page">
@@ -194,16 +217,46 @@ function SignupPage() {
           <p className="signup-error">비밀번호가 일치하지 않습니다.</p>
         )}
 
-        {/* 이용약관 동의 */}
-        <label className="signup-terms">
-          <input
-            type="checkbox"
-            className="signup-checkbox"
-            checked={agreeTerms}
-            onChange={(event) => setAgreeTerms(event.target.checked)}
-          />
-          <span>이용약관 동의</span>
-        </label>
+        {/* 약관 동의 */}
+        <div className="signup-agreements">
+          {/* 전체 동의 */}
+          <label className="signup-agree-all">
+            <input
+              type="checkbox"
+              className="signup-checkbox"
+              checked={isAllAgreed}
+              onChange={handleToggleAll}
+            />
+            <span>전체 동의</span>
+          </label>
+
+          {/* 개별 항목 */}
+          {AGREEMENTS.map((item) => (
+            <div className="signup-agree-item" key={item.key}>
+              <label className="signup-agree-label">
+                <input
+                  type="checkbox"
+                  className="signup-checkbox"
+                  checked={agreements[item.key]}
+                  onChange={() => handleToggleAgreement(item.key)}
+                />
+                <span>
+                  <span className="signup-agree-tag">
+                    [{item.required ? '필수' : '선택'}]
+                  </span>{' '}
+                  {item.label}
+                </span>
+              </label>
+              <button
+                type="button"
+                className="signup-agree-view"
+                onClick={() => setViewingAgreement(item)}
+              >
+                보기
+              </button>
+            </div>
+          ))}
+        </div>
 
         <button
           type="submit"
@@ -213,6 +266,11 @@ function SignupPage() {
           회원가입
         </button>
       </form>
+
+      <AgreementSheet
+        agreement={viewingAgreement}
+        onClose={() => setViewingAgreement(null)}
+      />
     </div>
   )
 }
