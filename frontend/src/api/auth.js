@@ -35,4 +35,23 @@ export const authApi = {
     })
     return throwIfFailed(data, '이메일 인증에 실패했습니다.')
   },
+
+  // 회원가입 (실패도 200 + success:false)
+  // 응답 data: { memberId, email }
+  signup: async ({
+    nickname,
+    email,
+    password,
+    passwordConfirm,
+    agreeTerms,
+  }) => {
+    const { data } = await client.post('/auth/signup', {
+      nickname,
+      email,
+      password,
+      passwordConfirm,
+      agreeTerms,
+    })
+    return throwIfFailed(data, '회원가입에 실패했습니다.')
+  },
 }

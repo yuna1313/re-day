@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { Eye, EyeOff } from 'lucide-react'
 import { authApi } from '../api/auth'
@@ -8,6 +9,7 @@ import AgreementSheet from '../components/AgreementSheet'
 import './SignupPage.css'
 
 function SignupPage() {
+  const navigate = useNavigate()
   const [nickname, setNickname] = useState('')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
@@ -68,9 +70,25 @@ function SignupPage() {
     verifyCodeMutation.mutate({ email, verificationCode: code })
   }
 
+  // 회원가입
+  const signupMutation = useMutation({
+    mutationFn: authApi.signup,
+    onSuccess: () => {
+      // 가입 완료 후 로그인 화면으로 이동 (가입 응답에는 토큰이 없음)
+      navigate('/login', { replace: true })
+    },
+  })
+
   const handleSubmit = (event) => {
     event.preventDefault()
-    // TODO: 회원가입 API 연동 예정
+    signupMutation.mutate({
+      nickname,
+      email,
+      password,
+      passwordConfirm,
+      // API 의 agreeTerms 는 단일 boolean → 필수 약관 동의 여부를 전달
+      agreeTerms: isAllRequiredAgreed,
+    })
   }
 
   const isSubmitDisabled =
@@ -258,12 +276,19 @@ function SignupPage() {
           ))}
         </div>
 
+        {/* 회원가입 실패 안내 */}
+        {signupMutation.isError && (
+          <p className="signup-error">
+            {getApiErrorMessage(signupMutation.error)}
+          </p>
+        )}
+
         <button
           type="submit"
           className="signup-submit"
-          disabled={isSubmitDisabled}
+          disabled={isSubmitDisabled || signupMutation.isPending}
         >
-          회원가입
+          {signupMutation.isPending ? '회원가입 중...' : '회원가입'}
         </button>
       </form>
 

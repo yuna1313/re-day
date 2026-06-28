@@ -82,4 +82,27 @@ export const handlers = [
       data: null,
     })
   }),
+
+  // 회원가입: POST /api/v1/auth/signup
+  // 실패도 HTTP 200 + success:false 로 내려온다.
+  http.post('/api/v1/auth/signup', async ({ request }) => {
+    const { email } = await request.json()
+
+    // 실패 케이스 테스트용: 이메일에 'dup' 이 들어가면 이미 가입된 이메일로 응답
+    if (email.includes('dup')) {
+      return HttpResponse.json({
+        success: false,
+        code: 'AUTH_SIGNUP_FAIL',
+        message: '이미 가입된 이메일입니다.',
+        data: null,
+      })
+    }
+
+    return HttpResponse.json({
+      success: true,
+      code: 'AUTH_SIGNUP_SUCCESS',
+      message: '회원가입이 완료되었습니다.',
+      data: { memberId: 1, email },
+    })
+  }),
 ]
