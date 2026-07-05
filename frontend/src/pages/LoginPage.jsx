@@ -96,10 +96,9 @@ function LoginPage() {
       </form>
 
       <div className="login-forgot">
-        {/* TODO: 비밀번호 찾기 화면 연결 (현재 백엔드 API 미정) */}
-        <button type="button" className="login-forgot-link">
+        <Link to="/forgot-password" className="login-forgot-link">
           비밀번호를 잊어버렸어요.
-        </button>
+        </Link>
       </div>
 
       <p className="login-signup">

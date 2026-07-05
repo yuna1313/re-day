@@ -3,6 +3,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import HomePage from './pages/HomePage'
 import RetrospectivesPage from './pages/RetrospectivesPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -14,6 +16,8 @@ function App() {
       {/* 로그인/회원가입은 공통 레이아웃(네비게이션) 밖의 독립 화면 */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* 로그인해야만 접근 가능한 영역 */}
       <Route element={<ProtectedRoute />}>

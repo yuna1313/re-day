@@ -5,6 +5,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { authApi } from '../api/auth'
 import { getApiErrorMessage } from '../api/client'
 import { AGREEMENTS } from '../constants/agreements'
+import { isValidEmail } from '../utils/validators'
 import AgreementSheet from '../components/AgreementSheet'
 import './SignupPage.css'
 
@@ -43,7 +44,7 @@ function SignupPage() {
   }
 
   // 이메일 형식 검증 (인증번호 발송 버튼 활성화 조건)
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  const isEmailValid = isValidEmail(email)
   // 입력란을 벗어났고(touched), 입력값이 있는데 형식이 틀릴 때만 안내
   const showEmailError = emailTouched && email.length > 0 && !isEmailValid
 
