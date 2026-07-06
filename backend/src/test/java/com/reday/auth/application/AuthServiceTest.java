@@ -31,6 +31,7 @@ import com.reday.auth.dto.EmailVerificationVerifyRequest;
 import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.LogoutRequest;
+import com.reday.auth.dto.PasswordResetRequest;
 import com.reday.auth.dto.PasswordResetVerificationSendRequest;
 import com.reday.auth.dto.PasswordResetVerificationVerifyRequest;
 import com.reday.auth.dto.SignupRequest;
@@ -141,6 +142,60 @@ class AuthServiceTest {
 			.isInstanceOf(BusinessException.class)
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())
 			.isEqualTo(AuthErrorCode.INVALID_VERIFICATION_CODE);
+	}
+
+	@Test
+	void resetPasswordSucceedsWithVerifiedEmail() {
+		Email email = Email.of("yuna1313@naver.com");
+		Member member = Member.create("yuna", "yuna1313@naver.com", "old-encoded-password");
+		when(memberRepository.findByEmail("yuna1313@naver.com")).thenReturn(Optional.of(member));
+		when(passwordResetVerificationStore.isVerified(email)).thenReturn(true);
+		when(passwordEncoder.encode("newPassword123")).thenReturn("new-encoded-password");
+
+		authService.resetPassword(
+			new PasswordResetRequest("yuna1313@naver.com", "newPassword123", "newPassword123")
+		);
+
+		assertThat(member.getPassword()).isEqualTo("new-encoded-password");
+		verify(passwordResetVerificationStore, times(1)).delete(email);
+	}
+
+	@Test
+	void resetPasswordRejectsUnverifiedEmail() {
+		Email email = Email.of("yuna1313@naver.com");
+		Member member = Member.create("yuna", "yuna1313@naver.com", "old-encoded-password");
+		when(memberRepository.findByEmail("yuna1313@naver.com")).thenReturn(Optional.of(member));
+		when(passwordResetVerificationStore.isVerified(email)).thenReturn(false);
+
+		assertThatThrownBy(() ->
+			authService.resetPassword(
+				new PasswordResetRequest("yuna1313@naver.com", "newPassword123", "newPassword123")
+			))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.EMAIL_NOT_VERIFIED);
+
+		verify(passwordEncoder, never()).encode("newPassword123");
+		verify(passwordResetVerificationStore, never()).delete(email);
+	}
+
+	@Test
+	void resetPasswordRejectsPasswordConfirmMismatch() {
+		Email email = Email.of("yuna1313@naver.com");
+		Member member = Member.create("yuna", "yuna1313@naver.com", "old-encoded-password");
+		when(memberRepository.findByEmail("yuna1313@naver.com")).thenReturn(Optional.of(member));
+		when(passwordResetVerificationStore.isVerified(email)).thenReturn(true);
+
+		assertThatThrownBy(() ->
+			authService.resetPassword(
+				new PasswordResetRequest("yuna1313@naver.com", "newPassword123", "different123")
+			))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.PASSWORD_CONFIRM_MISMATCH);
+
+		verify(passwordEncoder, never()).encode("newPassword123");
+		verify(passwordResetVerificationStore, never()).delete(email);
 	}
 
 	/**

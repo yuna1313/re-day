@@ -51,4 +51,17 @@ public class DatabasePasswordResetVerificationStore implements PasswordResetVeri
 		entity.complete();
 		log.info("[passwordResetVerificationStore.complete] password reset verification completed: {}", email.value());
 	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public boolean isVerified(Email email) {
+		return passwordResetVerificationRepository.existsByEmailAndVerifiedAtIsNotNull(email.value());
+	}
+
+	@Override
+	@Transactional
+	public void delete(Email email) {
+		passwordResetVerificationRepository.deleteByEmail(email.value());
+		log.info("[passwordResetVerificationStore.delete] password reset verification deleted: {}", email.value());
+	}
 }

@@ -29,6 +29,7 @@ import com.reday.auth.dto.EmailVerificationVerifyRequest;
 import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.LogoutRequest;
+import com.reday.auth.dto.PasswordResetRequest;
 import com.reday.auth.dto.PasswordResetVerificationSendRequest;
 import com.reday.auth.dto.PasswordResetVerificationVerifyRequest;
 import com.reday.auth.dto.SignupRequest;
@@ -150,6 +151,26 @@ public class AuthService {
 		verification.verify(inputCode, LocalDateTime.now());
 		passwordResetVerificationStore.complete(email);
 		log.info("[verifyPasswordResetVerification] 비밀번호 재설정 이메일 인증 완료: {}", email.value());
+	}
+
+	@Transactional
+	public void resetPassword(PasswordResetRequest request) {
+		log.info("[resetPassword] 비밀번호 재설정 요청");
+		if (request == null) {
+			throw new BusinessException(AuthErrorCode.INVALID_EMAIL_FORMAT);
+		}
+
+		Email email = Email.of(request.email());
+		Member member = memberRepository.findByEmail(email.value())
+			.orElseThrow(() -> new BusinessException(AuthErrorCode.EMAIL_NOT_FOUND));
+		if (!passwordResetVerificationStore.isVerified(email)) {
+			throw new BusinessException(AuthErrorCode.EMAIL_NOT_VERIFIED);
+		}
+
+		RawPassword newPassword = RawPassword.of(request.newPassword(), request.newPasswordConfirm());
+		member.changePassword(passwordEncoder.encode(newPassword.value()));
+		passwordResetVerificationStore.delete(email);
+		log.info("[resetPassword] 비밀번호 재설정 완료: {}", email.value());
 	}
 
 	/**

@@ -12,4 +12,8 @@ public interface PasswordResetVerificationStore {
 	void save(EmailVerification emailVerification);
 
 	void complete(Email email);
+
+	boolean isVerified(Email email);
+
+	void delete(Email email);
 }
