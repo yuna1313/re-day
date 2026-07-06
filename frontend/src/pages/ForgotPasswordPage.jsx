@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
+import { authApi } from '../api/auth'
+import { getApiErrorMessage } from '../api/client'
 import { isValidEmail } from '../utils/validators'
 import './ForgotPasswordPage.css'
 
@@ -11,11 +14,16 @@ function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [emailTouched, setEmailTouched] = useState(false)
   const [code, setCode] = useState('')
-  const [isSent, setIsSent] = useState(false)
   const [cooldown, setCooldown] = useState(0)
 
   const isEmailOk = isValidEmail(email)
   const showEmailError = emailTouched && email.length > 0 && !isEmailOk
+
+  // 인증코드 발송
+  const sendCodeMutation = useMutation({
+    mutationFn: authApi.sendPasswordResetCode,
+    onSuccess: () => setCooldown(RESEND_COOLDOWN),
+  })
 
   // 재전송 쿨다운 카운트다운 (1초마다 감소)
   useEffect(() => {
@@ -25,10 +33,8 @@ function ForgotPasswordPage() {
   }, [cooldown])
 
   const handleSendCode = () => {
-    if (!isEmailOk || cooldown > 0) return
-    // TODO: 재설정 인증코드 발송 API 연동 예정
-    setIsSent(true)
-    setCooldown(RESEND_COOLDOWN)
+    if (!isEmailOk || cooldown > 0 || sendCodeMutation.isPending) return
+    sendCodeMutation.mutate({ email })
   }
 
   const handleVerify = () => {
@@ -39,7 +45,13 @@ function ForgotPasswordPage() {
   }
 
   const sendLabel =
-    cooldown > 0 ? `${cooldown}초` : isSent ? '재전송' : '인증번호 전송'
+    cooldown > 0
+      ? `${cooldown}초`
+      : sendCodeMutation.isPending
+        ? '전송 중'
+        : sendCodeMutation.isSuccess
+          ? '재전송'
+          : '인증번호 전송'
 
   return (
     <div className="forgot-page">
@@ -68,18 +80,23 @@ function ForgotPasswordPage() {
             type="button"
             className="forgot-side-button"
             onClick={handleSendCode}
-            disabled={!isEmailOk || cooldown > 0}
+            disabled={!isEmailOk || cooldown > 0 || sendCodeMutation.isPending}
           >
             {sendLabel}
           </button>
         </div>
 
-        {/* 안내 문구 (자리 고정: 있든 없든 같은 높이) */}
+        {/* 안내 문구 (자리 고정) */}
         <p className="forgot-message" aria-live="polite">
           {showEmailError && (
             <span className="forgot-error">이메일 형식을 확인해주세요.</span>
           )}
-          {!showEmailError && isSent && (
+          {!showEmailError && sendCodeMutation.isError && (
+            <span className="forgot-error">
+              {getApiErrorMessage(sendCodeMutation.error)}
+            </span>
+          )}
+          {!showEmailError && sendCodeMutation.isSuccess && (
             <span className="forgot-hint">인증코드를 메일로 보냈어요.</span>
           )}
         </p>

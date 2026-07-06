@@ -36,6 +36,15 @@ export const authApi = {
     return throwIfFailed(data, '이메일 인증에 실패했습니다.')
   },
 
+  // 비밀번호 재설정 인증코드 발송 (실패도 200 + success:false, 코드 5분 유효)
+  sendPasswordResetCode: async ({ email }) => {
+    const { data } = await client.post(
+      '/auth/password-reset/email/send-verification',
+      { email },
+    )
+    return throwIfFailed(data, '비밀번호 재설정 인증코드 발송에 실패했습니다.')
+  },
+
   // 회원가입 (실패도 200 + success:false)
   // 응답 data: { memberId, email }
   signup: async ({
