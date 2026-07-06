@@ -15,4 +15,6 @@ public interface EmailSender {
 	 * @param verificationCode 발송할 인증코드
 	 */
 	void sendVerificationCode(Email email, VerificationCode verificationCode);
+
+	void sendPasswordResetVerificationCode(Email email, VerificationCode verificationCode);
 }
