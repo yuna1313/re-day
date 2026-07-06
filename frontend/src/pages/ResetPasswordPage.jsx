@@ -1,29 +1,49 @@
 import { useState } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
 import { Eye, EyeOff } from 'lucide-react'
+import { authApi } from '../api/auth'
+import { getApiErrorMessage } from '../api/client'
 import './ResetPasswordPage.css'
 
 function ResetPasswordPage() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
+
+  const resetMutation = useMutation({
+    mutationFn: authApi.resetPassword,
+    onSuccess: () => {
+      // 재설정 완료 → 로그인 화면으로
+      navigate('/login', { replace: true })
+    },
+  })
 
   // 이메일 인증을 거치지 않고 직접 들어오면 인증 화면으로 되돌린다.
   if (!location.state?.verified) {
     return <Navigate to="/forgot-password" replace />
   }
 
+  // 앞 화면(인증)에서 넘겨받은 이메일
+  const email = location.state?.email
+
   // 프론트에서 비밀번호 일치 확인 (확인란을 입력했는데 서로 다를 때만 표시)
   const passwordMismatch =
     passwordConfirm.length > 0 && password !== passwordConfirm
 
-  const isSubmitDisabled = !password || !passwordConfirm || passwordMismatch
+  const isSubmitDisabled =
+    !password || !passwordConfirm || passwordMismatch || resetMutation.isPending
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    // TODO: 비밀번호 재설정 API 연동 예정
+    resetMutation.mutate({
+      email,
+      newPassword: password,
+      newPasswordConfirm: passwordConfirm,
+    })
   }
 
   return (
@@ -86,7 +106,11 @@ function ResetPasswordPage() {
 
         {/* 문구 자리를 항상 확보해 버튼이 밀리지 않게 한다 */}
         <p className="reset-error" aria-live="polite">
-          {passwordMismatch ? '비밀번호가 일치하지 않습니다.' : ''}
+          {passwordMismatch
+            ? '비밀번호가 일치하지 않습니다.'
+            : resetMutation.isError
+              ? getApiErrorMessage(resetMutation.error)
+              : ''}
         </p>
 
         <button
@@ -94,7 +118,7 @@ function ResetPasswordPage() {
           className="reset-submit"
           disabled={isSubmitDisabled}
         >
-          완료
+          {resetMutation.isPending ? '변경 중...' : '완료'}
         </button>
       </form>
     </div>

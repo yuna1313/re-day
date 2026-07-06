@@ -154,4 +154,27 @@ export const handlers = [
       data: null,
     })
   }),
+
+  // 비밀번호 재설정: POST /api/v1/auth/password-reset
+  // 실패도 HTTP 200 + success:false 로 내려온다.
+  http.post('/api/v1/auth/password-reset', async ({ request }) => {
+    const { newPassword, newPasswordConfirm } = await request.json()
+
+    // 서버도 비밀번호 일치를 재확인한다고 가정 (실패 케이스 테스트용)
+    if (newPassword !== newPasswordConfirm) {
+      return HttpResponse.json({
+        success: false,
+        code: 'AUTH_PASSWORD_RESET_FAIL',
+        message: '비밀번호가 일치하지 않습니다.',
+        data: null,
+      })
+    }
+
+    return HttpResponse.json({
+      success: true,
+      code: 'AUTH_PASSWORD_RESET_SUCCESS',
+      message: '비밀번호 재설정이 완료되었습니다.',
+      data: null,
+    })
+  }),
 ]

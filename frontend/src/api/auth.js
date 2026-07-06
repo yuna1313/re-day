@@ -55,6 +55,17 @@ export const authApi = {
     return throwIfFailed(data, '비밀번호 재설정 인증에 실패했습니다.')
   },
 
+  // 비밀번호 재설정 (실패도 200 + success:false)
+  // 인증 완료된 이메일의 비밀번호를 변경. 성공 시 서버의 인증 기록은 삭제됨.
+  resetPassword: async ({ email, newPassword, newPasswordConfirm }) => {
+    const { data } = await client.post('/auth/password-reset', {
+      email,
+      newPassword,
+      newPasswordConfirm,
+    })
+    return throwIfFailed(data, '비밀번호 재설정에 실패했습니다.')
+  },
+
   // 회원가입 (실패도 200 + success:false)
   // 응답 data: { memberId, email }
   signup: async ({
