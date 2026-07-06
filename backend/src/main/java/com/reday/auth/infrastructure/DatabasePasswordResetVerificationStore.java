@@ -42,4 +42,13 @@ public class DatabasePasswordResetVerificationStore implements PasswordResetVeri
 		log.info("[passwordResetVerificationStore.save] password reset verification saved: {}",
 			emailVerification.email().value());
 	}
+
+	@Override
+	@Transactional
+	public void complete(Email email) {
+		PasswordResetVerificationEntity entity = passwordResetVerificationRepository.findByEmail(email.value())
+			.orElseThrow(() -> new IllegalArgumentException("Password reset verification not found: " + email.value()));
+		entity.complete();
+		log.info("[passwordResetVerificationStore.complete] password reset verification completed: {}", email.value());
+	}
 }

@@ -80,4 +80,9 @@ public class PasswordResetVerificationEntity {
 		this.verifiedAt = null;
 		this.updatedAt = LocalDateTime.now();
 	}
+
+	public void complete() {
+		this.verifiedAt = LocalDateTime.now();
+		this.updatedAt = this.verifiedAt;
+	}
 }

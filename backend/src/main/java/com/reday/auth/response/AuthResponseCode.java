@@ -15,7 +15,8 @@ public enum AuthResponseCode implements ResponseCode {
 	LOGOUT_SUCCESS("AUTH_LOGOUT_SUCCESS", "로그아웃되었습니다."),
 	EMAIL_SENT("AUTH_EMAIL_SENT", "인증코드를 발송했습니다."),
 	EMAIL_VERIFIED("AUTH_EMAIL_VERIFIED", "이메일 인증이 완료되었습니다."),
-	PASSWORD_RESET_VERIFICATION_SENT("AUTH_PASSWORD_RESET_VERIFICATION_SENT", "비밀번호 재설정 인증코드를 발송했습니다.");
+	PASSWORD_RESET_VERIFICATION_SENT("AUTH_PASSWORD_RESET_VERIFICATION_SENT", "비밀번호 재설정 인증코드를 발송했습니다."),
+	PASSWORD_RESET_VERIFIED("AUTH_PASSWORD_RESET_VERIFIED", "비밀번호 재설정 이메일 인증이 완료되었습니다.");
 
 	private final String code;
 	private final String message;

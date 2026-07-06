@@ -32,6 +32,7 @@ import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.LogoutRequest;
 import com.reday.auth.dto.PasswordResetVerificationSendRequest;
+import com.reday.auth.dto.PasswordResetVerificationVerifyRequest;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.TokenRefreshRequest;
 import com.reday.auth.dto.TokenRefreshResponse;
@@ -108,6 +109,38 @@ class AuthServiceTest {
 			org.mockito.ArgumentMatchers.any(),
 			org.mockito.ArgumentMatchers.any()
 		);
+	}
+
+	@Test
+	void verifyPasswordResetVerificationSucceedsWhenCodeMatches() {
+		Email email = Email.of("yuna1313@naver.com");
+		EmailVerification verification = EmailVerification.create(
+			email,
+			VerificationCode.of("123456"),
+			LocalDateTime.now(),
+			Duration.ofMinutes(5)
+		);
+		when(passwordResetVerificationStore.findByEmail(email)).thenReturn(Optional.of(verification));
+
+		authService.verifyPasswordResetVerification(
+			new PasswordResetVerificationVerifyRequest("yuna1313@naver.com", "123456")
+		);
+
+		verify(passwordResetVerificationStore, times(1)).complete(email);
+	}
+
+	@Test
+	void verifyPasswordResetVerificationRejectsMissingVerification() {
+		Email email = Email.of("yuna1313@naver.com");
+		when(passwordResetVerificationStore.findByEmail(email)).thenReturn(Optional.empty());
+
+		assertThatThrownBy(() ->
+			authService.verifyPasswordResetVerification(
+				new PasswordResetVerificationVerifyRequest("yuna1313@naver.com", "123456")
+			))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.INVALID_VERIFICATION_CODE);
 	}
 
 	/**

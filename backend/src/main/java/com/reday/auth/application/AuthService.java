@@ -30,6 +30,7 @@ import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.LogoutRequest;
 import com.reday.auth.dto.PasswordResetVerificationSendRequest;
+import com.reday.auth.dto.PasswordResetVerificationVerifyRequest;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.SignupResponse;
 import com.reday.auth.dto.TokenRefreshRequest;
@@ -133,6 +134,22 @@ public class AuthService {
 		emailSender.sendPasswordResetVerificationCode(email, verification.code());
 		passwordResetVerificationStore.save(verification);
 		log.info("[sendPasswordResetVerification] 비밀번호 재설정 인증코드 발송 완료: {}", email.value());
+	}
+
+	public void verifyPasswordResetVerification(PasswordResetVerificationVerifyRequest request) {
+		log.info("[verifyPasswordResetVerification] 비밀번호 재설정 인증코드 확인 요청");
+		if (request == null) {
+			throw new BusinessException(AuthErrorCode.EMAIL_VERIFY_FAIL);
+		}
+
+		Email email = Email.of(request.email());
+		VerificationCode inputCode = VerificationCode.of(request.verificationCode());
+		EmailVerification verification = passwordResetVerificationStore.findByEmail(email)
+			.orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_VERIFICATION_CODE));
+
+		verification.verify(inputCode, LocalDateTime.now());
+		passwordResetVerificationStore.complete(email);
+		log.info("[verifyPasswordResetVerification] 비밀번호 재설정 이메일 인증 완료: {}", email.value());
 	}
 
 	/**

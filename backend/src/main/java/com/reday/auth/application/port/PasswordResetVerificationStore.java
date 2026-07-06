@@ -10,4 +10,6 @@ public interface PasswordResetVerificationStore {
 	Optional<EmailVerification> findByEmail(Email email);
 
 	void save(EmailVerification emailVerification);
+
+	void complete(Email email);
 }

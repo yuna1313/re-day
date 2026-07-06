@@ -11,6 +11,7 @@ import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.LogoutRequest;
 import com.reday.auth.dto.PasswordResetVerificationSendRequest;
+import com.reday.auth.dto.PasswordResetVerificationVerifyRequest;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.SignupResponse;
 import com.reday.auth.dto.TokenRefreshRequest;
@@ -48,6 +49,14 @@ public class AuthController {
 	public ApiResponse<Void> sendPasswordResetVerification(@RequestBody PasswordResetVerificationSendRequest request) {
 		authService.sendPasswordResetVerification(request);
 		return ApiResponse.success(AuthResponseCode.PASSWORD_RESET_VERIFICATION_SENT);
+	}
+
+	@PostMapping("/api/v1/auth/password-reset/email/verify")
+	public ApiResponse<Void> verifyPasswordResetVerification(
+		@RequestBody PasswordResetVerificationVerifyRequest request
+	) {
+		authService.verifyPasswordResetVerification(request);
+		return ApiResponse.success(AuthResponseCode.PASSWORD_RESET_VERIFIED);
 	}
 
 	@PostMapping("/api/v1/auth/login")
