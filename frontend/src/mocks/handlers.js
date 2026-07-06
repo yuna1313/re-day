@@ -131,4 +131,27 @@ export const handlers = [
       })
     },
   ),
+
+  // 비밀번호 재설정 인증코드 확인: POST /api/v1/auth/password-reset/email/verify
+  // 실패도 HTTP 200 + success:false 로 내려온다.
+  http.post('/api/v1/auth/password-reset/email/verify', async ({ request }) => {
+    const { verificationCode } = await request.json()
+
+    // 테스트용 정답 코드: 123456
+    if (verificationCode === '123456') {
+      return HttpResponse.json({
+        success: true,
+        code: 'AUTH_PASSWORD_RESET_VERIFIED',
+        message: '비밀번호 재설정 이메일 인증이 완료되었습니다.',
+        data: null,
+      })
+    }
+
+    return HttpResponse.json({
+      success: false,
+      code: 'AUTH_PASSWORD_RESET_VERIFY_FAIL',
+      message: '인증번호가 일치하지 않습니다.',
+      data: null,
+    })
+  }),
 ]

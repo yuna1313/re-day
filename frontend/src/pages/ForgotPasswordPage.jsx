@@ -37,11 +37,18 @@ function ForgotPasswordPage() {
     sendCodeMutation.mutate({ email })
   }
 
+  // 인증코드 확인 (성공했을 때만 새 비밀번호 화면으로 이동, 실패면 버튼 유지)
+  const verifyCodeMutation = useMutation({
+    mutationFn: authApi.verifyPasswordResetCode,
+    onSuccess: () => {
+      // 서버가 인증 완료 상태를 저장했으므로 이메일만 다음 화면으로 넘긴다.
+      navigate('/reset-password', { state: { email, verified: true } })
+    },
+  })
+
   const handleVerify = () => {
     if (code.length !== 6) return
-    // TODO: 재설정 인증코드 확인 API 연동 예정 (성공했을 때만 이동)
-    // 인증 완료 → 새 비밀번호 화면으로 (검증 여부를 state 로 전달)
-    navigate('/reset-password', { state: { email, verified: true } })
+    verifyCodeMutation.mutate({ email, verificationCode: code })
   }
 
   const sendLabel =
@@ -119,11 +126,20 @@ function ForgotPasswordPage() {
             type="button"
             className="forgot-side-button"
             onClick={handleVerify}
-            disabled={code.length !== 6}
+            disabled={code.length !== 6 || verifyCodeMutation.isPending}
           >
             확인하기
           </button>
         </div>
+
+        {/* 인증코드 확인 실패 안내 (성공 시엔 다음 화면으로 이동) */}
+        <p className="forgot-message" aria-live="polite">
+          {verifyCodeMutation.isError && (
+            <span className="forgot-error">
+              {getApiErrorMessage(verifyCodeMutation.error)}
+            </span>
+          )}
+        </p>
       </form>
 
       <p className="forgot-back">
