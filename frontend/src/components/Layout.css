@@ -1,7 +1,9 @@
 .app-shell {
   max-width: 480px;
   margin: 0 auto;
-  min-height: 100dvh;
+  /* 화면 높이에 고정하고, 스크롤은 내부(.app-main)에서만 발생 */
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -11,24 +13,26 @@
 
 .app-main {
   flex: 1;
-  /* 하단 탭바 높이만큼 여백 확보 */
-  padding-bottom: 72px;
+  /* 본문만 스크롤 → 탭바는 절대 콘텐츠를 가리지 않음 */
+  overflow-y: auto;
+  /* 스크롤은 유지하되 스크롤바는 숨김 (Firefox) */
+  scrollbar-width: none;
 }
 
-/* 하단 고정 탭바 (좁은 화면=전체 폭, 넓은 화면=중앙 480 컬럼) */
+/* 스크롤바 숨김 (Chrome/Safari 등 WebKit) */
+.app-main::-webkit-scrollbar {
+  display: none;
+}
+
+/* 하단 탭바 (스크롤 영역 밖, 인플로우로 항상 하단 고정) */
 .bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  margin-inline: auto;
-  width: 100%;
-  max-width: 480px;
+  flex-shrink: 0;
   height: 64px;
   display: flex;
   background: #fff;
   border-top: 1px solid #eee;
-  z-index: 20;
+  /* app-shell 의 좌우 1rem 패딩을 상쇄해 탭바는 전체 폭으로 */
+  margin: 0 -1rem;
 }
 
 .bottom-nav-item {
