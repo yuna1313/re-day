@@ -1,25 +1,30 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { Home, CalendarDays, BarChart3, User } from 'lucide-react'
+import './Layout.css'
+
+// 하단 탭바 (모든 메인 화면 공통)
+const TABS = [
+  { to: '/', label: '홈', Icon: Home, end: true },
+  { to: '/reflection', label: '회고', Icon: CalendarDays },
+  { to: '/insights', label: '인사이트', Icon: BarChart3 },
+  { to: '/mypage', label: '마이', Icon: User },
+]
 
 function Layout() {
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <NavLink to="/" className="brand">
-          RE:DAY
-        </NavLink>
-        <nav className="app-nav">
-          {/* NavLink는 현재 경로와 일치하면 active 클래스를 자동으로 붙여준다 */}
-          <NavLink to="/" end>
-            홈
-          </NavLink>
-          <NavLink to="/retrospectives">회고</NavLink>
-        </nav>
-      </header>
-
       <main className="app-main">
-        {/* 자식 라우트의 페이지가 여기에 렌더링된다 */}
         <Outlet />
       </main>
+
+      <nav className="bottom-nav">
+        {TABS.map(({ to, label, Icon, end }) => (
+          <NavLink key={to} to={to} end={end} className="bottom-nav-item">
+            <Icon size={24} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   )
 }

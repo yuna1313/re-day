@@ -1,0 +1,67 @@
+.app-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  /* 앱 전체 좌우 패딩은 최상단 한 곳(여기)에서만 관리 */
+  padding: 0 1rem;
+}
+
+.app-main {
+  flex: 1;
+  /* 하단 탭바 높이만큼 여백 확보 */
+  padding-bottom: 72px;
+}
+
+/* 하단 고정 탭바 (좁은 화면=전체 폭, 넓은 화면=중앙 480 컬럼) */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: 100%;
+  max-width: 480px;
+  height: 64px;
+  display: flex;
+  background: #fff;
+  border-top: 1px solid #eee;
+  z-index: 20;
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #9ca3af;
+  font-size: 11px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* NavLink 가 현재 경로와 일치하면 active 클래스를 붙여준다 */
+.bottom-nav-item.active {
+  color: #3b82f6;
+}
+
+/* 준비 중 화면 (회고/인사이트/마이) */
+.stub-page {
+  padding: 48px 0;
+}
+
+.stub-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+}
+
+.stub-desc {
+  margin: 0;
+  color: #9ca3af;
+}
