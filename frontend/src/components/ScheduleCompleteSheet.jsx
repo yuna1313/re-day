@@ -3,13 +3,19 @@ import './ScheduleCompleteSheet.css'
 
 // 일정 "완료" 시 실제 소요 시간을 입력받는 바텀시트.
 // schedule 이 있으면 열림, null 이면 닫힘(상위에서 조건부 렌더).
-function ScheduleCompleteSheet({ schedule, onClose, onComplete }) {
+function ScheduleCompleteSheet({
+  schedule,
+  onClose,
+  onComplete,
+  isSubmitting,
+  errorMessage,
+}) {
   const [actualMinutes, setActualMinutes] = useState('')
 
   if (!schedule) return null
 
   const handleSubmit = () => {
-    if (!actualMinutes) return
+    if (!actualMinutes || isSubmitting) return
     onComplete(Number(actualMinutes))
   }
 
@@ -46,23 +52,29 @@ function ScheduleCompleteSheet({ schedule, onClose, onComplete }) {
               className="complete-input"
               type="text"
               inputMode="numeric"
-              placeholder="예: 25분"
+              placeholder="예: 25"
               value={actualMinutes}
+              maxLength={4}
+              // 숫자만, 최대 4자리(9999분)
               onChange={(event) =>
-                setActualMinutes(event.target.value.replace(/\D/g, ''))
+                setActualMinutes(
+                  event.target.value.replace(/\D/g, '').slice(0, 4),
+                )
               }
             />
             <span className="complete-unit">분</span>
           </div>
         </div>
 
+        {errorMessage && <p className="complete-error">{errorMessage}</p>}
+
         <button
           type="button"
           className="complete-submit"
           onClick={handleSubmit}
-          disabled={!actualMinutes}
+          disabled={!actualMinutes || isSubmitting}
         >
-          완료하기
+          {isSubmitting ? '완료 처리 중...' : '완료하기'}
         </button>
       </div>
     </div>

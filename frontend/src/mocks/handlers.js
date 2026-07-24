@@ -13,6 +13,14 @@ const shiftDays = (base, n) => {
   return d
 }
 
+// 완료 처리된 일정을 기억하는 상태 저장형 mock: scheduleId -> { actualMinutes, completedAt }
+const completedSchedules = {}
+const nowStr = () => {
+  const d = new Date()
+  const p = (n) => String(n).padStart(2, '0')
+  return `${ymd(d)} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+
 export const handlers = [
   // 일정 목록 조회: GET /api/v1/schedules?viewType&startDate&endDate
   http.get('/api/v1/schedules', ({ request }) => {
@@ -86,11 +94,23 @@ export const handlers = [
       },
     ]
 
-    // 요청한 날짜 범위로 필터
-    const schedules = all.filter((s) => {
-      const d = s.startAt.slice(0, 10)
-      return (!startDate || d >= startDate) && (!endDate || d <= endDate)
-    })
+    // 완료 처리된 일정 반영 후, 요청한 날짜 범위로 필터
+    const schedules = all
+      .map((s) => {
+        const done = completedSchedules[s.scheduleId]
+        return done
+          ? {
+              ...s,
+              status: 'DONE',
+              actualMinutes: done.actualMinutes,
+              completedAt: done.completedAt,
+            }
+          : s
+      })
+      .filter((s) => {
+        const d = s.startAt.slice(0, 10)
+        return (!startDate || d >= startDate) && (!endDate || d <= endDate)
+      })
 
     return HttpResponse.json({
       success: true,
@@ -99,6 +119,26 @@ export const handlers = [
       data: { viewType, startDate, endDate, schedules },
     })
   }),
+
+  // 일정 완료 처리: POST /api/v1/schedules/:scheduleId/complete
+  http.post(
+    '/api/v1/schedules/:scheduleId/complete',
+    async ({ request, params }) => {
+      const scheduleId = Number(params.scheduleId)
+      const { actualMinutes } = await request.json()
+      const completedAt = nowStr()
+
+      // 상태 저장 → 이후 목록 조회에 DONE 으로 반영됨
+      completedSchedules[scheduleId] = { actualMinutes, completedAt }
+
+      return HttpResponse.json({
+        success: true,
+        code: 'SCHEDULE_COMPLETED',
+        message: '일정이 완료 처리되었습니다.',
+        data: { scheduleId, status: 'DONE', actualMinutes, completedAt },
+      })
+    },
+  ),
 
   // 로그인: POST /api/v1/auth/login
   http.post('/api/v1/auth/login', async ({ request }) => {

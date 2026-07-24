@@ -14,6 +14,7 @@ import {
 } from 'date-fns'
 import { Plus, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { useSchedules } from '../hooks/useSchedules'
+import { useCompleteSchedule } from '../hooks/useCompleteSchedule'
 import { getApiErrorMessage } from '../api/client'
 import ScheduleCompleteSheet from '../components/ScheduleCompleteSheet'
 import './HomePage.css'
@@ -67,10 +68,18 @@ function HomePage() {
 
   const items = schedulesByDate[dateKey(selectedDate)] ?? []
 
-  const handleCompleteSubmit = () => {
-    // TODO: 일정 완료 API 연동 예정 (POST /schedules/{id}/complete, { actualMinutes })
-    // 연동 후: 성공 시 schedules 쿼리 무효화로 목록 갱신
+  const completeMutation = useCompleteSchedule()
+
+  const closeCompleteSheet = () => {
     setCompletingSchedule(null)
+    completeMutation.reset() // 다음에 열 때 이전 에러가 남지 않도록
+  }
+
+  const handleCompleteSubmit = (actualMinutes) => {
+    completeMutation.mutate(
+      { scheduleId: completingSchedule.id, actualMinutes },
+      { onSuccess: closeCompleteSheet },
+    )
   }
 
   return (
@@ -236,8 +245,14 @@ function HomePage() {
       {completingSchedule && (
         <ScheduleCompleteSheet
           schedule={completingSchedule}
-          onClose={() => setCompletingSchedule(null)}
+          onClose={closeCompleteSheet}
           onComplete={handleCompleteSubmit}
+          isSubmitting={completeMutation.isPending}
+          errorMessage={
+            completeMutation.isError
+              ? getApiErrorMessage(completeMutation.error)
+              : null
+          }
         />
       )}
     </div>
