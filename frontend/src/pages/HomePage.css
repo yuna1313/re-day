@@ -273,6 +273,71 @@
   list-style: none;
 }
 
+/* ===== 로딩 스켈레톤 ===== */
+.skeleton {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background: #ececf0;
+  border-radius: 6px;
+}
+
+/* 좌→우로 지나가는 반짝임(shimmer) */
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.65),
+    transparent
+  );
+  animation: skeleton-shimmer 1.3s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+
+/* 일정 항목 모양에 맞춘 블록 크기 */
+.skel-period {
+  width: 22px;
+  height: 11px;
+  margin-bottom: 4px;
+}
+
+.skel-clock {
+  width: 34px;
+  height: 13px;
+}
+
+.skel-title {
+  width: 55%;
+  height: 15px;
+  margin-bottom: 8px;
+}
+
+.skel-badge {
+  width: 64px;
+  height: 20px;
+}
+
+.skel-action {
+  width: 62px;
+  height: 32px;
+  border-radius: 8px;
+}
+
 .schedule-item {
   display: flex;
   align-items: center;

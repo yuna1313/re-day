@@ -198,7 +198,7 @@ function HomePage() {
       <section className="schedule">
         <h2 className="schedule-title">{monthDay(selectedDate)} 일정</h2>
         {isLoading ? (
-          <p className="schedule-empty">일정을 불러오는 중...</p>
+          <ScheduleSkeleton />
         ) : isError ? (
           <p className="schedule-error">{getApiErrorMessage(error)}</p>
         ) : items.length === 0 ? (
@@ -219,6 +219,29 @@ function HomePage() {
         </button>
       </div>
     </div>
+  )
+}
+
+// 로딩 중 스켈레톤 (일정 항목 모양의 회색 블록 + shimmer)
+function ScheduleSkeleton() {
+  return (
+    <ul className="schedule-list" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <li className="schedule-item" key={i}>
+          <div className="schedule-time">
+            <span className="skeleton skel-period" />
+            <span className="skeleton skel-clock" />
+          </div>
+          <div className="schedule-body">
+            <span className="skeleton skel-title" />
+            <span className="skeleton skel-badge" />
+          </div>
+          <div className="schedule-actions">
+            <span className="skeleton skel-action" />
+          </div>
+        </li>
+      ))}
+    </ul>
   )
 }
 
