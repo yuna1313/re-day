@@ -35,14 +35,75 @@ client.interceptors.request.use((config) => {
   return config
 })
 
-// 응답 인터셉터: 성공 응답은 그대로, 에러는 공통 처리한다.
+const REFRESH_URL = '/auth/refresh'
+const MEMBER_KEY = 'member'
+
+// 만료 시 로그아웃: 토큰·회원정보 정리 후 로그인 화면으로.
+// (인터셉터는 React 밖이라 라우터 대신 location 이동을 사용)
+function forceLogout() {
+  tokenStorage.clear()
+  localStorage.removeItem(MEMBER_KEY)
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login'
+  }
+}
+
+// 동시에 여러 요청이 401 이 나도 재발급은 1번만 하도록 공유 Promise 로 묶는다.
+let refreshPromise = null
+
+function refreshAccessToken() {
+  if (!refreshPromise) {
+    const refreshToken = tokenStorage.getRefreshToken()
+    refreshPromise = client
+      .post(REFRESH_URL, { refreshToken })
+      .then((res) => {
+        const { data } = res
+        if (!data.success) throw new Error(data.message || '토큰 재발급 실패')
+        tokenStorage.set({
+          accessToken: data.data.accessToken,
+          refreshToken: data.data.refreshToken,
+        })
+        return data.data.accessToken
+      })
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+  return refreshPromise
+}
+
+// 응답 인터셉터: 401 이면 refresh 로 토큰을 재발급받아 원래 요청을 재시도한다.
 client.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // 인증 만료/실패: 토큰 정리 (이후 라우팅 처리는 호출부/가드에서)
-      tokenStorage.clear()
+  async (error) => {
+    const { response, config } = error
+
+    // 인증(auth) 요청 자체의 401(로그인 실패·refresh 만료 등)은 재발급 대상이 아님
+    const isAuthRequest = config?.url?.includes('/auth/')
+
+    if (
+      response?.status === 401 &&
+      config &&
+      !config._retry &&
+      !isAuthRequest
+    ) {
+      if (!tokenStorage.getRefreshToken()) {
+        forceLogout()
+        return Promise.reject(error)
+      }
+      config._retry = true
+      try {
+        const newAccessToken = await refreshAccessToken()
+        // 새 토큰으로 원래 요청 재시도
+        config.headers.Authorization = `Bearer ${newAccessToken}`
+        return client(config)
+      } catch (refreshError) {
+        // refresh 도 실패 → 세션 만료로 간주하고 로그아웃
+        forceLogout()
+        return Promise.reject(refreshError)
+      }
     }
+
     return Promise.reject(error)
   },
 )

@@ -37,6 +37,34 @@ export const handlers = [
     )
   }),
 
+  // 토큰 재발급: POST /api/v1/auth/refresh
+  http.post('/api/v1/auth/refresh', async ({ request }) => {
+    const { refreshToken } = await request.json()
+
+    // refreshToken 이 있으면 새 토큰 발급, 없거나 유효하지 않으면 401
+    if (refreshToken) {
+      return HttpResponse.json({
+        success: true,
+        code: 'AUTH_TOKEN_REFRESHED',
+        message: '토큰이 재발급되었습니다.',
+        data: {
+          accessToken: 'new-mock-access-token',
+          refreshToken: 'new-mock-refresh-token',
+        },
+      })
+    }
+
+    return HttpResponse.json(
+      {
+        success: false,
+        code: 'AUTH_TOKEN_REFRESH_FAIL',
+        message: '토큰 재발급에 실패했습니다.',
+        data: null,
+      },
+      { status: 401 },
+    )
+  }),
+
   // 이메일 인증코드 발송: POST /api/v1/auth/email/send-verification
   // 실패도 HTTP 200 + success:false 로 내려온다.
   http.post('/api/v1/auth/email/send-verification', async ({ request }) => {
