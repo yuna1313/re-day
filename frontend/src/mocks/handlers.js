@@ -2,7 +2,104 @@ import { http, HttpResponse } from 'msw'
 
 // 백엔드가 없을 때 사용할 가짜 응답 정의.
 // 새 API를 mock 하려면 이 배열에 핸들러를 추가하면 된다.
+// mock 일정을 오늘 기준으로 만들기 위한 헬퍼
+const ymd = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate(),
+  ).padStart(2, '0')}`
+const shiftDays = (base, n) => {
+  const d = new Date(base)
+  d.setDate(d.getDate() + n)
+  return d
+}
+
 export const handlers = [
+  // 일정 목록 조회: GET /api/v1/schedules?viewType&startDate&endDate
+  http.get('/api/v1/schedules', ({ request }) => {
+    const url = new URL(request.url)
+    const viewType = url.searchParams.get('viewType')
+    const startDate = url.searchParams.get('startDate')
+    const endDate = url.searchParams.get('endDate')
+
+    // 오늘 근처에 예시 일정 배치
+    const today = new Date()
+    const all = [
+      {
+        scheduleId: 101,
+        title: '운동하기',
+        startAt: `${ymd(today)} 08:00:00`,
+        estimatedMinutes: 15,
+        actualMinutes: 20,
+        status: 'DONE',
+        completedAt: `${ymd(today)} 08:25:00`,
+        deferCount: 0,
+      },
+      {
+        scheduleId: 102,
+        title: 'NCS 문제 풀기',
+        startAt: `${ymd(today)} 13:30:00`,
+        estimatedMinutes: 60,
+        actualMinutes: null,
+        status: 'PENDING',
+        completedAt: null,
+        deferCount: 1,
+      },
+      {
+        scheduleId: 103,
+        title: '이력서 수정',
+        startAt: `${ymd(shiftDays(today, 4))} 10:00:00`,
+        estimatedMinutes: 30,
+        actualMinutes: null,
+        status: 'PENDING',
+        completedAt: null,
+        deferCount: 0,
+      },
+      {
+        scheduleId: 104,
+        title: '알고리즘 문제',
+        startAt: `${ymd(shiftDays(today, 4))} 14:00:00`,
+        estimatedMinutes: 45,
+        actualMinutes: null,
+        status: 'PENDING',
+        completedAt: null,
+        deferCount: 0,
+      },
+      {
+        scheduleId: 105,
+        title: '독서',
+        startAt: `${ymd(shiftDays(today, 4))} 19:00:00`,
+        estimatedMinutes: 20,
+        actualMinutes: null,
+        status: 'PENDING',
+        completedAt: null,
+        deferCount: 0,
+      },
+      {
+        scheduleId: 106,
+        title: '스터디',
+        startAt: `${ymd(shiftDays(today, 5))} 09:00:00`,
+        estimatedMinutes: 90,
+        actualMinutes: null,
+        status: 'PENDING',
+        completedAt: null,
+        deferCount: 0,
+      },
+    ]
+
+    // 요청한 날짜 범위로 필터
+    const schedules = all.filter((s) => {
+      const d = s.startAt.slice(0, 10)
+      return (!startDate || d >= startDate) && (!endDate || d <= endDate)
+    })
+
+    return HttpResponse.json({
+      success: true,
+      code: 'SCHEDULE_LIST_SUCCESS',
+      message: '일정 목록 조회에 성공했습니다.',
+      data: { viewType, startDate, endDate, schedules },
+    })
+  }),
+
   // 로그인: POST /api/v1/auth/login
   http.post('/api/v1/auth/login', async ({ request }) => {
     const { email, password } = await request.json()

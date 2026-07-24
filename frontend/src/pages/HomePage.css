@@ -260,6 +260,13 @@
   font-size: 14px;
 }
 
+.schedule-error {
+  margin: 48px 0;
+  text-align: center;
+  color: #ef4444;
+  font-size: 14px;
+}
+
 .schedule-list {
   margin: 0;
   padding: 0;

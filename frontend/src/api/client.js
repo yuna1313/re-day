@@ -108,6 +108,17 @@ client.interceptors.response.use(
   },
 )
 
+// 백엔드 공통 응답에서 success:false 면(HTTP 200이어도) 메시지를 담은 에러를 던진다.
+// (여러 API 모듈에서 재사용)
+export function throwIfFailed(data, fallbackMessage) {
+  if (!data.success) {
+    const error = new Error(data.message || fallbackMessage)
+    error.code = data.code
+    throw error
+  }
+  return data
+}
+
 // API 실패 시 사용자에게 보여줄 메시지를 통일된 방식으로 뽑아낸다.
 // - HTTP 에러(예: 401): 서버 메시지가 error.response.data.message 에 있음
 // - 200 + success:false: throwIfFailed 가 던진 Error 의 message 에 있음

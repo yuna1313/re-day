@@ -3,6 +3,7 @@ import {
   startOfToday,
   startOfWeek,
   startOfMonth,
+  endOfMonth,
   addDays,
   subDays,
   addMonths,
@@ -12,6 +13,8 @@ import {
   isToday,
 } from 'date-fns'
 import { Plus, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
+import { useSchedules } from '../hooks/useSchedules'
+import { getApiErrorMessage } from '../api/client'
 import './HomePage.css'
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
@@ -23,71 +26,9 @@ const dateKey = (d) =>
 
 const monthDay = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`
 
-// TODO: 일정 조회 API 연동 예정. 지금은 오늘 근처 며칠에 예시 일정을 넣어둔다.
-const initialSchedules = () => {
-  const today = startOfToday()
-  return {
-    [dateKey(today)]: [
-      {
-        id: 1,
-        period: '오전',
-        time: '08:00',
-        title: '운동하기',
-        estimatedMin: 15,
-        completed: true,
-      },
-      {
-        id: 2,
-        period: '오후',
-        time: '01:30',
-        title: 'NCS 문제 풀기',
-        estimatedMin: 60,
-        completed: false,
-      },
-    ],
-    [dateKey(addDays(today, 4))]: [
-      {
-        id: 3,
-        period: '오전',
-        time: '10:00',
-        title: '이력서 수정',
-        estimatedMin: 30,
-        completed: false,
-      },
-      {
-        id: 4,
-        period: '오후',
-        time: '02:00',
-        title: '알고리즘 문제',
-        estimatedMin: 45,
-        completed: false,
-      },
-      {
-        id: 5,
-        period: '오후',
-        time: '07:00',
-        title: '독서',
-        estimatedMin: 20,
-        completed: false,
-      },
-    ],
-    [dateKey(addDays(today, 5))]: [
-      {
-        id: 6,
-        period: '오전',
-        time: '09:00',
-        title: '스터디',
-        estimatedMin: 90,
-        completed: false,
-      },
-    ],
-  }
-}
-
 function HomePage() {
   const [view, setView] = useState('week') // 'week' | 'month'
   const [selectedDate, setSelectedDate] = useState(() => startOfToday())
-  const [schedulesByDate, setSchedulesByDate] = useState(initialSchedules)
 
   // 주간용
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 })
@@ -100,6 +41,21 @@ function HomePage() {
   const monthDays = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i))
   const monthLabel = `${selectedDate.getFullYear()}년 ${selectedDate.getMonth() + 1}월`
 
+  // 일정 조회 범위 (주간=그 주 / 월간=그 달)
+  const rangeStart = view === 'week' ? weekStart : monthStart
+  const rangeEnd =
+    view === 'week' ? addDays(weekStart, 6) : endOfMonth(selectedDate)
+  const {
+    data: schedulesByDate = {},
+    isLoading,
+    isError,
+    error,
+  } = useSchedules({
+    viewType: view === 'week' ? 'WEEK' : 'MONTH',
+    startDate: dateKey(rangeStart),
+    endDate: dateKey(rangeEnd),
+  })
+
   // < > : 주간이면 한 주, 월간이면 한 달 이동
   const handlePrev = () =>
     setSelectedDate((d) => (view === 'week' ? subDays(d, 7) : subMonths(d, 1)))
@@ -107,16 +63,6 @@ function HomePage() {
     setSelectedDate((d) => (view === 'week' ? addDays(d, 7) : addMonths(d, 1)))
 
   const items = schedulesByDate[dateKey(selectedDate)] ?? []
-
-  const completeItem = (id) => {
-    const key = dateKey(selectedDate)
-    setSchedulesByDate((prev) => ({
-      ...prev,
-      [key]: prev[key].map((it) =>
-        it.id === id ? { ...it, completed: true } : it,
-      ),
-    }))
-  }
 
   return (
     <div className="home">
@@ -251,16 +197,16 @@ function HomePage() {
       {/* 공통: 선택 날짜 일정 (주간/월간 공유) */}
       <section className="schedule">
         <h2 className="schedule-title">{monthDay(selectedDate)} 일정</h2>
-        {items.length === 0 ? (
+        {isLoading ? (
+          <p className="schedule-empty">일정을 불러오는 중...</p>
+        ) : isError ? (
+          <p className="schedule-error">{getApiErrorMessage(error)}</p>
+        ) : items.length === 0 ? (
           <p className="schedule-empty">등록된 일정이 없어요.</p>
         ) : (
           <ul className="schedule-list">
             {items.map((item) => (
-              <ScheduleItem
-                key={item.id}
-                item={item}
-                onComplete={() => completeItem(item.id)}
-              />
+              <ScheduleItem key={item.id} item={item} />
             ))}
           </ul>
         )}
@@ -276,7 +222,7 @@ function HomePage() {
   )
 }
 
-function ScheduleItem({ item, onComplete }) {
+function ScheduleItem({ item }) {
   return (
     <li className="schedule-item">
       <div className="schedule-time">
@@ -301,7 +247,8 @@ function ScheduleItem({ item, onComplete }) {
             <button type="button" className="btn-defer">
               미루기
             </button>
-            <button type="button" className="btn-complete" onClick={onComplete}>
+            {/* TODO: 완료 API 연동 예정 */}
+            <button type="button" className="btn-complete">
               완료
             </button>
           </>

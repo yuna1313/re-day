@@ -1,16 +1,4 @@
-import client from './client'
-
-// 백엔드 공통 응답 형태: { success, code, message, data }
-// 일부 API는 실패도 HTTP 200 + success:false 로 내려온다. 그런 경우 success 를 직접
-// 확인해 false 면 메시지를 담은 에러를 던져, React Query 의 onError 로 처리되게 한다.
-function throwIfFailed(data, fallbackMessage) {
-  if (!data.success) {
-    const error = new Error(data.message || fallbackMessage)
-    error.code = data.code
-    throw error
-  }
-  return data
-}
+import client, { throwIfFailed } from './client'
 
 // 인증 관련 API (백엔드: /api/v1/auth/**)
 export const authApi = {
