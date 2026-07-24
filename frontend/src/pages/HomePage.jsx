@@ -15,6 +15,7 @@ import {
 import { Plus, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { useSchedules } from '../hooks/useSchedules'
 import { getApiErrorMessage } from '../api/client'
+import ScheduleCompleteSheet from '../components/ScheduleCompleteSheet'
 import './HomePage.css'
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
@@ -29,6 +30,8 @@ const monthDay = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`
 function HomePage() {
   const [view, setView] = useState('week') // 'week' | 'month'
   const [selectedDate, setSelectedDate] = useState(() => startOfToday())
+  // '완료' 클릭한 일정 (null 이면 완료 시트 닫힘)
+  const [completingSchedule, setCompletingSchedule] = useState(null)
 
   // 주간용
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 })
@@ -63,6 +66,12 @@ function HomePage() {
     setSelectedDate((d) => (view === 'week' ? addDays(d, 7) : addMonths(d, 1)))
 
   const items = schedulesByDate[dateKey(selectedDate)] ?? []
+
+  const handleCompleteSubmit = () => {
+    // TODO: 일정 완료 API 연동 예정 (POST /schedules/{id}/complete, { actualMinutes })
+    // 연동 후: 성공 시 schedules 쿼리 무효화로 목록 갱신
+    setCompletingSchedule(null)
+  }
 
   return (
     <div className="home">
@@ -206,7 +215,11 @@ function HomePage() {
         ) : (
           <ul className="schedule-list">
             {items.map((item) => (
-              <ScheduleItem key={item.id} item={item} />
+              <ScheduleItem
+                key={item.id}
+                item={item}
+                onCompleteClick={setCompletingSchedule}
+              />
             ))}
           </ul>
         )}
@@ -218,6 +231,15 @@ function HomePage() {
           <Plus size={28} />
         </button>
       </div>
+
+      {/* 일정 완료 시트 (완료 버튼 클릭 시) */}
+      {completingSchedule && (
+        <ScheduleCompleteSheet
+          schedule={completingSchedule}
+          onClose={() => setCompletingSchedule(null)}
+          onComplete={handleCompleteSubmit}
+        />
+      )}
     </div>
   )
 }
@@ -245,7 +267,7 @@ function ScheduleSkeleton() {
   )
 }
 
-function ScheduleItem({ item }) {
+function ScheduleItem({ item, onCompleteClick }) {
   return (
     <li className="schedule-item">
       <div className="schedule-time">
@@ -270,8 +292,11 @@ function ScheduleItem({ item }) {
             <button type="button" className="btn-defer">
               미루기
             </button>
-            {/* TODO: 완료 API 연동 예정 */}
-            <button type="button" className="btn-complete">
+            <button
+              type="button"
+              className="btn-complete"
+              onClick={() => onCompleteClick(item)}
+            >
               완료
             </button>
           </>
