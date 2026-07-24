@@ -6,6 +6,7 @@ import SignupPage from './pages/SignupPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import HomePage from './pages/HomePage'
+import ScheduleDetailPage from './pages/ScheduleDetailPage'
 import ReflectionPage from './pages/ReflectionPage'
 import InsightsPage from './pages/InsightsPage'
 import MyPage from './pages/MyPage'
@@ -25,6 +26,10 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
+          <Route
+            path="/schedules/:scheduleId"
+            element={<ScheduleDetailPage />}
+          />
           <Route path="/reflection" element={<ReflectionPage />} />
           <Route path="/insights" element={<InsightsPage />} />
           <Route path="/mypage" element={<MyPage />} />

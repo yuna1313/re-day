@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   startOfToday,
   startOfWeek,
@@ -29,6 +30,7 @@ const dateKey = (d) =>
 const monthDay = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`
 
 function HomePage() {
+  const navigate = useNavigate()
   const [view, setView] = useState('week') // 'week' | 'month'
   const [selectedDate, setSelectedDate] = useState(() => startOfToday())
   // '완료' 클릭한 일정 (null 이면 완료 시트 닫힘)
@@ -228,6 +230,9 @@ function HomePage() {
                 key={item.id}
                 item={item}
                 onCompleteClick={setCompletingSchedule}
+                onItemClick={(it) =>
+                  navigate(`/schedules/${it.id}`, { state: { schedule: it } })
+                }
               />
             ))}
           </ul>
@@ -282,18 +287,25 @@ function ScheduleSkeleton() {
   )
 }
 
-function ScheduleItem({ item, onCompleteClick }) {
+function ScheduleItem({ item, onCompleteClick, onItemClick }) {
   return (
     <li className="schedule-item">
-      <div className="schedule-time">
-        <span className="schedule-period">{item.period}</span>
-        <span className="schedule-clock">{item.time}</span>
-      </div>
+      {/* 시간+제목 영역을 누르면 상세로 이동 (버튼과 분리) */}
+      <button
+        type="button"
+        className="schedule-main"
+        onClick={() => onItemClick(item)}
+      >
+        <div className="schedule-time">
+          <span className="schedule-period">{item.period}</span>
+          <span className="schedule-clock">{item.time}</span>
+        </div>
 
-      <div className="schedule-body">
-        <p className="schedule-name">{item.title}</p>
-        <span className="schedule-est">예상 {item.estimatedMin}분</span>
-      </div>
+        <div className="schedule-body">
+          <p className="schedule-name">{item.title}</p>
+          <span className="schedule-est">예상 {item.estimatedMin}분</span>
+        </div>
+      </button>
 
       <div className="schedule-actions">
         {item.completed ? (

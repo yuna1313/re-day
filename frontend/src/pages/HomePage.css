@@ -346,6 +346,22 @@
   border-bottom: 1px solid #f0f0f0;
 }
 
+/* 시간+제목 클릭 영역 (상세로 이동) */
+.schedule-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .schedule-time {
   display: flex;
   flex-direction: column;
