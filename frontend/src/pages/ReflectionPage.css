@@ -1,0 +1,135 @@
+.reflection-page {
+  padding: 0 0 24px;
+}
+
+/* 헤더 */
+.reflection-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0 2px;
+}
+
+.reflection-title {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 700;
+  color: #111;
+}
+
+/* 섹션 공통 */
+.reflection-section {
+  margin-top: 24px;
+}
+
+.reflection-heading {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+}
+
+/* 오늘 완료한 일정 */
+.completed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.completed-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.completed-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #111;
+  line-height: 20px;
+}
+
+.reflection-empty {
+  margin: 0;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* 로딩 스켈레톤 (전역 .skeleton 재사용) */
+.refl-skel-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.refl-skel-title {
+  width: 45%;
+  height: 15px;
+}
+
+/* 오늘의 회고 작성 */
+.reflection-subtext {
+  margin: -4px 0 12px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.reflection-textarea-wrap {
+  position: relative;
+}
+
+.reflection-textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 160px;
+  padding: 16px;
+  padding-bottom: 34px; /* 하단 글자 수 카운터 공간 */
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #111;
+  resize: none;
+  outline: none;
+}
+
+.reflection-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.reflection-textarea:focus {
+  border-color: #3b82f6;
+}
+
+.reflection-counter {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.reflection-submit {
+  margin-top: 20px;
+  width: 100%;
+  padding: 17px;
+  border: none;
+  border-radius: 14px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.reflection-submit:disabled {
+  background: #bcd3f7;
+  cursor: not-allowed;
+}
