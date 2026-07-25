@@ -15,6 +15,9 @@ const shiftDays = (base, n) => {
 
 // 완료 처리된 일정을 기억하는 상태 저장형 mock: scheduleId -> { actualMinutes, completedAt }
 const completedSchedules = {}
+// 새로 등록된 일정을 기억
+let nextScheduleId = 200
+const createdSchedules = []
 const nowStr = () => {
   const d = new Date()
   const p = (n) => String(n).padStart(2, '0')
@@ -92,6 +95,8 @@ export const handlers = [
         completedAt: null,
         deferCount: 0,
       },
+      // 새로 등록한 일정 포함
+      ...createdSchedules,
     ]
 
     // 완료 처리된 일정 반영 후, 요청한 날짜 범위로 필터
@@ -117,6 +122,31 @@ export const handlers = [
       code: 'SCHEDULE_LIST_SUCCESS',
       message: '일정 목록 조회에 성공했습니다.',
       data: { viewType, startDate, endDate, schedules },
+    })
+  }),
+
+  // 일정 생성: POST /api/v1/schedules
+  http.post('/api/v1/schedules', async ({ request }) => {
+    const { title, startAt, estimatedMinutes, memo } = await request.json()
+    const scheduleId = nextScheduleId++
+
+    createdSchedules.push({
+      scheduleId,
+      title,
+      startAt,
+      estimatedMinutes,
+      actualMinutes: null,
+      status: 'PENDING',
+      completedAt: null,
+      deferCount: 0,
+      memo: memo ?? null,
+    })
+
+    return HttpResponse.json({
+      success: true,
+      code: 'SCHEDULE_CREATED',
+      message: '일정이 등록되었습니다.',
+      data: { scheduleId },
     })
   }),
 

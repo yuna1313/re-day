@@ -12,6 +12,18 @@ export const scheduleApi = {
     return throwIfFailed(data, '일정 목록 조회에 실패했습니다.').data
   },
 
+  // 일정 생성
+  // startAt: 'yyyy-MM-dd HH:mm:ss' / 반환: { scheduleId }
+  createSchedule: async ({ title, startAt, estimatedMinutes, memo }) => {
+    const { data } = await client.post('/schedules', {
+      title,
+      startAt,
+      estimatedMinutes,
+      memo,
+    })
+    return throwIfFailed(data, '일정 등록에 실패했습니다.').data
+  },
+
   // 일정 완료 처리 (실제 소요 시간 저장)
   // 반환: { scheduleId, status, actualMinutes, completedAt }
   completeSchedule: async ({ scheduleId, actualMinutes }) => {

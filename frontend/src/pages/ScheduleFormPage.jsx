@@ -1,7 +1,16 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, useParams, Navigate } from 'react-router-dom'
 import { ChevronLeft, ChevronUp, ChevronDown } from 'lucide-react'
+import { useCreateSchedule } from '../hooks/useCreateSchedule'
+import { getApiErrorMessage } from '../api/client'
 import './ScheduleFormPage.css'
+
+// 폼의 날짜 + 시간(12h) → 'yyyy-MM-dd HH:mm:ss'
+function buildStartAt(date, time) {
+  const hour24 = time.ampm === 'AM' ? time.hour % 12 : (time.hour % 12) + 12
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${date} ${pad(hour24)}:${pad(time.minute)}:00`
+}
 
 // 기존 일정(수정)에서 초기 시간 파싱. 없으면 오전 12:00.
 function parseInitialTime(schedule) {
@@ -32,6 +41,8 @@ function ScheduleFormPage() {
   const [memo, setMemo] = useState(schedule?.memo ?? '')
   const [showTimePicker, setShowTimePicker] = useState(false)
 
+  const createMutation = useCreateSchedule()
+
   // 수정인데 데이터가 없으면(직접 접근/새로고침) 홈으로
   // TODO: 상세 조회 API(GET /schedules/{id}) 연동 시 직접 조회로 대체
   if (isEdit && !schedule) {
@@ -42,12 +53,27 @@ function ScheduleFormPage() {
     time.hour,
   ).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`
 
-  const isSubmitDisabled = !title || !date || !estimatedMinutes
+  const isSubmitDisabled =
+    !title || !date || !estimatedMinutes || createMutation.isPending
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    // TODO: 등록(POST /schedules) / 수정(PATCH /schedules/{id}) API 연동 예정
-    navigate(-1)
+
+    if (isEdit) {
+      // TODO: 일정 수정 API(PATCH /schedules/{id}) 연동 예정
+      navigate(-1)
+      return
+    }
+
+    createMutation.mutate(
+      {
+        title,
+        startAt: buildStartAt(date, time),
+        estimatedMinutes: Number(estimatedMinutes),
+        memo,
+      },
+      { onSuccess: () => navigate(-1) },
+    )
   }
 
   return (
@@ -142,12 +168,18 @@ function ScheduleFormPage() {
           />
         </div>
 
+        {createMutation.isError && (
+          <p className="form-error">
+            {getApiErrorMessage(createMutation.error)}
+          </p>
+        )}
+
         <button
           type="submit"
           className="form-submit"
           disabled={isSubmitDisabled}
         >
-          {isEdit ? '수정' : '등록'}
+          {isEdit ? '수정' : createMutation.isPending ? '등록 중...' : '등록'}
         </button>
       </form>
     </div>
