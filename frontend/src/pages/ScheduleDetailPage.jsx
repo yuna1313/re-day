@@ -65,12 +65,21 @@ function ScheduleDetailPage() {
         <p className="detail-memo-empty">작성된 메모가 없어요.</p>
       </div>
 
-      {/* 수정 / 삭제 */}
+      {/* 수정 / 삭제 (완료된 일정은 기록이므로 수정 불가, 삭제만 가능) */}
       <div className="detail-actions">
-        {/* TODO: 일정 수정 화면 연결 */}
-        <button type="button" className="detail-edit">
-          수정하기
-        </button>
+        {!schedule.completed && (
+          <button
+            type="button"
+            className="detail-edit"
+            onClick={() =>
+              navigate(`/schedules/${schedule.id}/edit`, {
+                state: { schedule },
+              })
+            }
+          >
+            수정하기
+          </button>
+        )}
         {/* TODO: 일정 삭제 API 연동 */}
         <button type="button" className="detail-delete">
           삭제하기

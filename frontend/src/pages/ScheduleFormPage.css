@@ -1,0 +1,170 @@
+.form-page {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: 12px 24px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 헤더: 뒤로가기(좌) + 가운데 제목 */
+.form-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+}
+
+.form-back {
+  position: absolute;
+  left: -4px;
+  display: flex;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.form-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+}
+
+.form-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+}
+
+.form-field {
+  margin-bottom: 22px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  background: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  /* iOS 입력 시 확대 방지 */
+  font-size: 16px;
+  color: #111;
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
+/* 시작 시간 필드(버튼) */
+.form-time-field {
+  text-align: left;
+  cursor: pointer;
+  /* 탭 시 하늘색 하이라이트 제거 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 예상 시간 (분 단위 접미사) */
+.form-est-wrap {
+  position: relative;
+}
+
+.form-est-input {
+  padding-right: 42px;
+}
+
+.form-est-unit {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: #6b7280;
+}
+
+/* 시간 스테퍼 */
+.time-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 10px 22px;
+  background: #fff;
+  border: 1px solid #eceef1;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(17, 24, 39, 0.05);
+}
+
+.ts-left {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.ts-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.ts-btn {
+  display: flex;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ts-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+}
+
+.ts-colon {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+}
+
+/* 등록/수정 버튼 (하단) */
+.form-submit {
+  margin-top: auto;
+  width: 100%;
+  padding: 17px;
+  border: none;
+  border-radius: 14px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.form-submit:disabled {
+  background: #bcd3f7;
+  cursor: not-allowed;
+}

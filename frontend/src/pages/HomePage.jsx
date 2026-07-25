@@ -239,9 +239,14 @@ function HomePage() {
         )}
       </section>
 
-      {/* 일정 추가 버튼 (추후 팝업 연결) */}
+      {/* 일정 추가 버튼 → 등록 화면 */}
       <div className="home-fab-area">
-        <button type="button" className="home-fab" aria-label="일정 추가">
+        <button
+          type="button"
+          className="home-fab"
+          aria-label="일정 추가"
+          onClick={() => navigate('/schedules/new')}
+        >
           <Plus size={28} />
         </button>
       </div>
