@@ -46,9 +46,11 @@ public class ScheduleService {
 	private static final int MAX_DEFER_REASON_DETAIL_LENGTH = 500;
 	private static final String CUSTOM_DEFER_REASON_CODE = "CUSTOM";
 	private static final Set<String> ALLOWED_DEFER_REASON_CODES = Set.of(
+		"LONGER_THAN_EXPECTED",
+		"NOT_STARTED",
 		"NO_TIME",
 		"COULD_NOT_FOCUS",
-		"LONGER_THAN_EXPECTED",
+		"TOO_BIG",
 		CUSTOM_DEFER_REASON_CODE
 	);
 

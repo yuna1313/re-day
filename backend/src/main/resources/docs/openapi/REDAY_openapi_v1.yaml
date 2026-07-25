@@ -1359,6 +1359,13 @@ paths:
               properties:
                 deferReasonCode:
                   type: string
+                  enum:
+                  - LONGER_THAN_EXPECTED
+                  - NOT_STARTED
+                  - NO_TIME
+                  - COULD_NOT_FOCUS
+                  - TOO_BIG
+                  - CUSTOM
                 deferReasonDetail:
                   type:
                   - string

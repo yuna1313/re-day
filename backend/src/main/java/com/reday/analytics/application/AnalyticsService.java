@@ -269,8 +269,10 @@ public class AnalyticsService {
 	private String deferReasonLabel(String deferReasonCode) {
 		return switch (deferReasonCode) {
 			case "LONGER_THAN_EXPECTED" -> "예상보다 오래 걸림";
+			case "NOT_STARTED" -> "시작을 못 함";
 			case "COULD_NOT_FOCUS" -> "집중 안 됨";
 			case "NO_TIME" -> "시간이 없었음";
+			case "TOO_BIG" -> "작업량이 너무 큼";
 			case "CUSTOM" -> "직접 입력";
 			default -> deferReasonCode;
 		};
