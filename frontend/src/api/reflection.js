@@ -20,8 +20,7 @@ export const reflectionApi = {
     return throwIfFailed(data, '회고 작성에 실패했습니다.').data
   },
 
-  // 회고 수정 (내용 변경)
-  // ※ 백엔드 스펙 확정 전 관례(PATCH /reflections/{id}, body { content })로 가정
+  // 회고 수정 (내용 변경) / 반환: null
   updateReflection: async ({ reflectionId, content }) => {
     const { data } = await client.patch(`/reflections/${reflectionId}`, {
       content,
