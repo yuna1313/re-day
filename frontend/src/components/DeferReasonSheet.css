@@ -138,3 +138,9 @@
   background: #bcd3f7;
   cursor: not-allowed;
 }
+
+.defer-error {
+  margin: 0 2px 12px;
+  font-size: 14px;
+  color: #ef4444;
+}

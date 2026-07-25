@@ -16,6 +16,7 @@ import {
 import { Plus, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { useSchedules } from '../hooks/useSchedules'
 import { useCompleteSchedule } from '../hooks/useCompleteSchedule'
+import { useDeferSchedule } from '../hooks/useDeferSchedule'
 import { getApiErrorMessage } from '../api/client'
 import ScheduleCompleteSheet from '../components/ScheduleCompleteSheet'
 import DeferReasonSheet from '../components/DeferReasonSheet'
@@ -87,9 +88,23 @@ function HomePage() {
     )
   }
 
-  const handleDeferSubmit = () => {
-    // TODO: 일정 미루기 API 연동 예정 (POST /schedules/{id}/defer)
+  const deferMutation = useDeferSchedule()
+
+  const closeDeferSheet = () => {
     setDeferringSchedule(null)
+    deferMutation.reset()
+  }
+
+  const handleDeferSubmit = ({ deferReasonCode, deferReasonDetail }) => {
+    deferMutation.mutate(
+      {
+        scheduleId: deferringSchedule.id,
+        deferReasonCode,
+        deferReasonDetail,
+        newStartAt: null, // 시안에 시간 변경 입력이 없어 사유만 기록
+      },
+      { onSuccess: closeDeferSheet },
+    )
   }
 
   return (
@@ -279,8 +294,14 @@ function HomePage() {
       {deferringSchedule && (
         <DeferReasonSheet
           schedule={deferringSchedule}
-          onClose={() => setDeferringSchedule(null)}
+          onClose={closeDeferSheet}
           onDefer={handleDeferSubmit}
+          isSubmitting={deferMutation.isPending}
+          errorMessage={
+            deferMutation.isError
+              ? getApiErrorMessage(deferMutation.error)
+              : null
+          }
         />
       )}
     </div>

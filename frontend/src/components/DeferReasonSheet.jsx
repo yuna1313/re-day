@@ -4,7 +4,13 @@ import './DeferReasonSheet.css'
 
 // 일정 "미루기" 시 이유를 선택받는 바텀시트.
 // schedule 이 있으면 열림, null 이면 닫힘(상위에서 조건부 렌더).
-function DeferReasonSheet({ schedule, onClose, onDefer }) {
+function DeferReasonSheet({
+  schedule,
+  onClose,
+  onDefer,
+  isSubmitting,
+  errorMessage,
+}) {
   const [selectedCode, setSelectedCode] = useState(null)
   const [customDetail, setCustomDetail] = useState('')
 
@@ -15,7 +21,7 @@ function DeferReasonSheet({ schedule, onClose, onDefer }) {
   const canSubmit = Boolean(selectedCode) && (!isCustom || customDetail.trim())
 
   const handleSubmit = () => {
-    if (!canSubmit) return
+    if (!canSubmit || isSubmitting) return
     onDefer({
       deferReasonCode: selectedCode,
       deferReasonDetail: isCustom ? customDetail.trim() : '',
@@ -82,13 +88,15 @@ function DeferReasonSheet({ schedule, onClose, onDefer }) {
           </div>
         </div>
 
+        {errorMessage && <p className="defer-error">{errorMessage}</p>}
+
         <button
           type="button"
           className="defer-submit"
           onClick={handleSubmit}
-          disabled={!canSubmit}
+          disabled={!canSubmit || isSubmitting}
         >
-          미루기
+          {isSubmitting ? '미루는 중...' : '미루기'}
         </button>
       </div>
     </div>

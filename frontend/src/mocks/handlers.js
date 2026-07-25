@@ -189,6 +189,35 @@ export const handlers = [
     })
   }),
 
+  // 일정 미루기: POST /api/v1/schedules/:scheduleId/defer
+  http.post(
+    '/api/v1/schedules/:scheduleId/defer',
+    async ({ request, params }) => {
+      const scheduleId = Number(params.scheduleId)
+      const { newStartAt } = await request.json()
+
+      // 새 시작일시가 있으면 목록에 반영
+      if (newStartAt) {
+        updatedSchedules[scheduleId] = {
+          ...(updatedSchedules[scheduleId] ?? {}),
+          startAt: newStartAt,
+        }
+      }
+
+      return HttpResponse.json({
+        success: true,
+        code: 'SCHEDULE_DEFERRED',
+        message: '일정이 미뤄졌습니다.',
+        data: {
+          scheduleId,
+          status: 'PENDING',
+          startAt: newStartAt ?? null,
+          deferCount: 1,
+        },
+      })
+    },
+  ),
+
   // 일정 완료 처리: POST /api/v1/schedules/:scheduleId/complete
   http.post(
     '/api/v1/schedules/:scheduleId/complete',

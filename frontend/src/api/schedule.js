@@ -55,4 +55,20 @@ export const scheduleApi = {
     const { data } = await client.delete(`/schedules/${scheduleId}`)
     return throwIfFailed(data, '일정 삭제에 실패했습니다.').data
   },
+
+  // 일정 미루기 (사유 저장, 필요 시 시작일시 변경)
+  // 반환: { scheduleId, status, startAt, deferCount }
+  deferSchedule: async ({
+    scheduleId,
+    deferReasonCode,
+    deferReasonDetail,
+    newStartAt,
+  }) => {
+    const { data } = await client.post(`/schedules/${scheduleId}/defer`, {
+      deferReasonCode,
+      deferReasonDetail,
+      newStartAt,
+    })
+    return throwIfFailed(data, '일정 미루기에 실패했습니다.').data
+  },
 }
