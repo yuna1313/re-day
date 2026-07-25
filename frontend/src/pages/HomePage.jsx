@@ -18,6 +18,7 @@ import { useSchedules } from '../hooks/useSchedules'
 import { useCompleteSchedule } from '../hooks/useCompleteSchedule'
 import { getApiErrorMessage } from '../api/client'
 import ScheduleCompleteSheet from '../components/ScheduleCompleteSheet'
+import DeferReasonSheet from '../components/DeferReasonSheet'
 import './HomePage.css'
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
@@ -35,6 +36,8 @@ function HomePage() {
   const [selectedDate, setSelectedDate] = useState(() => startOfToday())
   // '완료' 클릭한 일정 (null 이면 완료 시트 닫힘)
   const [completingSchedule, setCompletingSchedule] = useState(null)
+  // '미루기' 클릭한 일정 (null 이면 미루기 시트 닫힘)
+  const [deferringSchedule, setDeferringSchedule] = useState(null)
 
   // 주간용
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 })
@@ -82,6 +85,11 @@ function HomePage() {
       { scheduleId: completingSchedule.id, actualMinutes },
       { onSuccess: closeCompleteSheet },
     )
+  }
+
+  const handleDeferSubmit = () => {
+    // TODO: 일정 미루기 API 연동 예정 (POST /schedules/{id}/defer)
+    setDeferringSchedule(null)
   }
 
   return (
@@ -230,6 +238,7 @@ function HomePage() {
                 key={item.id}
                 item={item}
                 onCompleteClick={setCompletingSchedule}
+                onDeferClick={setDeferringSchedule}
                 onItemClick={(it) =>
                   navigate(`/schedules/${it.id}`, { state: { schedule: it } })
                 }
@@ -265,6 +274,15 @@ function HomePage() {
           }
         />
       )}
+
+      {/* 일정 미루기 시트 (미루기 버튼 클릭 시) */}
+      {deferringSchedule && (
+        <DeferReasonSheet
+          schedule={deferringSchedule}
+          onClose={() => setDeferringSchedule(null)}
+          onDefer={handleDeferSubmit}
+        />
+      )}
     </div>
   )
 }
@@ -292,7 +310,7 @@ function ScheduleSkeleton() {
   )
 }
 
-function ScheduleItem({ item, onCompleteClick, onItemClick }) {
+function ScheduleItem({ item, onCompleteClick, onDeferClick, onItemClick }) {
   return (
     <li className="schedule-item">
       {/* 시간+제목 영역을 누르면 상세로 이동 (버튼과 분리) */}
@@ -320,8 +338,11 @@ function ScheduleItem({ item, onCompleteClick, onItemClick }) {
           </span>
         ) : (
           <>
-            {/* TODO: 미루기 API 연동 예정 */}
-            <button type="button" className="btn-defer">
+            <button
+              type="button"
+              className="btn-defer"
+              onClick={() => onDeferClick(item)}
+            >
               미루기
             </button>
             <button

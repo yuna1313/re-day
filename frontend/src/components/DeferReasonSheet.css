@@ -1,0 +1,140 @@
+.defer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.defer-sheet {
+  width: 100%;
+  max-width: 480px;
+  height: 85dvh;
+  box-sizing: border-box;
+  padding: 12px 24px 24px;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: defer-up 0.25s ease-out;
+}
+
+@keyframes defer-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* 상단 그래버 */
+.defer-grabber {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 6px 0 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.defer-grabber-bar {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: #d1d5db;
+}
+
+.defer-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.defer-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+}
+
+.defer-subtitle {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.defer-options {
+  display: flex;
+  flex-direction: column;
+}
+
+.defer-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  font-size: 15px;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 텍스트 줄높이를 라디오 높이와 맞춰 세로 중앙 정렬 */
+.defer-option span {
+  line-height: 20px;
+}
+
+.defer-radio {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  /* 브라우저 기본 마진 제거 → 텍스트와 세로 정렬 */
+  margin: 0;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.defer-custom-input {
+  margin-top: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  background: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  /* iOS 입력 시 확대 방지 */
+  font-size: 16px;
+  color: #111;
+  outline: none;
+}
+
+.defer-custom-input::placeholder {
+  color: #9ca3af;
+}
+
+.defer-submit {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 17px;
+  border: none;
+  border-radius: 14px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.defer-submit:disabled {
+  background: #bcd3f7;
+  cursor: not-allowed;
+}
