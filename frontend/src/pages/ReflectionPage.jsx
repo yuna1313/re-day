@@ -2,12 +2,16 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import { CheckCircle2 } from 'lucide-react'
 import { useSchedules } from '../hooks/useSchedules'
+import { useCreateReflection } from '../hooks/useCreateReflection'
+import { getApiErrorMessage } from '../api/client'
 import './ReflectionPage.css'
 
 const MAX_LENGTH = 1000
 
 function ReflectionPage() {
   const [content, setContent] = useState('')
+  // 작성 완료 여부 (하루 1개 제한 → 저장 후 중복 작성 방지)
+  const [saved, setSaved] = useState(false)
 
   // 오늘의 완료한 일정 (일정 목록에서 오늘 + 완료만)
   const todayKey = format(new Date(), 'yyyy-MM-dd')
@@ -18,8 +22,14 @@ function ReflectionPage() {
   })
   const completed = (byDate[todayKey] ?? []).filter((item) => item.completed)
 
+  const createMutation = useCreateReflection()
+
   const handleSubmit = () => {
-    // TODO: 오늘의 회고 작성 API 연동 예정 (POST /reflections)
+    if (!content.trim() || createMutation.isPending) return
+    createMutation.mutate(
+      { reflectionDate: todayKey, content: content.trim() },
+      { onSuccess: () => setSaved(true) },
+    )
   }
 
   return (
@@ -66,6 +76,7 @@ function ReflectionPage() {
             placeholder="오늘 느낀 점이나 배운 점을 자유롭게 작성해보세요."
             value={content}
             maxLength={MAX_LENGTH}
+            disabled={saved}
             onChange={(event) => setContent(event.target.value)}
           />
           <span className="reflection-counter">
@@ -73,13 +84,22 @@ function ReflectionPage() {
           </span>
         </div>
 
+        {createMutation.isError && (
+          <p className="reflection-error">
+            {getApiErrorMessage(createMutation.error)}
+          </p>
+        )}
+        {saved && (
+          <p className="reflection-success">오늘의 회고를 저장했어요.</p>
+        )}
+
         <button
           type="button"
           className="reflection-submit"
           onClick={handleSubmit}
-          disabled={!content.trim()}
+          disabled={!content.trim() || createMutation.isPending || saved}
         >
-          작성하기
+          {createMutation.isPending ? '작성 중...' : '작성하기'}
         </button>
       </section>
     </div>

@@ -114,6 +114,18 @@
   color: #9ca3af;
 }
 
+.reflection-error {
+  margin: 12px 2px 0;
+  font-size: 14px;
+  color: #ef4444;
+}
+
+.reflection-success {
+  margin: 12px 2px 0;
+  font-size: 14px;
+  color: #3b82f6;
+}
+
 .reflection-submit {
   margin-top: 20px;
   width: 100%;

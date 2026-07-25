@@ -22,6 +22,9 @@ const createdSchedules = []
 const updatedSchedules = {}
 // 삭제(soft delete)된 일정 id
 const deletedScheduleIds = new Set()
+// 이미 회고를 작성한 날짜(하루 1개 제한 검증용) / 다음 회고 id
+const createdReflectionDates = new Set()
+let nextReflectionId = 11
 const nowStr = () => {
   const d = new Date()
   const p = (n) => String(n).padStart(2, '0')
@@ -237,6 +240,30 @@ export const handlers = [
       })
     },
   ),
+
+  // 회고 작성: POST /api/v1/reflections
+  // 회원별 같은 날짜에는 1개만 작성 가능 → 실패도 HTTP 200 + success:false 로 내려온다.
+  http.post('/api/v1/reflections', async ({ request }) => {
+    const { reflectionDate } = await request.json()
+
+    // 이미 작성한 날짜면 실패 응답 (하루 1개 제한)
+    if (createdReflectionDates.has(reflectionDate)) {
+      return HttpResponse.json({
+        success: false,
+        code: 'REFLECTION_ALREADY_EXISTS',
+        message: '이미 오늘의 회고를 작성했습니다.',
+        data: null,
+      })
+    }
+
+    createdReflectionDates.add(reflectionDate)
+    return HttpResponse.json({
+      success: true,
+      code: 'REFLECTION_CREATED',
+      message: '회고가 작성되었습니다.',
+      data: { reflectionId: nextReflectionId++ },
+    })
+  }),
 
   // 로그인: POST /api/v1/auth/login
   http.post('/api/v1/auth/login', async ({ request }) => {
