@@ -22,13 +22,97 @@ const createdSchedules = []
 const updatedSchedules = {}
 // 삭제(soft delete)된 일정 id
 const deletedScheduleIds = new Set()
-// 이미 회고를 작성한 날짜(하루 1개 제한 검증용) / 다음 회고 id
-const createdReflectionDates = new Set()
+// 작성된 회고: 'yyyy-MM-dd' -> { reflectionId, reflectionDate, content }
+const reflectionsByDate = {}
 let nextReflectionId = 11
 const nowStr = () => {
   const d = new Date()
   const p = (n) => String(n).padStart(2, '0')
   return `${ymd(d)} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+
+// 기본 예시 일정 + 등록/수정/완료 상태를 반영한 목록 (날짜 필터 전)
+function getResolvedSchedules() {
+  const today = new Date()
+  const base = [
+    {
+      scheduleId: 101,
+      title: '운동하기',
+      startAt: `${ymd(today)} 08:00:00`,
+      estimatedMinutes: 15,
+      actualMinutes: 20,
+      status: 'DONE',
+      completedAt: `${ymd(today)} 08:25:00`,
+      deferCount: 0,
+    },
+    {
+      scheduleId: 102,
+      title: 'NCS 문제 풀기',
+      startAt: `${ymd(today)} 13:30:00`,
+      estimatedMinutes: 60,
+      actualMinutes: null,
+      status: 'PENDING',
+      completedAt: null,
+      deferCount: 1,
+    },
+    {
+      scheduleId: 103,
+      title: '이력서 수정',
+      startAt: `${ymd(shiftDays(today, 4))} 10:00:00`,
+      estimatedMinutes: 30,
+      actualMinutes: null,
+      status: 'PENDING',
+      completedAt: null,
+      deferCount: 0,
+    },
+    {
+      scheduleId: 104,
+      title: '알고리즘 문제',
+      startAt: `${ymd(shiftDays(today, 4))} 14:00:00`,
+      estimatedMinutes: 45,
+      actualMinutes: null,
+      status: 'PENDING',
+      completedAt: null,
+      deferCount: 0,
+    },
+    {
+      scheduleId: 105,
+      title: '독서',
+      startAt: `${ymd(shiftDays(today, 4))} 19:00:00`,
+      estimatedMinutes: 20,
+      actualMinutes: null,
+      status: 'PENDING',
+      completedAt: null,
+      deferCount: 0,
+    },
+    {
+      scheduleId: 106,
+      title: '스터디',
+      startAt: `${ymd(shiftDays(today, 5))} 09:00:00`,
+      estimatedMinutes: 90,
+      actualMinutes: null,
+      status: 'PENDING',
+      completedAt: null,
+      deferCount: 0,
+    },
+    // 새로 등록한 일정 포함
+    ...createdSchedules,
+  ]
+
+  return base
+    .map((s) => {
+      const merged = { ...s, ...(updatedSchedules[s.scheduleId] ?? {}) }
+      const done = completedSchedules[merged.scheduleId]
+      return done
+        ? {
+            ...merged,
+            status: 'DONE',
+            actualMinutes: done.actualMinutes,
+            completedAt: done.completedAt,
+          }
+        : merged
+    })
+    .filter((s) => !deletedScheduleIds.has(s.scheduleId))
 }
 
 export const handlers = [
@@ -39,92 +123,11 @@ export const handlers = [
     const startDate = url.searchParams.get('startDate')
     const endDate = url.searchParams.get('endDate')
 
-    // 오늘 근처에 예시 일정 배치
-    const today = new Date()
-    const all = [
-      {
-        scheduleId: 101,
-        title: '운동하기',
-        startAt: `${ymd(today)} 08:00:00`,
-        estimatedMinutes: 15,
-        actualMinutes: 20,
-        status: 'DONE',
-        completedAt: `${ymd(today)} 08:25:00`,
-        deferCount: 0,
-      },
-      {
-        scheduleId: 102,
-        title: 'NCS 문제 풀기',
-        startAt: `${ymd(today)} 13:30:00`,
-        estimatedMinutes: 60,
-        actualMinutes: null,
-        status: 'PENDING',
-        completedAt: null,
-        deferCount: 1,
-      },
-      {
-        scheduleId: 103,
-        title: '이력서 수정',
-        startAt: `${ymd(shiftDays(today, 4))} 10:00:00`,
-        estimatedMinutes: 30,
-        actualMinutes: null,
-        status: 'PENDING',
-        completedAt: null,
-        deferCount: 0,
-      },
-      {
-        scheduleId: 104,
-        title: '알고리즘 문제',
-        startAt: `${ymd(shiftDays(today, 4))} 14:00:00`,
-        estimatedMinutes: 45,
-        actualMinutes: null,
-        status: 'PENDING',
-        completedAt: null,
-        deferCount: 0,
-      },
-      {
-        scheduleId: 105,
-        title: '독서',
-        startAt: `${ymd(shiftDays(today, 4))} 19:00:00`,
-        estimatedMinutes: 20,
-        actualMinutes: null,
-        status: 'PENDING',
-        completedAt: null,
-        deferCount: 0,
-      },
-      {
-        scheduleId: 106,
-        title: '스터디',
-        startAt: `${ymd(shiftDays(today, 5))} 09:00:00`,
-        estimatedMinutes: 90,
-        actualMinutes: null,
-        status: 'PENDING',
-        completedAt: null,
-        deferCount: 0,
-      },
-      // 새로 등록한 일정 포함
-      ...createdSchedules,
-    ]
-
-    // 수정·완료 내용 반영 후, 요청한 날짜 범위로 필터
-    const schedules = all
-      .map((s) => {
-        const merged = { ...s, ...(updatedSchedules[s.scheduleId] ?? {}) }
-        const done = completedSchedules[merged.scheduleId]
-        return done
-          ? {
-              ...merged,
-              status: 'DONE',
-              actualMinutes: done.actualMinutes,
-              completedAt: done.completedAt,
-            }
-          : merged
-      })
-      .filter((s) => {
-        if (deletedScheduleIds.has(s.scheduleId)) return false
-        const d = s.startAt.slice(0, 10)
-        return (!startDate || d >= startDate) && (!endDate || d <= endDate)
-      })
+    // 수정·완료 반영된 목록을 요청한 날짜 범위로 필터
+    const schedules = getResolvedSchedules().filter((s) => {
+      const d = s.startAt.slice(0, 10)
+      return (!startDate || d >= startDate) && (!endDate || d <= endDate)
+    })
 
     return HttpResponse.json({
       success: true,
@@ -241,13 +244,30 @@ export const handlers = [
     },
   ),
 
+  // 오늘 회고 조회: GET /api/v1/reflections/today
+  // 오늘 회고(없으면 null) + 오늘 완료한 일정 목록
+  http.get('/api/v1/reflections/today', () => {
+    const todayKey = ymd(new Date())
+    const reflection = reflectionsByDate[todayKey] ?? null
+    const completedList = getResolvedSchedules()
+      .filter((s) => s.startAt.slice(0, 10) === todayKey && s.status === 'DONE')
+      .map((s) => ({ scheduleId: s.scheduleId, title: s.title }))
+
+    return HttpResponse.json({
+      success: true,
+      code: 'REFLECTION_TODAY_SUCCESS',
+      message: '오늘 회고 조회에 성공했습니다.',
+      data: { reflection, completedSchedules: completedList },
+    })
+  }),
+
   // 회고 작성: POST /api/v1/reflections
   // 회원별 같은 날짜에는 1개만 작성 가능 → 실패도 HTTP 200 + success:false 로 내려온다.
   http.post('/api/v1/reflections', async ({ request }) => {
-    const { reflectionDate } = await request.json()
+    const { reflectionDate, content } = await request.json()
 
     // 이미 작성한 날짜면 실패 응답 (하루 1개 제한)
-    if (createdReflectionDates.has(reflectionDate)) {
+    if (reflectionsByDate[reflectionDate]) {
       return HttpResponse.json({
         success: false,
         code: 'REFLECTION_ALREADY_EXISTS',
@@ -256,14 +276,40 @@ export const handlers = [
       })
     }
 
-    createdReflectionDates.add(reflectionDate)
+    const reflectionId = nextReflectionId++
+    reflectionsByDate[reflectionDate] = {
+      reflectionId,
+      reflectionDate,
+      content,
+    }
     return HttpResponse.json({
       success: true,
       code: 'REFLECTION_CREATED',
       message: '회고가 작성되었습니다.',
-      data: { reflectionId: nextReflectionId++ },
+      data: { reflectionId },
     })
   }),
+
+  // 회고 수정: PATCH /api/v1/reflections/:reflectionId
+  http.patch(
+    '/api/v1/reflections/:reflectionId',
+    async ({ request, params }) => {
+      const reflectionId = Number(params.reflectionId)
+      const { content } = await request.json()
+
+      const entry = Object.values(reflectionsByDate).find(
+        (r) => r.reflectionId === reflectionId,
+      )
+      if (entry) entry.content = content
+
+      return HttpResponse.json({
+        success: true,
+        code: 'REFLECTION_UPDATED',
+        message: '회고가 수정되었습니다.',
+        data: null,
+      })
+    },
+  ),
 
   // 로그인: POST /api/v1/auth/login
   http.post('/api/v1/auth/login', async ({ request }) => {

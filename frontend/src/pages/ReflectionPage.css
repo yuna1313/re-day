@@ -70,6 +70,11 @@
   height: 15px;
 }
 
+.refl-skel-editor {
+  height: 160px;
+  border-radius: 16px;
+}
+
 /* 오늘의 회고 작성 */
 .reflection-subtext {
   margin: -4px 0 12px;
@@ -114,16 +119,25 @@
   color: #9ca3af;
 }
 
+/* 작성 내역 보기(조회) 모드 */
+.reflection-view {
+  min-height: 120px;
+  box-sizing: border-box;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #111;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .reflection-error {
   margin: 12px 2px 0;
   font-size: 14px;
   color: #ef4444;
-}
-
-.reflection-success {
-  margin: 12px 2px 0;
-  font-size: 14px;
-  color: #3b82f6;
 }
 
 .reflection-submit {
@@ -144,4 +158,35 @@
 .reflection-submit:disabled {
   background: #bcd3f7;
   cursor: not-allowed;
+}
+
+/* 수정 모드: 취소 + 수정 완료 나란히 */
+.reflection-btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.reflection-btn-row .reflection-submit {
+  flex: 1;
+  margin-top: 0;
+}
+
+.reflection-cancel {
+  flex: 0 0 96px;
+  padding: 17px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  color: #6b7280;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.reflection-cancel:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
