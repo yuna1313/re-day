@@ -128,3 +128,15 @@
   background: #fff;
   color: #ef4444;
 }
+
+.detail-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.detail-error {
+  margin: 12px 2px 0;
+  font-size: 14px;
+  color: #ef4444;
+  text-align: center;
+}

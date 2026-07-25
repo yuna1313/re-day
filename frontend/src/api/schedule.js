@@ -49,4 +49,10 @@ export const scheduleApi = {
     })
     return throwIfFailed(data, '일정 완료 처리에 실패했습니다.').data
   },
+
+  // 일정 삭제 (백엔드는 soft delete)
+  deleteSchedule: async ({ scheduleId }) => {
+    const { data } = await client.delete(`/schedules/${scheduleId}`)
+    return throwIfFailed(data, '일정 삭제에 실패했습니다.').data
+  },
 }

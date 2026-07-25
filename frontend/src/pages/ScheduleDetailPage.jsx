@@ -1,16 +1,27 @@
 import { useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
+import { useDeleteSchedule } from '../hooks/useDeleteSchedule'
+import { getApiErrorMessage } from '../api/client'
 import './ScheduleDetailPage.css'
 
 function ScheduleDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const schedule = location.state?.schedule
+  const deleteMutation = useDeleteSchedule()
 
   // 목록에서 넘어온 데이터가 없으면(직접 접근/새로고침) 홈으로
   // TODO: 상세 조회 API(GET /schedules/{id}) 연동 시 이 경우에도 직접 조회
   if (!schedule) {
     return <Navigate to="/" replace />
+  }
+
+  const handleDelete = () => {
+    if (!window.confirm('이 일정을 삭제할까요?')) return
+    deleteMutation.mutate(
+      { scheduleId: schedule.id },
+      { onSuccess: () => navigate('/', { replace: true }) },
+    )
   }
 
   const [year, month, day] = schedule.date.split('-')
@@ -80,11 +91,21 @@ function ScheduleDetailPage() {
             수정하기
           </button>
         )}
-        {/* TODO: 일정 삭제 API 연동 */}
-        <button type="button" className="detail-delete">
-          삭제하기
+        <button
+          type="button"
+          className="detail-delete"
+          onClick={handleDelete}
+          disabled={deleteMutation.isPending}
+        >
+          {deleteMutation.isPending ? '삭제 중...' : '삭제하기'}
         </button>
       </div>
+
+      {deleteMutation.isError && (
+        <p className="detail-error">
+          {getApiErrorMessage(deleteMutation.error)}
+        </p>
+      )}
     </div>
   )
 }

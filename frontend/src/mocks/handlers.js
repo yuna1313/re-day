@@ -20,6 +20,8 @@ let nextScheduleId = 200
 const createdSchedules = []
 // 수정된 일정 내용을 기억: scheduleId -> { title, startAt, estimatedMinutes, memo }
 const updatedSchedules = {}
+// 삭제(soft delete)된 일정 id
+const deletedScheduleIds = new Set()
 const nowStr = () => {
   const d = new Date()
   const p = (n) => String(n).padStart(2, '0')
@@ -116,6 +118,7 @@ export const handlers = [
           : merged
       })
       .filter((s) => {
+        if (deletedScheduleIds.has(s.scheduleId)) return false
         const d = s.startAt.slice(0, 10)
         return (!startDate || d >= startDate) && (!endDate || d <= endDate)
       })
@@ -170,6 +173,18 @@ export const handlers = [
       success: true,
       code: 'SCHEDULE_UPDATED',
       message: '일정이 수정되었습니다.',
+      data: null,
+    })
+  }),
+
+  // 일정 삭제(soft delete): DELETE /api/v1/schedules/:scheduleId
+  http.delete('/api/v1/schedules/:scheduleId', ({ params }) => {
+    deletedScheduleIds.add(Number(params.scheduleId))
+
+    return HttpResponse.json({
+      success: true,
+      code: 'SCHEDULE_DELETED',
+      message: '일정이 삭제되었습니다.',
       data: null,
     })
   }),
