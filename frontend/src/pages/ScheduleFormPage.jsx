@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation, useParams, Navigate } from 'react-router-dom'
 import { ChevronLeft, ChevronUp, ChevronDown } from 'lucide-react'
 import { useCreateSchedule } from '../hooks/useCreateSchedule'
+import { useUpdateSchedule } from '../hooks/useUpdateSchedule'
 import { getApiErrorMessage } from '../api/client'
 import './ScheduleFormPage.css'
 
@@ -42,6 +43,8 @@ function ScheduleFormPage() {
   const [showTimePicker, setShowTimePicker] = useState(false)
 
   const createMutation = useCreateSchedule()
+  const updateMutation = useUpdateSchedule()
+  const submitMutation = isEdit ? updateMutation : createMutation
 
   // 수정인데 데이터가 없으면(직접 접근/새로고침) 홈으로
   // TODO: 상세 조회 API(GET /schedules/{id}) 연동 시 직접 조회로 대체
@@ -54,26 +57,26 @@ function ScheduleFormPage() {
   ).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`
 
   const isSubmitDisabled =
-    !title || !date || !estimatedMinutes || createMutation.isPending
+    !title || !date || !estimatedMinutes || submitMutation.isPending
 
   const handleSubmit = (event) => {
     event.preventDefault()
 
-    if (isEdit) {
-      // TODO: 일정 수정 API(PATCH /schedules/{id}) 연동 예정
-      navigate(-1)
-      return
+    const payload = {
+      title,
+      startAt: buildStartAt(date, time),
+      estimatedMinutes: Number(estimatedMinutes),
+      memo,
     }
 
-    createMutation.mutate(
-      {
-        title,
-        startAt: buildStartAt(date, time),
-        estimatedMinutes: Number(estimatedMinutes),
-        memo,
-      },
-      { onSuccess: () => navigate(-1) },
-    )
+    if (isEdit) {
+      updateMutation.mutate(
+        { scheduleId: schedule.id, ...payload },
+        { onSuccess: () => navigate(-1) },
+      )
+    } else {
+      createMutation.mutate(payload, { onSuccess: () => navigate(-1) })
+    }
   }
 
   return (
@@ -168,9 +171,9 @@ function ScheduleFormPage() {
           />
         </div>
 
-        {createMutation.isError && (
+        {submitMutation.isError && (
           <p className="form-error">
-            {getApiErrorMessage(createMutation.error)}
+            {getApiErrorMessage(submitMutation.error)}
           </p>
         )}
 
@@ -179,7 +182,13 @@ function ScheduleFormPage() {
           className="form-submit"
           disabled={isSubmitDisabled}
         >
-          {isEdit ? '수정' : createMutation.isPending ? '등록 중...' : '등록'}
+          {submitMutation.isPending
+            ? isEdit
+              ? '수정 중...'
+              : '등록 중...'
+            : isEdit
+              ? '수정'
+              : '등록'}
         </button>
       </form>
     </div>

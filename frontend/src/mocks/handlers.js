@@ -18,6 +18,8 @@ const completedSchedules = {}
 // 새로 등록된 일정을 기억
 let nextScheduleId = 200
 const createdSchedules = []
+// 수정된 일정 내용을 기억: scheduleId -> { title, startAt, estimatedMinutes, memo }
+const updatedSchedules = {}
 const nowStr = () => {
   const d = new Date()
   const p = (n) => String(n).padStart(2, '0')
@@ -99,18 +101,19 @@ export const handlers = [
       ...createdSchedules,
     ]
 
-    // 완료 처리된 일정 반영 후, 요청한 날짜 범위로 필터
+    // 수정·완료 내용 반영 후, 요청한 날짜 범위로 필터
     const schedules = all
       .map((s) => {
-        const done = completedSchedules[s.scheduleId]
+        const merged = { ...s, ...(updatedSchedules[s.scheduleId] ?? {}) }
+        const done = completedSchedules[merged.scheduleId]
         return done
           ? {
-              ...s,
+              ...merged,
               status: 'DONE',
               actualMinutes: done.actualMinutes,
               completedAt: done.completedAt,
             }
-          : s
+          : merged
       })
       .filter((s) => {
         const d = s.startAt.slice(0, 10)
@@ -147,6 +150,27 @@ export const handlers = [
       code: 'SCHEDULE_CREATED',
       message: '일정이 등록되었습니다.',
       data: { scheduleId },
+    })
+  }),
+
+  // 일정 수정: PATCH /api/v1/schedules/:scheduleId
+  http.patch('/api/v1/schedules/:scheduleId', async ({ request, params }) => {
+    const scheduleId = Number(params.scheduleId)
+    const { title, startAt, estimatedMinutes, memo } = await request.json()
+
+    updatedSchedules[scheduleId] = {
+      ...(updatedSchedules[scheduleId] ?? {}),
+      title,
+      startAt,
+      estimatedMinutes,
+      memo,
+    }
+
+    return HttpResponse.json({
+      success: true,
+      code: 'SCHEDULE_UPDATED',
+      message: '일정이 수정되었습니다.',
+      data: null,
     })
   }),
 

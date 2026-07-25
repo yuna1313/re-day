@@ -24,6 +24,23 @@ export const scheduleApi = {
     return throwIfFailed(data, '일정 등록에 실패했습니다.').data
   },
 
+  // 일정 수정 (제목/시작일시/예상시간/메모)
+  updateSchedule: async ({
+    scheduleId,
+    title,
+    startAt,
+    estimatedMinutes,
+    memo,
+  }) => {
+    const { data } = await client.patch(`/schedules/${scheduleId}`, {
+      title,
+      startAt,
+      estimatedMinutes,
+      memo,
+    })
+    return throwIfFailed(data, '일정 수정에 실패했습니다.').data
+  },
+
   // 일정 완료 처리 (실제 소요 시간 저장)
   // 반환: { scheduleId, status, actualMinutes, completedAt }
   completeSchedule: async ({ scheduleId, actualMinutes }) => {
