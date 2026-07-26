@@ -44,6 +44,7 @@ function getResolvedSchedules() {
       status: 'DONE',
       completedAt: `${ymd(today)} 08:25:00`,
       deferCount: 0,
+      memo: '아침 스트레칭 위주로',
     },
     {
       scheduleId: 102,
@@ -54,6 +55,7 @@ function getResolvedSchedules() {
       status: 'PENDING',
       completedAt: null,
       deferCount: 1,
+      memo: null,
     },
     {
       scheduleId: 103,
@@ -134,6 +136,41 @@ export const handlers = [
       code: 'SCHEDULE_LIST_SUCCESS',
       message: '일정 목록 조회에 성공했습니다.',
       data: { viewType, startDate, endDate, schedules },
+    })
+  }),
+
+  // 일정 상세 조회: GET /api/v1/schedules/:scheduleId
+  http.get('/api/v1/schedules/:scheduleId', ({ params }) => {
+    const scheduleId = Number(params.scheduleId)
+    const s = getResolvedSchedules().find((x) => x.scheduleId === scheduleId)
+
+    if (!s) {
+      return HttpResponse.json({
+        success: false,
+        code: 'SCHEDULE_NOT_FOUND',
+        message: '일정을 찾을 수 없습니다.',
+        data: null,
+      })
+    }
+
+    return HttpResponse.json({
+      success: true,
+      code: 'SCHEDULE_DETAIL_SUCCESS',
+      message: '일정 상세 조회에 성공했습니다.',
+      data: {
+        scheduleId: s.scheduleId,
+        title: s.title,
+        startAt: s.startAt,
+        estimatedMinutes: s.estimatedMinutes,
+        actualMinutes: s.actualMinutes ?? null,
+        memo: s.memo ?? null,
+        status: s.status,
+        completedAt: s.completedAt ?? null,
+        createdAt: s.createdAt ?? '2026-01-08 22:10:00',
+        updatedAt: s.updatedAt ?? s.startAt,
+        deferCount: s.deferCount ?? 0,
+        deferLogs: s.deferLogs ?? [],
+      },
     })
   }),
 

@@ -3,7 +3,7 @@ import { scheduleApi } from '../api/schedule'
 
 // 서버 응답의 일정 하나를 화면 표시용 형태로 변환한다.
 // startAt: "2026-01-09 08:00:00" → 오전/오후 + 12시간 표기
-function toDisplayItem(schedule) {
+export function toDisplayItem(schedule) {
   const dateStr = schedule.startAt.slice(0, 10) // yyyy-MM-dd
   const hour24 = Number(schedule.startAt.slice(11, 13))
   const minute = schedule.startAt.slice(14, 16)

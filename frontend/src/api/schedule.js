@@ -12,6 +12,14 @@ export const scheduleApi = {
     return throwIfFailed(data, '일정 목록 조회에 실패했습니다.').data
   },
 
+  // 일정 상세 조회 (상세 정보 + 미루기 로그)
+  // 반환: { scheduleId, title, startAt, estimatedMinutes, actualMinutes, memo,
+  //         status, completedAt, createdAt, updatedAt, deferCount, deferLogs }
+  getSchedule: async ({ scheduleId }) => {
+    const { data } = await client.get(`/schedules/${scheduleId}`)
+    return throwIfFailed(data, '일정 상세 조회에 실패했습니다.').data
+  },
+
   // 일정 생성
   // startAt: 'yyyy-MM-dd HH:mm:ss' / 반환: { scheduleId }
   createSchedule: async ({ title, startAt, estimatedMinutes, memo }) => {

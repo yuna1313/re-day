@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate, useLocation, useParams, Navigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, ChevronUp, ChevronDown } from 'lucide-react'
+import { useSchedule } from '../hooks/useSchedule'
 import { useCreateSchedule } from '../hooks/useCreateSchedule'
 import { useUpdateSchedule } from '../hooks/useUpdateSchedule'
 import { getApiErrorMessage } from '../api/client'
@@ -26,31 +27,72 @@ function parseInitialTime(schedule) {
   return { hour: 12, minute: 0, ampm: 'AM' }
 }
 
+// 헤더(뒤로 + 제목)
+function FormHeader({ isEdit, onBack }) {
+  return (
+    <header className="form-header">
+      <button
+        type="button"
+        className="form-back"
+        onClick={onBack}
+        aria-label="뒤로"
+      >
+        <ChevronLeft size={26} />
+      </button>
+      <h1 className="form-title">{isEdit ? '일정 수정' : '일정 등록'}</h1>
+    </header>
+  )
+}
+
+// 컨테이너: 수정이면 상세를 조회해 메모까지 채운 뒤 폼을 띄운다.
 function ScheduleFormPage() {
   const navigate = useNavigate()
-  const location = useLocation()
   const { scheduleId } = useParams()
   const isEdit = Boolean(scheduleId)
-  const schedule = location.state?.schedule
 
-  const [title, setTitle] = useState(schedule?.title ?? '')
-  const [date, setDate] = useState(schedule?.date ?? '')
-  const [time, setTime] = useState(() => parseInitialTime(schedule))
+  // 수정: 상세 조회(상세를 이미 봤다면 캐시 적중으로 즉시). 등록: 조회 안 함.
+  const {
+    data: initial,
+    isError,
+    error,
+  } = useSchedule(isEdit ? scheduleId : undefined)
+
+  if (!isEdit) {
+    return <ScheduleFormInner isEdit={false} initial={null} />
+  }
+
+  // 수정 대상 조회 전/실패 처리
+  if (!initial) {
+    return (
+      <div className="form-page">
+        <FormHeader isEdit onBack={() => navigate(-1)} />
+        {isError ? (
+          <p className="form-error">{getApiErrorMessage(error)}</p>
+        ) : (
+          <FormSkeleton />
+        )}
+      </div>
+    )
+  }
+
+  return <ScheduleFormInner isEdit initial={initial} key={initial.id} />
+}
+
+function ScheduleFormInner({ isEdit, initial }) {
+  const navigate = useNavigate()
+
+  const [title, setTitle] = useState(initial?.title ?? '')
+  const [date, setDate] = useState(initial?.date ?? '')
+  const [time, setTime] = useState(() => parseInitialTime(initial))
   const [estimatedMinutes, setEstimatedMinutes] = useState(
-    schedule?.estimatedMin != null ? String(schedule.estimatedMin) : '',
+    initial?.estimatedMin != null ? String(initial.estimatedMin) : '',
   )
-  const [memo, setMemo] = useState(schedule?.memo ?? '')
+  const [memo, setMemo] = useState(initial?.memo ?? '')
   const [showTimePicker, setShowTimePicker] = useState(false)
 
   const createMutation = useCreateSchedule()
   const updateMutation = useUpdateSchedule()
   const submitMutation = isEdit ? updateMutation : createMutation
-
-  // 수정인데 데이터가 없으면(직접 접근/새로고침) 홈으로
-  // TODO: 상세 조회 API(GET /schedules/{id}) 연동 시 직접 조회로 대체
-  if (isEdit && !schedule) {
-    return <Navigate to="/" replace />
-  }
 
   const timeLabel = `${time.ampm === 'AM' ? '오전' : '오후'} ${String(
     time.hour,
@@ -71,7 +113,7 @@ function ScheduleFormPage() {
 
     if (isEdit) {
       updateMutation.mutate(
-        { scheduleId: schedule.id, ...payload },
+        { scheduleId: initial.id, ...payload },
         { onSuccess: () => navigate(-1) },
       )
     } else {
@@ -81,17 +123,7 @@ function ScheduleFormPage() {
 
   return (
     <div className="form-page">
-      <header className="form-header">
-        <button
-          type="button"
-          className="form-back"
-          onClick={() => navigate(-1)}
-          aria-label="뒤로"
-        >
-          <ChevronLeft size={26} />
-        </button>
-        <h1 className="form-title">{isEdit ? '일정 수정' : '일정 등록'}</h1>
-      </header>
+      <FormHeader isEdit={isEdit} onBack={() => navigate(-1)} />
 
       <form className="form-body" onSubmit={handleSubmit} noValidate>
         {/* 일정 제목 */}
@@ -270,6 +302,31 @@ function TimeStepper({ time, onChange }) {
           <ChevronDown size={18} />
         </button>
       </div>
+    </div>
+  )
+}
+
+// 수정 대상 조회 중 스켈레톤
+function FormSkeleton() {
+  return (
+    <div className="form-body" aria-hidden="true">
+      {[0, 1, 2, 3].map((i) => (
+        <div className="form-field" key={i}>
+          <span
+            className="skeleton"
+            style={{
+              display: 'block',
+              width: 70,
+              height: 14,
+              marginBottom: 10,
+            }}
+          />
+          <span
+            className="skeleton"
+            style={{ display: 'block', height: 54, borderRadius: 14 }}
+          />
+        </div>
+      ))}
     </div>
   )
 }

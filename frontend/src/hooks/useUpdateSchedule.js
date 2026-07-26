@@ -7,8 +7,12 @@ export function useUpdateSchedule() {
 
   return useMutation({
     mutationFn: scheduleApi.updateSchedule,
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['schedules'] })
+      // 상세 화면으로 돌아갔을 때 최신 내용이 반영되도록 상세도 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['schedule', String(variables.scheduleId)],
+      })
     },
   })
 }

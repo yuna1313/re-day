@@ -1,5 +1,6 @@
-import { useNavigate, useLocation, Navigate } from 'react-router-dom'
+import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
+import { useSchedule } from '../hooks/useSchedule'
 import { useDeleteSchedule } from '../hooks/useDeleteSchedule'
 import { getApiErrorMessage } from '../api/client'
 import './ScheduleDetailPage.css'
@@ -7,14 +8,16 @@ import './ScheduleDetailPage.css'
 function ScheduleDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const schedule = location.state?.schedule
-  const deleteMutation = useDeleteSchedule()
+  const { scheduleId } = useParams()
 
-  // 목록에서 넘어온 데이터가 없으면(직접 접근/새로고침) 홈으로
-  // TODO: 상세 조회 API(GET /schedules/{id}) 연동 시 이 경우에도 직접 조회
-  if (!schedule) {
-    return <Navigate to="/" replace />
-  }
+  // 목록에서 넘어온 데이터가 있으면 즉시 표시하고, 상세 조회로 갱신(메모 등)
+  const {
+    data: schedule,
+    isError,
+    error,
+  } = useSchedule(scheduleId, location.state?.schedule)
+
+  const deleteMutation = useDeleteSchedule()
 
   const handleDelete = () => {
     if (!window.confirm('이 일정을 삭제할까요?')) return
@@ -23,9 +26,6 @@ function ScheduleDetailPage() {
       { onSuccess: () => navigate('/', { replace: true }) },
     )
   }
-
-  const [year, month, day] = schedule.date.split('-')
-  const startAtLabel = `${Number(year)}년 ${Number(month)}월 ${Number(day)}일 ${schedule.period} ${schedule.time}`
 
   return (
     <div className="detail-page">
@@ -41,6 +41,43 @@ function ScheduleDetailPage() {
         <h1 className="detail-title">일정 상세</h1>
       </header>
 
+      {!schedule ? (
+        isError ? (
+          <p className="detail-error">{getApiErrorMessage(error)}</p>
+        ) : (
+          <DetailSkeleton />
+        )
+      ) : (
+        <ScheduleDetailBody
+          schedule={schedule}
+          onEdit={() =>
+            navigate(`/schedules/${schedule.id}/edit`, { state: { schedule } })
+          }
+          onDelete={handleDelete}
+          deleting={deleteMutation.isPending}
+          deleteError={
+            deleteMutation.isError
+              ? getApiErrorMessage(deleteMutation.error)
+              : null
+          }
+        />
+      )}
+    </div>
+  )
+}
+
+function ScheduleDetailBody({
+  schedule,
+  onEdit,
+  onDelete,
+  deleting,
+  deleteError,
+}) {
+  const [year, month, day] = schedule.date.split('-')
+  const startAtLabel = `${Number(year)}년 ${Number(month)}월 ${Number(day)}일 ${schedule.period} ${schedule.time}`
+
+  return (
+    <>
       {/* 일정 정보 */}
       <div className="detail-card">
         <h2 className="detail-name">{schedule.title}</h2>
@@ -72,40 +109,50 @@ function ScheduleDetailPage() {
       <div className="detail-card">
         <h2 className="detail-card-title">메모</h2>
         <hr className="detail-divider" />
-        {/* TODO: 상세 API 연동 시 실제 메모 표시 */}
-        <p className="detail-memo-empty">작성된 메모가 없어요.</p>
+        {schedule.memo ? (
+          <p className="detail-memo">{schedule.memo}</p>
+        ) : (
+          <p className="detail-memo-empty">작성된 메모가 없어요.</p>
+        )}
       </div>
 
       {/* 수정 / 삭제 (완료된 일정은 기록이므로 수정 불가, 삭제만 가능) */}
       <div className="detail-actions">
         {!schedule.completed && (
-          <button
-            type="button"
-            className="detail-edit"
-            onClick={() =>
-              navigate(`/schedules/${schedule.id}/edit`, {
-                state: { schedule },
-              })
-            }
-          >
+          <button type="button" className="detail-edit" onClick={onEdit}>
             수정하기
           </button>
         )}
         <button
           type="button"
           className="detail-delete"
-          onClick={handleDelete}
-          disabled={deleteMutation.isPending}
+          onClick={onDelete}
+          disabled={deleting}
         >
-          {deleteMutation.isPending ? '삭제 중...' : '삭제하기'}
+          {deleting ? '삭제 중...' : '삭제하기'}
         </button>
       </div>
 
-      {deleteMutation.isError && (
-        <p className="detail-error">
-          {getApiErrorMessage(deleteMutation.error)}
-        </p>
-      )}
+      {deleteError && <p className="detail-error">{deleteError}</p>}
+    </>
+  )
+}
+
+// 로딩 스켈레톤 (정보 카드 모양)
+function DetailSkeleton() {
+  return (
+    <div className="detail-card" aria-hidden="true">
+      <span
+        className="skeleton"
+        style={{ display: 'block', width: '55%', height: 22 }}
+      />
+      <hr className="detail-divider" />
+      {[0, 1, 2].map((i) => (
+        <div className="detail-row" key={i}>
+          <span className="skeleton" style={{ width: 64, height: 14 }} />
+          <span className="skeleton" style={{ width: '40%', height: 14 }} />
+        </div>
+      ))}
     </div>
   )
 }
