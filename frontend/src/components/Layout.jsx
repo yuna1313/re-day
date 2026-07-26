@@ -7,7 +7,7 @@ const TABS = [
   { to: '/', label: '홈', Icon: Home, end: true },
   { to: '/reflection', label: '회고', Icon: CalendarDays },
   { to: '/insights', label: '인사이트', Icon: BarChart3 },
-  { to: '/mypage', label: '마이', Icon: User },
+  { to: '/mypage', label: '마이페이지', Icon: User },
 ]
 
 function Layout() {
