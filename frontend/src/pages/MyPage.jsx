@@ -1,11 +1,15 @@
 import { useNavigate } from 'react-router-dom'
 import { User, Lock, ChevronRight } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useMe } from '../hooks/useMe'
 import './MyPage.css'
 
 function MyPage() {
   const navigate = useNavigate()
   const { member, logout } = useAuth()
+  // 저장된 정보로 즉시 표시하고, 최신 정보를 조회해 갱신한다.
+  const { data } = useMe()
+  const profile = data ?? member
 
   const handleLogout = () => {
     logout()
@@ -13,7 +17,7 @@ function MyPage() {
   }
 
   const handlePasswordChange = () => {
-    // TODO: 비밀번호 변경 화면/API 연동 예정
+    navigate('/mypage/password')
   }
 
   return (
@@ -29,8 +33,8 @@ function MyPage() {
             <User size={26} />
           </span>
           <div className="profile-info">
-            <span className="profile-name">{member?.nickname ?? '사용자'}</span>
-            <span className="profile-email">{member?.email ?? ''}</span>
+            <span className="profile-name">{profile?.nickname ?? '사용자'}</span>
+            <span className="profile-email">{profile?.email ?? ''}</span>
           </div>
         </div>
 

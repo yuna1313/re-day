@@ -11,6 +11,7 @@ import ScheduleFormPage from './pages/ScheduleFormPage'
 import ReflectionPage from './pages/ReflectionPage'
 import InsightsPage from './pages/InsightsPage'
 import MyPage from './pages/MyPage'
+import ChangePasswordPage from './pages/ChangePasswordPage'
 import NotFoundPage from './pages/NotFoundPage'
 import './App.css'
 
@@ -42,6 +43,7 @@ function App() {
           <Route path="/reflection" element={<ReflectionPage />} />
           <Route path="/insights" element={<InsightsPage />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/mypage/password" element={<ChangePasswordPage />} />
           {/* 위에 매칭되지 않는 모든 경로는 404 */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>

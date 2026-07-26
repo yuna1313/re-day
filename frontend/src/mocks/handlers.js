@@ -357,6 +357,20 @@ export const handlers = [
     })
   }),
 
+  // 내 정보 조회: GET /api/v1/members/me
+  http.get('/api/v1/members/me', () => {
+    return HttpResponse.json({
+      success: true,
+      code: 'MEMBER_ME_SUCCESS',
+      message: '내 정보 조회에 성공했습니다.',
+      data: {
+        memberId: 1,
+        nickname: '망고미',
+        email: 'manggom@example.com',
+      },
+    })
+  }),
+
   // 로그인: POST /api/v1/auth/login
   http.post('/api/v1/auth/login', async ({ request }) => {
     const { email, password } = await request.json()
