@@ -371,6 +371,29 @@ export const handlers = [
     })
   }),
 
+  // 비밀번호 변경: PATCH /api/v1/members/me/password
+  // 현재 비밀번호가 틀리면 HTTP 200 + success:false 로 내려온다.
+  http.patch('/api/v1/members/me/password', async ({ request }) => {
+    const { currentPassword } = await request.json()
+
+    // 테스트 계정 비밀번호(1234)와 다르면 실패로 응답
+    if (currentPassword !== '1234') {
+      return HttpResponse.json({
+        success: false,
+        code: 'MEMBER_PASSWORD_MISMATCH',
+        message: '현재 비밀번호가 일치하지 않습니다.',
+        data: null,
+      })
+    }
+
+    return HttpResponse.json({
+      success: true,
+      code: 'MEMBER_PASSWORD_UPDATED',
+      message: '비밀번호가 변경되었습니다.',
+      data: null,
+    })
+  }),
+
   // 로그인: POST /api/v1/auth/login
   http.post('/api/v1/auth/login', async ({ request }) => {
     const { email, password } = await request.json()

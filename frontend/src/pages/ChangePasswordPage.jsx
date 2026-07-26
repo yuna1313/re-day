@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Eye, EyeOff, CheckCircle2, Circle } from 'lucide-react'
+import { useChangePassword } from '../hooks/useChangePassword'
+import { getApiErrorMessage } from '../api/client'
 import './ChangePasswordPage.css'
 
 // 새 비밀번호 규칙 (실시간 검사)
@@ -24,10 +26,15 @@ function ChangePasswordPage() {
   const allPassed = ruleResults.every((rule) => rule.passed)
   const canSubmit = currentPassword.length > 0 && allPassed
 
+  const changeMutation = useChangePassword()
+
   const handleSubmit = (event) => {
     event.preventDefault()
-    if (!canSubmit) return
-    // TODO: 비밀번호 변경 API 연동 예정
+    if (!canSubmit || changeMutation.isPending) return
+    changeMutation.mutate(
+      { currentPassword, newPassword },
+      { onSuccess: () => navigate('/mypage', { replace: true }) },
+    )
   }
 
   return (
@@ -116,8 +123,16 @@ function ChangePasswordPage() {
           </div>
         </div>
 
-        <button type="submit" className="pw-submit" disabled={!canSubmit}>
-          변경하기
+        {changeMutation.isError && (
+          <p className="pw-error">{getApiErrorMessage(changeMutation.error)}</p>
+        )}
+
+        <button
+          type="submit"
+          className="pw-submit"
+          disabled={!canSubmit || changeMutation.isPending}
+        >
+          {changeMutation.isPending ? '변경 중...' : '변경하기'}
         </button>
       </form>
     </div>

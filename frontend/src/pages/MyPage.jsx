@@ -33,7 +33,9 @@ function MyPage() {
             <User size={26} />
           </span>
           <div className="profile-info">
-            <span className="profile-name">{profile?.nickname ?? '사용자'}</span>
+            <span className="profile-name">
+              {profile?.nickname ?? '사용자'}
+            </span>
             <span className="profile-email">{profile?.email ?? ''}</span>
           </div>
         </div>
