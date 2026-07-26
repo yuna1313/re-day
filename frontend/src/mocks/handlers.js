@@ -311,6 +311,52 @@ export const handlers = [
     },
   ),
 
+  // 인사이트 조회: GET /api/v1/analytics/insights?periodType
+  http.get('/api/v1/analytics/insights', ({ request }) => {
+    const url = new URL(request.url)
+    const periodType = url.searchParams.get('periodType') || 'LAST_30_DAYS'
+
+    return HttpResponse.json({
+      success: true,
+      code: 'INSIGHT_SUCCESS',
+      message: '인사이트 조회에 성공했습니다.',
+      data: {
+        periodType,
+        timeSlotCompletionRates: [
+          { timeSlot: 'MORNING', label: '오전', completionRate: 38 },
+          { timeSlot: 'AFTERNOON', label: '오후', completionRate: 97 },
+          { timeSlot: 'EVENING', label: '저녁', completionRate: 74 },
+        ],
+        topDeferReasons: [
+          {
+            rank: 1,
+            deferReasonCode: 'LONGER_THAN_EXPECTED',
+            label: '예상보다 오래 걸림',
+            count: 9,
+          },
+          {
+            rank: 2,
+            deferReasonCode: 'COULD_NOT_FOCUS',
+            label: '집중 안 됨',
+            count: 5,
+          },
+          {
+            rank: 3,
+            deferReasonCode: 'NO_TIME',
+            label: '시간이 없었음',
+            count: 1,
+          },
+        ],
+        estimatedVsActual: {
+          averageEstimatedMinutes: 30,
+          averageActualMinutes: 50,
+          averageDiffMinutes: 20,
+        },
+        feedbackMessages: ['오후 일정 완료율이 가장 높아요.'],
+      },
+    })
+  }),
+
   // 로그인: POST /api/v1/auth/login
   http.post('/api/v1/auth/login', async ({ request }) => {
     const { email, password } = await request.json()

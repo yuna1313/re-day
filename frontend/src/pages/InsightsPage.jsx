@@ -1,33 +1,12 @@
-import { TrendingUp, Clock3 } from 'lucide-react'
+import { TrendingUp, Clock3, Sparkles } from 'lucide-react'
+import { useInsights } from '../hooks/useInsights'
+import { getApiErrorMessage } from '../api/client'
 import './InsightsPage.css'
-
-// TODO: 인사이트 조회 API 연동 예정 — 현재는 시안 기준 샘플 데이터
-// 기간은 30일 고정 (7일/전체 선택은 추후)
-
-// 시간대별 완료율 (%)
-const TIME_COMPLETION = [
-  { label: '오전', rate: 38 },
-  { label: '오후', rate: 97 },
-  { label: '저녁', rate: 74 },
-]
-
-// 미루기 상위 이유
-const DEFER_REASONS = [
-  { rank: 1, label: '예상보다 오래 걸림', count: 9 },
-  { rank: 2, label: '집중 안 됨', count: 5 },
-  { rank: 3, label: '시간을 착각함', count: 1 },
-]
-
-// 예상 vs 실제 평균 (분)
-const ESTIMATE = { estimated: 30, actual: 50 }
 
 const Y_TICKS = [100, 50, 0]
 
 function InsightsPage() {
-  const bestTime = TIME_COMPLETION.reduce((a, b) => (b.rate > a.rate ? b : a))
-  const maxCount = Math.max(...DEFER_REASONS.map((d) => d.count))
-  const maxMin = Math.max(ESTIMATE.estimated, ESTIMATE.actual)
-  const diff = ESTIMATE.actual - ESTIMATE.estimated
+  const { data, isLoading, isError, error } = useInsights()
 
   return (
     <div className="insights-page">
@@ -40,38 +19,89 @@ function InsightsPage() {
         <span className="period-chip">최근 30일</span>
       </div>
 
+      {isLoading ? (
+        <InsightsSkeleton />
+      ) : isError ? (
+        <p className="insights-error">{getApiErrorMessage(error)}</p>
+      ) : (
+        <InsightsContent data={data} />
+      )}
+    </div>
+  )
+}
+
+function InsightsContent({ data }) {
+  const timeSlots = data.timeSlotCompletionRates ?? []
+  const reasons = data.topDeferReasons ?? []
+  const est = data.estimatedVsActual ?? {}
+  const feedback = data.feedbackMessages ?? []
+
+  const bestRate = timeSlots.length
+    ? Math.max(...timeSlots.map((t) => t.completionRate))
+    : 0
+  const maxCount = reasons.length ? Math.max(...reasons.map((r) => r.count)) : 0
+  const estMin = est.averageEstimatedMinutes ?? 0
+  const actMin = est.averageActualMinutes ?? 0
+  const diff = est.averageDiffMinutes ?? actMin - estMin
+  const maxMin = Math.max(estMin, actMin) || 1
+
+  return (
+    <>
+      {/* 피드백(인사이트 한 줄) */}
+      {feedback.length > 0 && (
+        <div className="insight-banner">
+          <Sparkles size={16} />
+          <div className="insight-lines">
+            {feedback.map((msg, i) => (
+              <span key={i}>{msg}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 시간대별 완료율 */}
       <section className="insights-section">
         <h2 className="insights-heading">시간대별 완료율</h2>
         <div className="insights-card">
-          <div className="chart">
-            <div className="chart-grid">
-              {Y_TICKS.map((t) => (
-                <div className="grid-line" key={t}>
-                  <span className="grid-label">{t}</span>
+          {timeSlots.length === 0 ? (
+            <p className="insights-empty">표시할 데이터가 없어요.</p>
+          ) : (
+            <>
+              <div className="chart">
+                <div className="chart-grid">
+                  {Y_TICKS.map((t) => (
+                    <div className="grid-line" key={t}>
+                      <span className="grid-label">{t}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="chart-bars">
-              {TIME_COMPLETION.map((d) => (
-                <div
-                  className={`bar-col${d.label === bestTime.label ? ' best' : ''}`}
-                  key={d.label}
-                >
-                  <div className="bar" style={{ height: `${d.rate}%` }}>
-                    <span className="bar-value">{d.rate}%</span>
-                  </div>
+                <div className="chart-bars">
+                  {timeSlots.map((d) => (
+                    <div
+                      className={`bar-col${
+                        d.completionRate === bestRate ? ' best' : ''
+                      }`}
+                      key={d.timeSlot}
+                    >
+                      <div
+                        className="bar"
+                        style={{ height: `${d.completionRate}%` }}
+                      >
+                        <span className="bar-value">{d.completionRate}%</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="chart-xlabels">
-            {TIME_COMPLETION.map((d) => (
-              <span className="chart-xlabel" key={d.label}>
-                {d.label}
-              </span>
-            ))}
-          </div>
+              </div>
+              <div className="chart-xlabels">
+                {timeSlots.map((d) => (
+                  <span className="chart-xlabel" key={d.timeSlot}>
+                    {d.label}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -79,25 +109,29 @@ function InsightsPage() {
       <section className="insights-section">
         <h2 className="insights-heading">미루기 상위 이유</h2>
         <div className="insights-card">
-          <ul className="reason-list">
-            {DEFER_REASONS.map((d) => (
-              <li className="reason-row" key={d.rank}>
-                <span className={`reason-rank rank-${d.rank}`}>{d.rank}</span>
-                <div className="reason-main">
-                  <div className="reason-top">
-                    <span className="reason-label">{d.label}</span>
-                    <span className="reason-count">{d.count}회</span>
+          {reasons.length === 0 ? (
+            <p className="insights-empty">미룬 일정이 없어요.</p>
+          ) : (
+            <ul className="reason-list">
+              {reasons.map((d) => (
+                <li className="reason-row" key={d.deferReasonCode}>
+                  <span className={`reason-rank rank-${d.rank}`}>{d.rank}</span>
+                  <div className="reason-main">
+                    <div className="reason-top">
+                      <span className="reason-label">{d.label}</span>
+                      <span className="reason-count">{d.count}회</span>
+                    </div>
+                    <div className="reason-track">
+                      <div
+                        className={`reason-fill rank-${d.rank}`}
+                        style={{ width: `${(d.count / maxCount) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="reason-track">
-                    <div
-                      className={`reason-fill rank-${d.rank}`}
-                      style={{ width: `${(d.count / maxCount) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
 
@@ -113,10 +147,10 @@ function InsightsPage() {
             <div className="compare-track">
               <div
                 className="compare-fill est"
-                style={{ width: `${(ESTIMATE.estimated / maxMin) * 100}%` }}
+                style={{ width: `${(estMin / maxMin) * 100}%` }}
               />
             </div>
-            <span className="compare-val">{ESTIMATE.estimated}분</span>
+            <span className="compare-val">{estMin}분</span>
           </div>
           <div className="compare-row">
             <span className="compare-label">
@@ -126,10 +160,10 @@ function InsightsPage() {
             <div className="compare-track">
               <div
                 className="compare-fill act"
-                style={{ width: `${(ESTIMATE.actual / maxMin) * 100}%` }}
+                style={{ width: `${(actMin / maxMin) * 100}%` }}
               />
             </div>
-            <span className="compare-val">{ESTIMATE.actual}분</span>
+            <span className="compare-val">{actMin}분</span>
           </div>
 
           {diff > 0 && (
@@ -138,6 +172,79 @@ function InsightsPage() {
               평균 <strong>+{diff}분</strong> 더 걸려요
             </div>
           )}
+        </div>
+      </section>
+    </>
+  )
+}
+
+// 로딩 스켈레톤 (카드 구조에 맞춘 회색 블록 + shimmer)
+function InsightsSkeleton() {
+  return (
+    <div aria-hidden="true">
+      <section className="insights-section">
+        <h2 className="insights-heading">시간대별 완료율</h2>
+        <div className="insights-card">
+          <div className="chart-skel">
+            {[58, 92, 76].map((h, i) => (
+              <span
+                className="skeleton"
+                key={i}
+                style={{
+                  width: 54,
+                  height: `${h}%`,
+                  borderRadius: '14px 14px 0 0',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="insights-section">
+        <h2 className="insights-heading">미루기 상위 이유</h2>
+        <div className="insights-card">
+          <ul className="reason-list">
+            {[0, 1, 2].map((i) => (
+              <li className="reason-row" key={i}>
+                <span
+                  className="skeleton"
+                  style={{ width: 26, height: 26, borderRadius: 9 }}
+                />
+                <div className="reason-main">
+                  <div className="reason-top">
+                    <span
+                      className="skeleton"
+                      style={{ width: '45%', height: 14 }}
+                    />
+                  </div>
+                  <span
+                    className="skeleton"
+                    style={{ display: 'block', height: 6, borderRadius: 4 }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="insights-section">
+        <h2 className="insights-heading">예상 vs 실제 평균</h2>
+        <div className="insights-card">
+          {[0, 1].map((i) => (
+            <div
+              className="compare-row"
+              key={i}
+              style={i ? { marginTop: 14 } : undefined}
+            >
+              <span className="skeleton" style={{ width: 44, height: 14 }} />
+              <span
+                className="skeleton"
+                style={{ flex: 1, height: 22, borderRadius: 11 }}
+              />
+            </div>
+          ))}
         </div>
       </section>
     </div>
