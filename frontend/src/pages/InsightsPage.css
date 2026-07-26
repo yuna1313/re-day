@@ -1,0 +1,317 @@
+.insights-page {
+  padding: 0 0 24px;
+}
+
+/* 헤더 */
+.insights-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0 2px;
+}
+
+.insights-title {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* 기간 (30일 고정) */
+.period-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 22px;
+}
+
+.period-chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #f1f3f6;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* ===== 섹션 / 카드 공통 ===== */
+.insights-section {
+  margin-top: 28px;
+}
+
+.insights-section:first-of-type {
+  margin-top: 6px;
+}
+
+.insights-heading {
+  margin: 0 0 13px;
+  padding-left: 2px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: #0f172a;
+}
+
+.insights-card {
+  padding: 22px 18px;
+  background: #fff;
+  border: 1px solid #eef1f5;
+  border-radius: 24px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+}
+
+/* ===== 시간대별 완료율 (막대 차트) ===== */
+.chart {
+  position: relative;
+  height: 208px;
+}
+
+.chart-grid,
+.chart-bars {
+  position: absolute;
+  top: 26px;
+  bottom: 0;
+  left: 30px;
+  right: 2px;
+}
+
+.chart-grid {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.grid-line {
+  position: relative;
+  height: 1px;
+  background: #f2f4f7;
+}
+
+.grid-label {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: -8px;
+  font-size: 11px;
+  color: #cbd2dc;
+}
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.bar-col {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bar {
+  position: relative;
+  width: 100%;
+  max-width: 58px;
+  border-radius: 14px 14px 0 0;
+  background: linear-gradient(180deg, #bfdbfe 0%, #7cadf8 100%);
+  transition: height 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 최고 완료율 막대 강조 */
+.bar-col.best .bar {
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.28);
+}
+
+.bar-value {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 9px;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+/* 최고 완료율 수치는 파란 pill 로 강조 */
+.bar-col.best .bar-value {
+  color: #fff;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #2563eb;
+  box-shadow: 0 5px 12px rgba(37, 99, 235, 0.32);
+}
+
+.chart-xlabels {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  padding: 0 2px 0 30px;
+}
+
+.chart-xlabel {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* ===== 미루기 상위 이유 ===== */
+.reason-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.reason-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reason-rank {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  background: #cbd5e1;
+}
+
+.reason-rank.rank-1 {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+.reason-rank.rank-2 {
+  background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+}
+.reason-rank.rank-3 {
+  background: linear-gradient(135deg, #e2a877, #c07f43);
+}
+
+.reason-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.reason-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.reason-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.reason-count {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.reason-track {
+  height: 6px;
+  border-radius: 4px;
+  background: #f1f4f8;
+  overflow: hidden;
+}
+
+.reason-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.reason-fill.rank-1 {
+  background: linear-gradient(90deg, #fcd34d, #f59e0b);
+}
+.reason-fill.rank-2 {
+  background: linear-gradient(90deg, #bcc7d6, #94a3b8);
+}
+.reason-fill.rank-3 {
+  background: linear-gradient(90deg, #e2a877, #c07f43);
+}
+
+/* ===== 예상 vs 실제 평균 ===== */
+.compare-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.compare-row + .compare-row {
+  margin-top: 14px;
+}
+
+.compare-label {
+  flex-shrink: 0;
+  width: 52px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.compare-track {
+  flex: 1;
+  height: 22px;
+  border-radius: 11px;
+  background: #f1f3f6;
+  overflow: hidden;
+}
+
+.compare-fill {
+  height: 100%;
+  border-radius: 11px;
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.compare-fill.est {
+  background: linear-gradient(90deg, #93c5fd, #3b82f6);
+}
+
+/* 실제 초과분을 색으로 강조 (앰버) */
+.compare-fill.act {
+  background: linear-gradient(90deg, #fcd34d, #f59e0b);
+}
+
+.compare-val {
+  flex-shrink: 0;
+  width: 40px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.compare-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 18px;
+  padding: 8px 13px;
+  border-radius: 11px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 13px;
+}
+
+.compare-note strong {
+  font-weight: 800;
+}
