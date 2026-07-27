@@ -1,0 +1,126 @@
+/* 모바일 우선(mobile-first) 레이아웃.
+   주 사용 환경이 휴대폰이므로 좁은 화면 기준으로 작성하고,
+   넓은 화면에서는 가운데 정렬된 한 컬럼으로 보이도록 max-width 로 제한한다. */
+.login-page {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-logo {
+  margin: 24px 0 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #111;
+}
+
+.login-greeting {
+  margin: 72px 0 0;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #1f2937;
+}
+
+.login-form {
+  margin-top: 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-field {
+  position: relative;
+}
+
+.login-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18px 48px 18px 18px;
+  background: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  /* 16px 미만이면 iOS Safari 에서 입력 시 화면이 확대되므로 16px 이상 유지 */
+  font-size: 16px;
+  color: #111;
+  outline: none;
+}
+
+.login-input::placeholder {
+  color: #9ca3af;
+}
+
+/* 비밀번호 표시/숨기기 토글 버튼 */
+.login-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  display: flex;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.login-error {
+  margin: 4px 2px 0;
+  font-size: 14px;
+  color: #ef4444;
+}
+
+.login-button {
+  margin-top: 28px;
+  width: 100%;
+  padding: 18px;
+  border: none;
+  border-radius: 14px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.login-button:disabled {
+  background: #bcd3f7;
+  cursor: not-allowed;
+}
+
+.login-forgot {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.login-forgot-link {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* 회원가입 진입 안내 (로그인 버튼 아래 한 줄) */
+.login-signup {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.login-signup-link {
+  margin-left: 6px;
+  color: #3b82f6;
+  font-weight: 700;
+  text-decoration: none;
+}

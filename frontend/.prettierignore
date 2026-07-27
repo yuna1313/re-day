@@ -1,0 +1,7 @@
+dist
+node_modules
+package-lock.json
+*.md
+
+# MSW가 생성한 서비스워커 (수정하지 않음)
+public/mockServiceWorker.js

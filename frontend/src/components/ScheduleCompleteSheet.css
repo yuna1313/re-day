@@ -1,0 +1,147 @@
+.complete-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* 화면 하단에서 올라오는 시트 (상단은 메인 화면이 살짝 보이도록 높이 제한) */
+.complete-sheet {
+  width: 100%;
+  max-width: 480px;
+  height: 85dvh;
+  box-sizing: border-box;
+  padding: 12px 24px 24px;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: complete-up 0.25s ease-out;
+}
+
+/* 상단 그래버(손잡이) */
+.complete-grabber {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 6px 0 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.complete-grabber-bar {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: #d1d5db;
+}
+
+@keyframes complete-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* 내용 영역(위쪽), 완료 버튼은 시트 하단 고정 */
+.complete-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.complete-title {
+  margin: 0 0 22px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+}
+
+.complete-name {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+}
+
+.complete-est {
+  margin: 0;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.complete-divider {
+  margin: 22px 0;
+  border: none;
+  border-top: 1px solid #eceef1;
+}
+
+.complete-label {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.complete-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.complete-input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 16px;
+  background: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  /* iOS 입력 시 확대 방지 */
+  font-size: 16px;
+  color: #111;
+  outline: none;
+}
+
+.complete-input::placeholder {
+  color: #9ca3af;
+}
+
+.complete-unit {
+  font-size: 16px;
+  color: #374151;
+}
+
+.complete-submit {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 18px;
+  border: none;
+  border-radius: 14px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.complete-submit:disabled {
+  background: #bcd3f7;
+  cursor: not-allowed;
+}
+
+.complete-error {
+  margin: 0 2px 12px;
+  font-size: 14px;
+  color: #ef4444;
+}

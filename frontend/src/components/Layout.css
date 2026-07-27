@@ -1,0 +1,71 @@
+.app-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  /* 화면 높이에 고정하고, 스크롤은 내부(.app-main)에서만 발생 */
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  /* 앱 전체 좌우 패딩은 최상단 한 곳(여기)에서만 관리 */
+  padding: 0 1rem;
+}
+
+.app-main {
+  flex: 1;
+  /* 본문만 스크롤 → 탭바는 절대 콘텐츠를 가리지 않음 */
+  overflow-y: auto;
+  /* 스크롤은 유지하되 스크롤바는 숨김 (Firefox) */
+  scrollbar-width: none;
+}
+
+/* 스크롤바 숨김 (Chrome/Safari 등 WebKit) */
+.app-main::-webkit-scrollbar {
+  display: none;
+}
+
+/* 하단 탭바 (스크롤 영역 밖, 인플로우로 항상 하단 고정) */
+.bottom-nav {
+  flex-shrink: 0;
+  height: 64px;
+  display: flex;
+  background: #fff;
+  border-top: 1px solid #eee;
+  /* app-shell 의 좌우 1rem 패딩을 상쇄해 탭바는 전체 폭으로 */
+  margin: 0 -1rem;
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #9ca3af;
+  font-size: 11px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* NavLink 가 현재 경로와 일치하면 active 클래스를 붙여준다 */
+.bottom-nav-item.active {
+  color: #3b82f6;
+}
+
+/* 준비 중 화면 (회고/인사이트/마이) */
+.stub-page {
+  padding: 48px 0;
+}
+
+.stub-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+}
+
+.stub-desc {
+  margin: 0;
+  color: #9ca3af;
+}
