@@ -447,6 +447,212 @@ paths:
                     message: 인증코드 요청 횟수가 너무 많습니다.
                     data: null
       description: 회원가입 시 사용할 이메일 인증코드를 발송합니다.
+  /auth/password-reset/email/send-verification:
+    post:
+      summary: 비밀번호 재설정 이메일 인증코드 발송
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+              required:
+              - email
+      responses:
+        '200':
+          description: 요청 성공 또는 일반 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                AUTH_PASSWORD_RESET_VERIFICATION_SENT:
+                  summary: 비밀번호 재설정 인증코드 발송 성공
+                  value:
+                    success: true
+                    code: AUTH_PASSWORD_RESET_VERIFICATION_SENT
+                    message: 비밀번호 재설정 인증코드를 발송했습니다.
+                    data: null
+                AUTH_EMAIL_NOT_FOUND_FAIL:
+                  summary: 가입된 이메일을 찾을 수 없습니다.
+                  description: 입력한 이메일로 가입된 회원이 존재하지 않는 경우
+                  value:
+                    success: false
+                    code: AUTH_EMAIL_NOT_FOUND_FAIL
+                    message: 가입된 이메일을 찾을 수 없습니다.
+                    data: null
+                AUTH_INVALID_EMAIL_FORMAT_FAIL:
+                  summary: 이메일 형식이 올바르지 않습니다.
+                  description: 이메일 형식 검증에 실패한 경우
+                  value:
+                    success: false
+                    code: AUTH_INVALID_EMAIL_FORMAT_FAIL
+                    message: 이메일 형식이 올바르지 않습니다.
+                    data: null
+                AUTH_EMAIL_SEND_FAIL:
+                  summary: 이메일 인증코드 발송에 실패했습니다.
+                  description: 메일 발송 중 오류가 발생한 경우
+                  value:
+                    success: false
+                    code: AUTH_EMAIL_SEND_FAIL
+                    message: 이메일 인증코드 발송에 실패했습니다.
+                    data: null
+                AUTH_TOO_MANY_VERIFICATION_REQUESTS_FAIL:
+                  summary: 인증코드 요청 횟수가 너무 많습니다.
+                  description: 지정된 시간 내 인증코드 재요청 횟수 제한을 초과한 경우
+                  value:
+                    success: false
+                    code: AUTH_TOO_MANY_VERIFICATION_REQUESTS_FAIL
+                    message: 인증코드 요청 횟수가 너무 많습니다.
+                    data: null
+      description: 가입된 이메일 주소로 비밀번호 재설정에 사용할 6자리 인증코드를 발송합니다. 인증코드는 5분 동안 유효합니다.
+  /auth/password-reset/email/verify:
+    post:
+      summary: 비밀번호 재설정 이메일 인증코드 확인
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                verificationCode:
+                  type: string
+              required:
+              - email
+              - verificationCode
+      responses:
+        '200':
+          description: 요청 성공 또는 일반 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                AUTH_PASSWORD_RESET_VERIFIED:
+                  summary: 비밀번호 재설정 이메일 인증 성공
+                  value:
+                    success: true
+                    code: AUTH_PASSWORD_RESET_VERIFIED
+                    message: 비밀번호 재설정 이메일 인증이 완료되었습니다.
+                    data: null
+                AUTH_EMAIL_VERIFY_FAIL:
+                  summary: 이메일 인증에 실패했습니다.
+                  description: 요청 본문이 없거나 인증 처리 중 오류가 발생한 경우
+                  value:
+                    success: false
+                    code: AUTH_EMAIL_VERIFY_FAIL
+                    message: 이메일 인증에 실패했습니다.
+                    data: null
+                AUTH_INVALID_EMAIL_FORMAT_FAIL:
+                  summary: 이메일 형식이 올바르지 않습니다.
+                  description: 이메일 형식 검증에 실패한 경우
+                  value:
+                    success: false
+                    code: AUTH_INVALID_EMAIL_FORMAT_FAIL
+                    message: 이메일 형식이 올바르지 않습니다.
+                    data: null
+                AUTH_INVALID_VERIFICATION_CODE_FAIL:
+                  summary: 인증코드가 올바르지 않습니다.
+                  description: 인증코드가 저장된 코드와 일치하지 않거나 발급 내역이 없는 경우
+                  value:
+                    success: false
+                    code: AUTH_INVALID_VERIFICATION_CODE_FAIL
+                    message: 인증코드가 올바르지 않습니다.
+                    data: null
+                AUTH_VERIFICATION_CODE_EXPIRED_FAIL:
+                  summary: 인증코드가 만료되었습니다.
+                  description: 인증코드 유효시간이 지난 경우
+                  value:
+                    success: false
+                    code: AUTH_VERIFICATION_CODE_EXPIRED_FAIL
+                    message: 인증코드가 만료되었습니다.
+                    data: null
+      description: 비밀번호 재설정을 위해 발송된 6자리 인증코드를 확인하고 인증 완료 상태로 저장합니다.
+  /auth/password-reset:
+    post:
+      summary: 비밀번호 재설정
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                newPassword:
+                  type: string
+                newPasswordConfirm:
+                  type: string
+              required:
+              - email
+              - newPassword
+              - newPasswordConfirm
+      responses:
+        '200':
+          description: 요청 성공 또는 일반 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                AUTH_PASSWORD_RESET_SUCCESS:
+                  summary: 비밀번호 재설정 성공
+                  value:
+                    success: true
+                    code: AUTH_PASSWORD_RESET_SUCCESS
+                    message: 비밀번호 재설정이 완료되었습니다.
+                    data: null
+                AUTH_EMAIL_NOT_FOUND_FAIL:
+                  summary: 가입된 이메일을 찾을 수 없습니다.
+                  description: 입력한 이메일로 가입된 회원이 존재하지 않는 경우
+                  value:
+                    success: false
+                    code: AUTH_EMAIL_NOT_FOUND_FAIL
+                    message: 가입된 이메일을 찾을 수 없습니다.
+                    data: null
+                AUTH_EMAIL_NOT_VERIFIED_FAIL:
+                  summary: 이메일 인증이 완료되지 않았습니다.
+                  description: 비밀번호 재설정 이메일 인증번호 확인이 완료되지 않은 경우
+                  value:
+                    success: false
+                    code: AUTH_EMAIL_NOT_VERIFIED_FAIL
+                    message: 이메일 인증이 완료되지 않았습니다.
+                    data: null
+                AUTH_INVALID_EMAIL_FORMAT_FAIL:
+                  summary: 이메일 형식이 올바르지 않습니다.
+                  description: 이메일 형식 검증에 실패한 경우
+                  value:
+                    success: false
+                    code: AUTH_INVALID_EMAIL_FORMAT_FAIL
+                    message: 이메일 형식이 올바르지 않습니다.
+                    data: null
+                AUTH_INVALID_PASSWORD_FORMAT_FAIL:
+                  summary: 비밀번호 형식이 올바르지 않습니다.
+                  description: 새 비밀번호가 비밀번호 형식 조건을 만족하지 못한 경우
+                  value:
+                    success: false
+                    code: AUTH_INVALID_PASSWORD_FORMAT_FAIL
+                    message: 비밀번호 형식이 올바르지 않습니다.
+                    data: null
+                AUTH_PASSWORD_CONFIRM_MISMATCH_FAIL:
+                  summary: 비밀번호 확인이 일치하지 않습니다.
+                  description: newPassword와 newPasswordConfirm이 일치하지 않는 경우
+                  value:
+                    success: false
+                    code: AUTH_PASSWORD_CONFIRM_MISMATCH_FAIL
+                    message: 비밀번호 확인이 일치하지 않습니다.
+                    data: null
+      description: 비밀번호 재설정 이메일 인증을 완료한 이메일의 비밀번호를 새 비밀번호로 변경합니다. 성공하면 재설정 인증 기록은 삭제되어 재사용할 수 없습니다.
   /auth/email/verify:
     post:
       summary: 이메일 인증코드 확인
@@ -1153,6 +1359,13 @@ paths:
               properties:
                 deferReasonCode:
                   type: string
+                  enum:
+                  - LONGER_THAN_EXPECTED
+                  - NOT_STARTED
+                  - NO_TIME
+                  - COULD_NOT_FOCUS
+                  - TOO_BIG
+                  - CUSTOM
                 deferReasonDetail:
                   type:
                   - string

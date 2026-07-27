@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -33,6 +35,36 @@ import com.reday.schedule.repository.ScheduleActionLogRepository;
 import com.reday.schedule.repository.ScheduleRepository;
 
 class ScheduleServiceTest {
+
+	@ParameterizedTest
+	@ValueSource(strings = {"NOT_STARTED", "TOO_BIG"})
+	void deferScheduleSucceedsWithNewAllowedDeferReasonCodes(String deferReasonCode) {
+		Schedule schedule = Schedule.create(
+			1,
+			"schedule",
+			LocalDateTime.of(2026, 1, 9, 13, 30),
+			30,
+			null,
+			null,
+			ScheduleStatus.PENDING,
+			null,
+			1
+		);
+		ReflectionTestUtils.setField(schedule, "scheduleIdx", 102);
+		when(scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(102, 1))
+			.thenReturn(Optional.of(schedule));
+
+		scheduleService.deferSchedule(
+			1,
+			102,
+			new ScheduleDeferRequest(deferReasonCode, null, null)
+		);
+
+		ArgumentCaptor<ScheduleActionLog> actionLogCaptor = ArgumentCaptor.forClass(ScheduleActionLog.class);
+		verify(scheduleActionLogRepository).save(actionLogCaptor.capture());
+		assertThat(actionLogCaptor.getValue().getDeferReasonCode()).isEqualTo(deferReasonCode);
+		assertThat(actionLogCaptor.getValue().getDeferReasonDetail()).isNull();
+	}
 
 	private final ScheduleRepository scheduleRepository = org.mockito.Mockito.mock(ScheduleRepository.class);
 	private final ScheduleActionLogRepository scheduleActionLogRepository =

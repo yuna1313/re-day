@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.reday.auth.application.port.EmailSender;
 import com.reday.auth.application.port.EmailVerificationStore;
+import com.reday.auth.application.port.PasswordResetVerificationStore;
 import com.reday.auth.application.port.RefreshTokenStore;
 import com.reday.auth.application.port.VerificationCodeGenerator;
 import com.reday.auth.domain.Email;
@@ -30,6 +31,9 @@ import com.reday.auth.dto.EmailVerificationVerifyRequest;
 import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.LogoutRequest;
+import com.reday.auth.dto.PasswordResetRequest;
+import com.reday.auth.dto.PasswordResetVerificationSendRequest;
+import com.reday.auth.dto.PasswordResetVerificationVerifyRequest;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.TokenRefreshRequest;
 import com.reday.auth.dto.TokenRefreshResponse;
@@ -45,6 +49,8 @@ class AuthServiceTest {
 	private final PasswordEncoder passwordEncoder = org.mockito.Mockito.mock(PasswordEncoder.class);
 	private final EmailSender emailSender = org.mockito.Mockito.mock(EmailSender.class);
 	private final EmailVerificationStore emailVerificationStore = org.mockito.Mockito.mock(EmailVerificationStore.class);
+	private final PasswordResetVerificationStore passwordResetVerificationStore =
+		org.mockito.Mockito.mock(PasswordResetVerificationStore.class);
 	private final VerificationCodeGenerator verificationCodeGenerator = org.mockito.Mockito.mock(VerificationCodeGenerator.class);
 	private final RefreshTokenStore refreshTokenStore = org.mockito.Mockito.mock(RefreshTokenStore.class);
 	private final AuthenticationManager authenticationManager = org.mockito.Mockito.mock(AuthenticationManager.class);
@@ -54,6 +60,7 @@ class AuthServiceTest {
 		passwordEncoder,
 		emailSender,
 		emailVerificationStore,
+		passwordResetVerificationStore,
 		verificationCodeGenerator,
 		refreshTokenStore,
 		authenticationManager,
@@ -71,6 +78,124 @@ class AuthServiceTest {
 			.isEqualTo(AuthErrorCode.INVALID_EMAIL_FORMAT);
 
 		verify(memberRepository, never()).existsByEmail("yuna1313@naver");
+	}
+
+	@Test
+	void sendPasswordResetVerificationSendsCodeToExistingMemberEmail() {
+		Email email = Email.of("yuna1313@naver.com");
+		VerificationCode verificationCode = VerificationCode.of("123456");
+		when(memberRepository.existsByEmail("yuna1313@naver.com")).thenReturn(true);
+		when(verificationCodeGenerator.generate()).thenReturn(verificationCode);
+		when(passwordResetVerificationStore.findByEmail(email)).thenReturn(Optional.empty());
+
+		authService.sendPasswordResetVerification(new PasswordResetVerificationSendRequest("yuna1313@naver.com"));
+
+		verify(emailSender, times(1)).sendPasswordResetVerificationCode(email, verificationCode);
+		verify(passwordResetVerificationStore, times(1))
+			.save(org.mockito.ArgumentMatchers.argThat(verification ->
+				verification.email().equals(email) && verification.code().equals(verificationCode)));
+	}
+
+	@Test
+	void sendPasswordResetVerificationRejectsUnknownEmail() {
+		when(memberRepository.existsByEmail("unknown@naver.com")).thenReturn(false);
+
+		assertThatThrownBy(() ->
+			authService.sendPasswordResetVerification(new PasswordResetVerificationSendRequest("unknown@naver.com")))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.EMAIL_NOT_FOUND);
+
+		verify(emailSender, never()).sendPasswordResetVerificationCode(
+			org.mockito.ArgumentMatchers.any(),
+			org.mockito.ArgumentMatchers.any()
+		);
+	}
+
+	@Test
+	void verifyPasswordResetVerificationSucceedsWhenCodeMatches() {
+		Email email = Email.of("yuna1313@naver.com");
+		EmailVerification verification = EmailVerification.create(
+			email,
+			VerificationCode.of("123456"),
+			LocalDateTime.now(),
+			Duration.ofMinutes(5)
+		);
+		when(passwordResetVerificationStore.findByEmail(email)).thenReturn(Optional.of(verification));
+
+		authService.verifyPasswordResetVerification(
+			new PasswordResetVerificationVerifyRequest("yuna1313@naver.com", "123456")
+		);
+
+		verify(passwordResetVerificationStore, times(1)).complete(email);
+	}
+
+	@Test
+	void verifyPasswordResetVerificationRejectsMissingVerification() {
+		Email email = Email.of("yuna1313@naver.com");
+		when(passwordResetVerificationStore.findByEmail(email)).thenReturn(Optional.empty());
+
+		assertThatThrownBy(() ->
+			authService.verifyPasswordResetVerification(
+				new PasswordResetVerificationVerifyRequest("yuna1313@naver.com", "123456")
+			))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.INVALID_VERIFICATION_CODE);
+	}
+
+	@Test
+	void resetPasswordSucceedsWithVerifiedEmail() {
+		Email email = Email.of("yuna1313@naver.com");
+		Member member = Member.create("yuna", "yuna1313@naver.com", "old-encoded-password");
+		when(memberRepository.findByEmail("yuna1313@naver.com")).thenReturn(Optional.of(member));
+		when(passwordResetVerificationStore.isVerified(email)).thenReturn(true);
+		when(passwordEncoder.encode("newPassword123")).thenReturn("new-encoded-password");
+
+		authService.resetPassword(
+			new PasswordResetRequest("yuna1313@naver.com", "newPassword123", "newPassword123")
+		);
+
+		assertThat(member.getPassword()).isEqualTo("new-encoded-password");
+		verify(passwordResetVerificationStore, times(1)).delete(email);
+	}
+
+	@Test
+	void resetPasswordRejectsUnverifiedEmail() {
+		Email email = Email.of("yuna1313@naver.com");
+		Member member = Member.create("yuna", "yuna1313@naver.com", "old-encoded-password");
+		when(memberRepository.findByEmail("yuna1313@naver.com")).thenReturn(Optional.of(member));
+		when(passwordResetVerificationStore.isVerified(email)).thenReturn(false);
+
+		assertThatThrownBy(() ->
+			authService.resetPassword(
+				new PasswordResetRequest("yuna1313@naver.com", "newPassword123", "newPassword123")
+			))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.EMAIL_NOT_VERIFIED);
+
+		verify(passwordEncoder, never()).encode("newPassword123");
+		verify(passwordResetVerificationStore, never()).delete(email);
+	}
+
+	@Test
+	void resetPasswordRejectsPasswordConfirmMismatch() {
+		Email email = Email.of("yuna1313@naver.com");
+		Member member = Member.create("yuna", "yuna1313@naver.com", "old-encoded-password");
+		when(memberRepository.findByEmail("yuna1313@naver.com")).thenReturn(Optional.of(member));
+		when(passwordResetVerificationStore.isVerified(email)).thenReturn(true);
+
+		assertThatThrownBy(() ->
+			authService.resetPassword(
+				new PasswordResetRequest("yuna1313@naver.com", "newPassword123", "different123")
+			))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(AuthErrorCode.PASSWORD_CONFIRM_MISMATCH);
+
+		verify(passwordEncoder, never()).encode("newPassword123");
+		verify(passwordResetVerificationStore, never()).delete(email);
 	}
 
 	/**

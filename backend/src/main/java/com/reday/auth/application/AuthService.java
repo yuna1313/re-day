@@ -16,6 +16,7 @@ import org.springframework.util.StringUtils;
 
 import com.reday.auth.application.port.EmailSender;
 import com.reday.auth.application.port.EmailVerificationStore;
+import com.reday.auth.application.port.PasswordResetVerificationStore;
 import com.reday.auth.application.port.RefreshTokenStore;
 import com.reday.auth.application.port.VerificationCodeGenerator;
 import com.reday.auth.domain.Email;
@@ -28,6 +29,9 @@ import com.reday.auth.dto.EmailVerificationVerifyRequest;
 import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.LogoutRequest;
+import com.reday.auth.dto.PasswordResetRequest;
+import com.reday.auth.dto.PasswordResetVerificationSendRequest;
+import com.reday.auth.dto.PasswordResetVerificationVerifyRequest;
 import com.reday.auth.dto.SignupRequest;
 import com.reday.auth.dto.SignupResponse;
 import com.reday.auth.dto.TokenRefreshRequest;
@@ -51,6 +55,7 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final EmailSender emailSender;
 	private final EmailVerificationStore emailVerificationStore;
+	private final PasswordResetVerificationStore passwordResetVerificationStore;
 	private final VerificationCodeGenerator verificationCodeGenerator;
 	private final RefreshTokenStore refreshTokenStore;
 	private final AuthenticationManager authenticationManager;
@@ -113,6 +118,59 @@ public class AuthService {
 		emailSender.sendVerificationCode(email, verification.code());
 		emailVerificationStore.save(verification);
 		log.info("[sendEmailVerification] 이메일 인증코드 발송 완료: {}", email.value());
+	}
+
+	public void sendPasswordResetVerification(PasswordResetVerificationSendRequest request) {
+		log.info("[sendPasswordResetVerification] 비밀번호 재설정 인증코드 발송 요청");
+		if (request == null) {
+			throw new BusinessException(AuthErrorCode.INVALID_EMAIL_FORMAT);
+		}
+
+		Email email = Email.of(request.email());
+		if (!memberRepository.existsByEmail(email.value())) {
+			throw new BusinessException(AuthErrorCode.EMAIL_NOT_FOUND);
+		}
+
+		EmailVerification verification = createPasswordResetVerification(email);
+		emailSender.sendPasswordResetVerificationCode(email, verification.code());
+		passwordResetVerificationStore.save(verification);
+		log.info("[sendPasswordResetVerification] 비밀번호 재설정 인증코드 발송 완료: {}", email.value());
+	}
+
+	public void verifyPasswordResetVerification(PasswordResetVerificationVerifyRequest request) {
+		log.info("[verifyPasswordResetVerification] 비밀번호 재설정 인증코드 확인 요청");
+		if (request == null) {
+			throw new BusinessException(AuthErrorCode.EMAIL_VERIFY_FAIL);
+		}
+
+		Email email = Email.of(request.email());
+		VerificationCode inputCode = VerificationCode.of(request.verificationCode());
+		EmailVerification verification = passwordResetVerificationStore.findByEmail(email)
+			.orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_VERIFICATION_CODE));
+
+		verification.verify(inputCode, LocalDateTime.now());
+		passwordResetVerificationStore.complete(email);
+		log.info("[verifyPasswordResetVerification] 비밀번호 재설정 이메일 인증 완료: {}", email.value());
+	}
+
+	@Transactional
+	public void resetPassword(PasswordResetRequest request) {
+		log.info("[resetPassword] 비밀번호 재설정 요청");
+		if (request == null) {
+			throw new BusinessException(AuthErrorCode.INVALID_EMAIL_FORMAT);
+		}
+
+		Email email = Email.of(request.email());
+		Member member = memberRepository.findByEmail(email.value())
+			.orElseThrow(() -> new BusinessException(AuthErrorCode.EMAIL_NOT_FOUND));
+		if (!passwordResetVerificationStore.isVerified(email)) {
+			throw new BusinessException(AuthErrorCode.EMAIL_NOT_VERIFIED);
+		}
+
+		RawPassword newPassword = RawPassword.of(request.newPassword(), request.newPasswordConfirm());
+		member.changePassword(passwordEncoder.encode(newPassword.value()));
+		passwordResetVerificationStore.delete(email);
+		log.info("[resetPassword] 비밀번호 재설정 완료: {}", email.value());
 	}
 
 	/**
@@ -290,6 +348,22 @@ public class AuthService {
 		log.info("[createVerification] 인증코드 요청 기록 확인: {}", email.value());
 
 		return emailVerificationStore.findByEmail(email)
+			.map(verification -> verification.reissue(
+				verificationCode,
+				now,
+				VERIFICATION_CODE_TTL,
+				VERIFICATION_REQUEST_WINDOW,
+				MAX_VERIFICATION_REQUESTS
+			))
+			.orElseGet(() -> EmailVerification.create(email, verificationCode, now, VERIFICATION_CODE_TTL));
+	}
+
+	private EmailVerification createPasswordResetVerification(Email email) {
+		LocalDateTime now = LocalDateTime.now();
+		VerificationCode verificationCode = verificationCodeGenerator.generate();
+		log.info("[createPasswordResetVerification] 비밀번호 재설정 인증코드 요청 기록 확인: {}", email.value());
+
+		return passwordResetVerificationStore.findByEmail(email)
 			.map(verification -> verification.reissue(
 				verificationCode,
 				now,

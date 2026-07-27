@@ -52,4 +52,28 @@ public class SmtpEmailSender implements EmailSender {
 			throw new BusinessException(AuthErrorCode.EMAIL_SEND_FAIL);
 		}
 	}
+
+	@Override
+	public void sendPasswordResetVerificationCode(Email email, VerificationCode verificationCode) {
+		JavaMailSender javaMailSender = javaMailSenderProvider.getIfAvailable();
+		if (javaMailSender == null) {
+			log.warn("[sendPasswordResetVerificationCode] JavaMailSender bean is not available.");
+			throw new BusinessException(AuthErrorCode.EMAIL_SEND_FAIL);
+		}
+
+		SimpleMailMessage message = new SimpleMailMessage();
+		message.setTo(email.value());
+		message.setSubject("[RE:DAY] 비밀번호 재설정 인증코드");
+		message.setText("RE:DAY 비밀번호 재설정 인증코드는 "
+			+ verificationCode.value()
+			+ " 입니다. 5분 안에 입력해주세요.");
+
+		try {
+			log.info("[sendPasswordResetVerificationCode] 메일 발송 시도: {}", email.value());
+			javaMailSender.send(message);
+		} catch (MailException exception) {
+			log.warn("[sendPasswordResetVerificationCode] email send failed: {}", email.value(), exception);
+			throw new BusinessException(AuthErrorCode.EMAIL_SEND_FAIL);
+		}
+	}
 }

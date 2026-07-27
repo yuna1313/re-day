@@ -1,0 +1,151 @@
+.detail-page {
+  padding-bottom: 24px;
+}
+
+/* 헤더: 뒤로가기(좌) + 가운데 제목 */
+.detail-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  margin-top: 8px;
+}
+
+.detail-back {
+  position: absolute;
+  left: -4px;
+  display: flex;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.detail-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111;
+}
+
+/* 카드 */
+.detail-card {
+  margin-top: 16px;
+  padding: 18px 20px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(17, 24, 39, 0.06);
+}
+
+.detail-name {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111;
+}
+
+.detail-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+}
+
+.detail-divider {
+  margin: 14px 0 16px;
+  border: none;
+  border-top: 1px solid #eceef1;
+}
+
+.detail-row {
+  margin-bottom: 16px;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.detail-value {
+  margin: 0;
+  font-size: 15px;
+  color: #111;
+}
+
+/* 상태 색: 미완료=회색 / 완료=파랑 */
+.detail-status {
+  color: #9ca3af;
+}
+
+.detail-status-done {
+  color: #3b82f6;
+}
+
+.detail-memo {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #111;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.detail-memo-empty {
+  margin: 0;
+  font-size: 14px;
+  color: #c0c4cc;
+}
+
+/* 수정/삭제 버튼 */
+.detail-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.detail-edit,
+.detail-delete {
+  padding: 16px 0;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.detail-edit {
+  flex: 1;
+  border: none;
+  background: #3b82f6;
+  color: #fff;
+}
+
+.detail-delete {
+  flex: 1;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #ef4444;
+}
+
+.detail-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.detail-error {
+  margin: 12px 2px 0;
+  font-size: 14px;
+  color: #ef4444;
+  text-align: center;
+}

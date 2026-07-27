@@ -1,0 +1,40 @@
+.app-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.app-nav {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.app-nav a {
+  text-decoration: none;
+  color: #555;
+}
+
+/* NavLink가 현재 경로와 일치하면 active 클래스를 붙여준다 */
+.app-nav a.active {
+  color: #646cff;
+  font-weight: 600;
+}
+
+.app-main {
+  padding: 2rem 0;
+}

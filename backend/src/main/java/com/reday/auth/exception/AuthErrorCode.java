@@ -21,6 +21,7 @@ public enum AuthErrorCode implements ErrorResponseCode {
 	REFRESH_TOKEN_REVOKED(HttpStatus.FORBIDDEN, "AUTH_REFRESH_TOKEN_REVOKED_FAIL", "이미 무효화된 리프레시 토큰입니다."),
 	EMAIL_NOT_VERIFIED(HttpStatus.FORBIDDEN, "AUTH_EMAIL_NOT_VERIFIED_FAIL", "이메일 인증이 완료되지 않았습니다."),
 	EMAIL_DUPLICATED(HttpStatus.OK, "AUTH_EMAIL_DUPLICATED_FAIL", "이미 사용 중인 이메일입니다."),
+	EMAIL_NOT_FOUND(HttpStatus.OK, "AUTH_EMAIL_NOT_FOUND_FAIL", "가입된 이메일을 찾을 수 없습니다."),
 	INVALID_EMAIL_FORMAT(HttpStatus.OK, "AUTH_INVALID_EMAIL_FORMAT_FAIL", "이메일 형식이 올바르지 않습니다."),
 	INVALID_PASSWORD_FORMAT(HttpStatus.OK, "AUTH_INVALID_PASSWORD_FORMAT_FAIL", "비밀번호 형식이 올바르지 않습니다."),
 	INVALID_NICKNAME(HttpStatus.OK, "AUTH_INVALID_NICKNAME_FAIL", "닉네임 형식이 올바르지 않습니다."),

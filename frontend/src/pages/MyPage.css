@@ -1,0 +1,123 @@
+.mypage {
+  padding: 0 0 24px;
+}
+
+/* 헤더 */
+.mypage-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0 2px;
+  margin-bottom: 18px;
+}
+
+.mypage-title {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* 카드 공통 */
+.mypage-card {
+  background: #fff;
+  border: 1px solid #f0f1f3;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.mypage-card + .mypage-card {
+  margin-top: 16px;
+}
+
+/* 프로필 */
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+}
+
+.profile-avatar {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #eef1f5;
+  color: #9aa3b0;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.profile-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+
+.profile-email {
+  font-size: 13px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mypage-divider {
+  height: 1px;
+  background: #f0f1f3;
+}
+
+/* 메뉴 행 */
+.menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 18px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.menu-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.menu-lock {
+  color: #3b82f6;
+}
+
+.menu-chevron {
+  color: #c2c9d3;
+}
+
+/* 로그아웃 */
+.logout-btn {
+  width: 100%;
+  padding: 18px;
+  border: none;
+  background: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ef4444;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
