@@ -1,0 +1,76 @@
+name: Deploy backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            backend/**/*.gradle*
+            backend/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Build and test
+        working-directory: backend
+        run: |
+          chmod +x gradlew
+          ./gradlew clean test bootJar --no-daemon
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VULTR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VULTR_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
+          chmod 600 ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload and deploy
+        env:
+          VULTR_HOST: ${{ secrets.VULTR_HOST }}
+          VULTR_USER: ${{ secrets.VULTR_USER }}
+        run: |
+          JAR_FILE=$(find backend/build/libs \
+            -type f \
+            -name "*.jar" \
+            ! -name "*-plain.jar" \
+            | head -n 1)
+
+          if [ -z "$JAR_FILE" ]; then
+            echo "Spring Boot JAR 파일을 찾을 수 없습니다."
+            exit 1
+          fi
+
+          scp "$JAR_FILE" \
+            "$VULTR_USER@$VULTR_HOST:/opt/reday/app.jar.new"
+
+          ssh "$VULTR_USER@$VULTR_HOST" '
+            set -e
+            cd /opt/reday
+            mv app.jar.new app.jar
+            docker compose up -d --build backend
+            docker image prune -f
+            docker compose ps
+          '
