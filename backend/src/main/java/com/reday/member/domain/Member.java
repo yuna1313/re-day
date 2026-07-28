@@ -85,4 +85,11 @@ public class Member {
 	public void changePassword(String encodedPassword) {
 		this.password = encodedPassword;
 	}
+
+	/**
+	 * 로그인 성공 시점을 기록합니다.
+	 */
+	public void recordLogin() {
+		this.lastLoginAt = LocalDateTime.now();
+	}
 }
