@@ -9,6 +9,9 @@ import './ReflectionPage.css'
 
 const MAX_LENGTH = 1000
 
+// 자기연민 + 미래지향 회고를 돕는 가이드 프롬프트
+const REFLECTION_PROMPTS = ['오늘 잘한 점', '아쉬웠던 점', '내일 딱 하나']
+
 function ReflectionPage() {
   const todayKey = format(new Date(), 'yyyy-MM-dd')
 
@@ -36,6 +39,14 @@ function ReflectionPage() {
   const cancelEditing = () => {
     setIsEditing(false)
     updateMutation.reset()
+  }
+
+  // 프롬프트 칩을 누르면 현재 내용 끝에 시작 문장을 붙여준다.
+  const insertPrompt = (label) => {
+    setContent((prev) => {
+      const base = prev.replace(/\s*$/, '')
+      return base ? `${base}\n${label}: ` : `${label}: `
+    })
   }
 
   const handleSubmit = () => {
@@ -79,7 +90,9 @@ function ReflectionPage() {
             ))}
           </ul>
         ) : completed.length === 0 ? (
-          <p className="reflection-empty">완료한 일정이 없어요.</p>
+          <p className="reflection-empty">
+            오늘은 천천히 가도 괜찮아요. 내일 다시 시작하면 돼요 🙂
+          </p>
         ) : (
           <ul className="completed-list">
             {completed.map((item) => (
@@ -104,14 +117,28 @@ function ReflectionPage() {
           <>
             {!hasReflection && (
               <p className="reflection-subtext">
-                오늘의 회고를 작성해볼까요? 😎
+                오늘 하루, 스스로에게 편하게 한마디 남겨볼까요? 😊
               </p>
             )}
+
+            {/* 자기연민+미래지향 가이드 프롬프트 (누르면 시작 문장 삽입) */}
+            <div className="reflection-prompts">
+              {REFLECTION_PROMPTS.map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  className="reflection-prompt"
+                  onClick={() => insertPrompt(label)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
             <div className="reflection-textarea-wrap">
               <textarea
                 className="reflection-textarea"
-                placeholder="오늘 느낀 점이나 배운 점을 자유롭게 작성해보세요."
+                placeholder="잘한 점, 아쉬운 점, 내일 시도할 것을 편하게 적어보세요. 완벽하지 않아도 괜찮아요."
                 value={content}
                 maxLength={MAX_LENGTH}
                 onChange={(event) => setContent(event.target.value)}

@@ -199,18 +199,21 @@ function ScheduleFormInner({ isEdit, initial }) {
           </div>
         </div>
 
-        {/* 메모 */}
+        {/* 첫 단계 (실행의도 — 착수 저항 낮추기) */}
         <div className="form-field">
           <label className="form-label" htmlFor="schedule-memo">
-            메모
+            첫 단계 (선택)
           </label>
           <input
             id="schedule-memo"
             className="form-input"
-            placeholder="메모를 입력해주세요 (선택)"
+            placeholder="예: 운동화 신기 / 자료 폴더 열기"
             value={memo}
             onChange={(event) => setMemo(event.target.value)}
           />
+          <p className="form-hint">
+            가장 작은 첫 행동을 적어두면 시작이 훨씬 쉬워져요.
+          </p>
         </div>
 
         {submitMutation.isError && (
