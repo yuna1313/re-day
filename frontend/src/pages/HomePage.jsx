@@ -207,8 +207,8 @@ function HomePage() {
               // 이번 달이 아니면 회색, 아니면 일=빨강/토=파랑/평일=검정
               const numClass = [
                 'month-day-num',
-                isToday(day) && 'today', // 오늘 = 하늘색 배경
-                isSameDay(day, selectedDate) && 'selected', // 선택 = 파란 테두리
+                isToday(day) && 'today', // 오늘 = 파란 테두리
+                isSameDay(day, selectedDate) && 'selected', // 선택 = 하늘색 배경 + 파란 글씨
                 isOther
                   ? 'other-month'
                   : dow === 0
