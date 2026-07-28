@@ -1,9 +1,47 @@
-import { TrendingUp, Clock3, Sparkles } from 'lucide-react'
+import { TrendingUp, Clock3, Sparkles, Lightbulb } from 'lucide-react'
 import { useInsights } from '../hooks/useInsights'
 import { getApiErrorMessage } from '../api/client'
 import './InsightsPage.css'
 
 const Y_TICKS = [100, 50, 0]
+
+// 미루기 상위 이유별 행동 제안
+const DEFER_ACTION_TIP = {
+  LONGER_THAN_EXPECTED: '예상 시간을 넉넉히 잡거나 작업을 잘게 나눠보세요.',
+  TOO_BIG: '작업을 더 작은 단위로 쪼개면 시작이 쉬워져요.',
+  NOT_STARTED: '가장 작은 첫 단계를 정해 바로 시작해보세요.',
+  COULD_NOT_FOCUS: '25분 집중 → 5분 휴식처럼 짧게 나눠 집중해보세요.',
+  NO_TIME: '하루에 딱 하나를 "오늘의 한 가지"로 정해보세요.',
+}
+
+// 응답 데이터로 행동 제안(액션 팁) 생성 — 숫자를 "그래서 뭘 할지"로 연결
+function buildActionTips(timeSlots, reasons, diff) {
+  const tips = []
+
+  const best = timeSlots.reduce(
+    (acc, slot) =>
+      slot.completionRate > (acc?.completionRate ?? -1) ? slot : acc,
+    null,
+  )
+  if (best && best.completionRate > 0) {
+    tips.push(
+      `${best.label}에 완료율이 높아요. 어려운 일은 ${best.label}에 배치해보세요.`,
+    )
+  }
+
+  const topReason = reasons[0]
+  if (topReason && DEFER_ACTION_TIP[topReason.deferReasonCode]) {
+    tips.push(DEFER_ACTION_TIP[topReason.deferReasonCode])
+  }
+
+  if (diff > 0) {
+    tips.push(
+      `실제가 예상보다 평균 ${diff}분 더 걸려요. 예상 시간을 실제에 맞춰 잡아보세요.`,
+    )
+  }
+
+  return tips
+}
 
 function InsightsPage() {
   const { data, isLoading, isError, error } = useInsights()
@@ -44,6 +82,7 @@ function InsightsContent({ data }) {
   const actMin = est.averageActualMinutes ?? 0
   const diff = est.averageDiffMinutes ?? actMin - estMin
   const maxMin = Math.max(estMin, actMin) || 1
+  const tips = buildActionTips(timeSlots, reasons, diff)
 
   return (
     <>
@@ -174,6 +213,23 @@ function InsightsContent({ data }) {
           )}
         </div>
       </section>
+
+      {/* 이렇게 해보세요 (관찰 → 행동) */}
+      {tips.length > 0 && (
+        <section className="insights-section">
+          <h2 className="insights-heading">이렇게 해보세요</h2>
+          <div className="insights-card">
+            <ul className="tip-list">
+              {tips.map((tip, i) => (
+                <li className="tip-item" key={i}>
+                  <Lightbulb size={16} />
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
     </>
   )
 }

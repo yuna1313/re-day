@@ -8,12 +8,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-	private static final String FRONTEND_ORIGIN = "https://re-day-one.vercel.app";
+	// 운영 도메인 + Vercel 프리뷰(*.vercel.app) + 로컬 개발 서버(Vite)
+	private static final String[] ALLOWED_ORIGIN_PATTERNS = {
+		"https://re-day-one.vercel.app",
+		"https://*.vercel.app",
+		"http://localhost:5173"
+	};
 
 	@Override
 	public void addCorsMappings(CorsRegistry registry) {
 		registry.addMapping("/api/v1/**")
-			.allowedOrigins(FRONTEND_ORIGIN)
+			.allowedOriginPatterns(ALLOWED_ORIGIN_PATTERNS)
 			.allowedMethods("GET", "POST", "PATCH", "DELETE", "OPTIONS")
 			.allowedHeaders("*")
 			.allowCredentials(true);

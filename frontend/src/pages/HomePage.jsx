@@ -95,13 +95,17 @@ function HomePage() {
     deferMutation.reset()
   }
 
-  const handleDeferSubmit = ({ deferReasonCode, deferReasonDetail }) => {
+  const handleDeferSubmit = ({
+    deferReasonCode,
+    deferReasonDetail,
+    newStartAt,
+  }) => {
     deferMutation.mutate(
       {
         scheduleId: deferringSchedule.id,
         deferReasonCode,
         deferReasonDetail,
-        newStartAt: null, // 시안에 시간 변경 입력이 없어 사유만 기록
+        newStartAt, // 미루기 = 다시 할 시간 재약속
       },
       { onSuccess: closeDeferSheet },
     )
@@ -347,7 +351,14 @@ function ScheduleItem({ item, onCompleteClick, onDeferClick, onItemClick }) {
 
         <div className="schedule-body">
           <p className="schedule-name">{item.title}</p>
-          <span className="schedule-est">예상 {item.estimatedMin}분</span>
+          <div className="schedule-meta">
+            <span className="schedule-est">예상 {item.estimatedMin}분</span>
+            {item.deferCount > 0 && (
+              <span className="schedule-defer-badge">
+                {item.deferCount}번 미룸
+              </span>
+            )}
+          </div>
         </div>
       </button>
 

@@ -1,30 +1,41 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, ChevronUp, ChevronDown } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import { useSchedule } from '../hooks/useSchedule'
 import { useCreateSchedule } from '../hooks/useCreateSchedule'
 import { useUpdateSchedule } from '../hooks/useUpdateSchedule'
 import { getApiErrorMessage } from '../api/client'
 import './ScheduleFormPage.css'
 
-// 폼의 날짜 + 시간(12h) → 'yyyy-MM-dd HH:mm:ss'
+const pad = (n) => String(n).padStart(2, '0')
+
+// 폼의 날짜 + 시간('HH:mm') → 'yyyy-MM-dd HH:mm:ss'
 function buildStartAt(date, time) {
-  const hour24 = time.ampm === 'AM' ? time.hour % 12 : (time.hour % 12) + 12
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${date} ${pad(hour24)}:${pad(time.minute)}:00`
+  return `${date} ${time}:00`
 }
 
-// 기존 일정(수정)에서 초기 시간 파싱. 없으면 오전 12:00.
-function parseInitialTime(schedule) {
-  if (schedule?.time && schedule?.period) {
-    const [h, m] = schedule.time.split(':').map(Number)
-    return {
-      hour: h,
-      minute: m,
-      ampm: schedule.period === '오전' ? 'AM' : 'PM',
-    }
-  }
-  return { hour: 12, minute: 0, ampm: 'AM' }
+// 오늘 날짜 'yyyy-MM-dd' (등록 기본값)
+function todayStr() {
+  const d = new Date()
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+// 다음 30분 단위 'HH:mm' (등록 기본값, 예: 14:10 → 14:30, 14:37 → 15:00)
+function nextHalfHourStr() {
+  const d = new Date()
+  d.setSeconds(0, 0)
+  // 30분 미만이면 30분으로, 이상이면 다음 정시(60 → 자동으로 다음 시각 00분)
+  d.setMinutes(d.getMinutes() < 30 ? 30 : 60)
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+// 기존 일정(수정)의 표시용 12시간(오전/오후 HH:mm) → time input용 24시간 'HH:mm'
+function toTimeInput(schedule) {
+  if (!schedule?.time || !schedule?.period) return nextHalfHourStr()
+  const [hour12, minute] = schedule.time.split(':')
+  const base = Number(hour12) % 12
+  const hour24 = schedule.period === '오전' ? base : base + 12
+  return `${pad(hour24)}:${minute}`
 }
 
 // 헤더(뒤로 + 제목)
@@ -82,24 +93,22 @@ function ScheduleFormInner({ isEdit, initial }) {
   const navigate = useNavigate()
 
   const [title, setTitle] = useState(initial?.title ?? '')
-  const [date, setDate] = useState(initial?.date ?? '')
-  const [time, setTime] = useState(() => parseInitialTime(initial))
+  // 등록: 오늘 날짜 / 다음 정시 기본값. 수정: 기존 값.
+  const [date, setDate] = useState(initial?.date ?? todayStr())
+  const [time, setTime] = useState(() =>
+    initial ? toTimeInput(initial) : nextHalfHourStr(),
+  )
   const [estimatedMinutes, setEstimatedMinutes] = useState(
     initial?.estimatedMin != null ? String(initial.estimatedMin) : '',
   )
   const [memo, setMemo] = useState(initial?.memo ?? '')
-  const [showTimePicker, setShowTimePicker] = useState(false)
 
   const createMutation = useCreateSchedule()
   const updateMutation = useUpdateSchedule()
   const submitMutation = isEdit ? updateMutation : createMutation
 
-  const timeLabel = `${time.ampm === 'AM' ? '오전' : '오후'} ${String(
-    time.hour,
-  ).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`
-
   const isSubmitDisabled =
-    !title || !date || !estimatedMinutes || submitMutation.isPending
+    !title || !date || !time || !estimatedMinutes || submitMutation.isPending
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -154,17 +163,18 @@ function ScheduleFormInner({ isEdit, initial }) {
           />
         </div>
 
-        {/* 시작 시간 (커스텀 스테퍼) */}
+        {/* 시작 시간 (네이티브 시간 피커) */}
         <div className="form-field">
-          <label className="form-label">시작 시간</label>
-          <button
-            type="button"
-            className="form-input form-time-field"
-            onClick={() => setShowTimePicker((v) => !v)}
-          >
-            {timeLabel}
-          </button>
-          {showTimePicker && <TimeStepper time={time} onChange={setTime} />}
+          <label className="form-label" htmlFor="schedule-time">
+            시작 시간
+          </label>
+          <input
+            id="schedule-time"
+            type="time"
+            className="form-input"
+            value={time}
+            onChange={(event) => setTime(event.target.value)}
+          />
         </div>
 
         {/* 예상 시간 */}
@@ -189,18 +199,21 @@ function ScheduleFormInner({ isEdit, initial }) {
           </div>
         </div>
 
-        {/* 메모 */}
+        {/* 첫 단계 (실행의도 — 착수 저항 낮추기) */}
         <div className="form-field">
           <label className="form-label" htmlFor="schedule-memo">
-            메모
+            첫 단계 (선택)
           </label>
           <input
             id="schedule-memo"
             className="form-input"
-            placeholder="메모를 입력해주세요 (선택)"
+            placeholder="예: 운동화 신기 / 자료 폴더 열기"
             value={memo}
             onChange={(event) => setMemo(event.target.value)}
           />
+          <p className="form-hint">
+            가장 작은 첫 행동을 적어두면 시작이 훨씬 쉬워져요.
+          </p>
         </div>
 
         {submitMutation.isError && (
@@ -223,85 +236,6 @@ function ScheduleFormInner({ isEdit, initial }) {
               : '등록'}
         </button>
       </form>
-    </div>
-  )
-}
-
-// 시:분 AM/PM 스테퍼
-function TimeStepper({ time, onChange }) {
-  const { hour, minute, ampm } = time
-  const changeHour = (delta) =>
-    onChange({ ...time, hour: ((hour - 1 + delta + 12) % 12) + 1 })
-  const changeMinute = (delta) =>
-    onChange({ ...time, minute: (minute + delta + 60) % 60 })
-  const toggleAmpm = () =>
-    onChange({ ...time, ampm: ampm === 'AM' ? 'PM' : 'AM' })
-
-  return (
-    <div className="time-stepper">
-      <div className="ts-left">
-        <div className="ts-col">
-          <button
-            type="button"
-            className="ts-btn"
-            onClick={() => changeHour(1)}
-            aria-label="시 올리기"
-          >
-            <ChevronUp size={18} />
-          </button>
-          <span className="ts-value">{String(hour).padStart(2, '0')}</span>
-          <button
-            type="button"
-            className="ts-btn"
-            onClick={() => changeHour(-1)}
-            aria-label="시 내리기"
-          >
-            <ChevronDown size={18} />
-          </button>
-        </div>
-
-        <span className="ts-colon">:</span>
-
-        <div className="ts-col">
-          <button
-            type="button"
-            className="ts-btn"
-            onClick={() => changeMinute(1)}
-            aria-label="분 올리기"
-          >
-            <ChevronUp size={18} />
-          </button>
-          <span className="ts-value">{String(minute).padStart(2, '0')}</span>
-          <button
-            type="button"
-            className="ts-btn"
-            onClick={() => changeMinute(-1)}
-            aria-label="분 내리기"
-          >
-            <ChevronDown size={18} />
-          </button>
-        </div>
-      </div>
-
-      <div className="ts-col">
-        <button
-          type="button"
-          className="ts-btn"
-          onClick={toggleAmpm}
-          aria-label="오전/오후 올리기"
-        >
-          <ChevronUp size={18} />
-        </button>
-        <span className="ts-value">{ampm}</span>
-        <button
-          type="button"
-          className="ts-btn"
-          onClick={toggleAmpm}
-          aria-label="오전/오후 내리기"
-        >
-          <ChevronDown size={18} />
-        </button>
-      </div>
     </div>
   )
 }
