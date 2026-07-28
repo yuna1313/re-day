@@ -103,6 +103,12 @@ function ScheduleDetailBody({
             {schedule.completed ? '완료' : '미완료'}
           </p>
         </div>
+        {schedule.deferCount > 0 && (
+          <div className="detail-row">
+            <p className="detail-label">미룬 횟수</p>
+            <p className="detail-value">{schedule.deferCount}번</p>
+          </div>
+        )}
       </div>
 
       {/* 메모 */}

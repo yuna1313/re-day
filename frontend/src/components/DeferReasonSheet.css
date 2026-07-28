@@ -69,6 +69,75 @@
   color: #9ca3af;
 }
 
+/* 미루기 횟수 인지(자책 아닌 재약속 톤) */
+.defer-count-note {
+  margin: 0 0 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ea580c;
+}
+
+/* 섹션 (재약속 / 이유) */
+.defer-section {
+  margin-bottom: 22px;
+}
+
+.defer-section-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+
+/* 빠른 재약속 칩 */
+.defer-presets {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.defer-preset {
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.defer-preset.active {
+  border-color: #3b82f6;
+  background: #eff4ff;
+  color: #2563eb;
+}
+
+/* 날짜 + 시간 입력 */
+.defer-datetime {
+  display: flex;
+  gap: 10px;
+}
+
+.defer-dt-input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 13px 12px;
+  background: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #111;
+  outline: none;
+}
+
+.defer-dt-input:focus {
+  border-color: #3b82f6;
+}
+
 .defer-options {
   display: flex;
   flex-direction: column;

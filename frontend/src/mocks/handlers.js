@@ -239,12 +239,16 @@ export const handlers = [
       const scheduleId = Number(params.scheduleId)
       const { newStartAt } = await request.json()
 
-      // 새 시작일시가 있으면 목록에 반영
-      if (newStartAt) {
-        updatedSchedules[scheduleId] = {
-          ...(updatedSchedules[scheduleId] ?? {}),
-          startAt: newStartAt,
-        }
+      // 현재 상태 기준으로 미루기 횟수 +1, 새 시작일시 반영
+      const current = getResolvedSchedules().find(
+        (s) => s.scheduleId === scheduleId,
+      )
+      const nextDeferCount = (current?.deferCount ?? 0) + 1
+
+      updatedSchedules[scheduleId] = {
+        ...(updatedSchedules[scheduleId] ?? {}),
+        ...(newStartAt ? { startAt: newStartAt } : {}),
+        deferCount: nextDeferCount,
       }
 
       return HttpResponse.json({
@@ -254,8 +258,8 @@ export const handlers = [
         data: {
           scheduleId,
           status: 'PENDING',
-          startAt: newStartAt ?? null,
-          deferCount: 1,
+          startAt: newStartAt ?? current?.startAt ?? null,
+          deferCount: nextDeferCount,
         },
       })
     },
