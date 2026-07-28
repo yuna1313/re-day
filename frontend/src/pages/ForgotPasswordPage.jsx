@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { authApi } from '../api/auth'
 import { getApiErrorMessage } from '../api/client'
 import { isValidEmail } from '../utils/validators'
+import AuthHeader from '../components/AuthHeader'
 import './ForgotPasswordPage.css'
 
 // 재전송까지 대기 시간(초). 버튼 연타/반복 요청 방지용.
@@ -62,7 +63,7 @@ function ForgotPasswordPage() {
 
   return (
     <div className="forgot-page">
-      <h1 className="forgot-logo">RE:DAY</h1>
+      <AuthHeader title="비밀번호 찾기" onBack={() => navigate(-1)} />
       <p className="forgot-desc">
         비밀번호 재설정을 위해 이메일 인증을 진행해주세요.
       </p>
@@ -141,12 +142,6 @@ function ForgotPasswordPage() {
           )}
         </p>
       </form>
-
-      <p className="forgot-back">
-        <Link to="/login" className="forgot-back-link">
-          로그인으로 돌아가기
-        </Link>
-      </p>
     </div>
   )
 }
