@@ -111,14 +111,16 @@ function ScheduleDetailBody({
         )}
       </div>
 
-      {/* 메모 */}
+      {/* 첫 단계 */}
       <div className="detail-card">
-        <h2 className="detail-card-title">메모</h2>
+        <h2 className="detail-card-title">첫 단계</h2>
         <hr className="detail-divider" />
         {schedule.memo ? (
           <p className="detail-memo">{schedule.memo}</p>
         ) : (
-          <p className="detail-memo-empty">작성된 메모가 없어요.</p>
+          <p className="detail-memo-empty">
+            첫 단계를 적어두면 시작이 쉬워져요.
+          </p>
         )}
       </div>
 
