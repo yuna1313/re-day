@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { Eye, EyeOff } from 'lucide-react'
+import AuthHeader from '../components/AuthHeader'
 import { authApi } from '../api/auth'
 import { getApiErrorMessage } from '../api/client'
 import { AGREEMENTS } from '../constants/agreements'
@@ -103,8 +104,7 @@ function SignupPage() {
 
   return (
     <div className="signup-page">
-      <h1 className="signup-logo">RE:DAY</h1>
-      <p className="signup-desc">회원가입을 위해 아래 정보들을 입력해주세요.</p>
+      <AuthHeader title="회원가입" onBack={() => navigate(-1)} />
 
       <form className="signup-form" onSubmit={handleSubmit} noValidate>
         {/* 닉네임 */}
