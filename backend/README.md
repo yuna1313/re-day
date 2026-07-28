@@ -73,6 +73,9 @@ main(backend 변경) push
 
 필요한 GitHub Secrets: `VULTR_HOST`, `VULTR_USER`, `VULTR_SSH_KEY`, `VULTR_KNOWN_HOSTS`
 
+컨테이너 정의: [compose.yml](./compose.yml) · [Dockerfile](./Dockerfile)
+(Dockerfile은 CI가 빌드한 `app.jar`를 이미지화하는 **서버 배포 전용** — 로컬 클론에는 `app.jar`가 없어 그대로는 빌드되지 않습니다.)
+
 ## 🖥️ 서버 구성 & 운영
 
 **서버 디렉터리 (`/opt/reday`)**
