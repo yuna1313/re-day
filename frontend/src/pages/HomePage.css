@@ -223,14 +223,15 @@
   color: #c8c8cc;
 }
 
-/* 오늘: 하늘색 배경 */
+/* 오늘: 파란 테두리 (주간 스트립과 통일) */
 .month-day-num.today {
-  background: #e6f0ff;
+  border-color: #3b82f6;
 }
 
-/* 선택: 파란 테두리 */
+/* 선택: 하늘색 배경 + 파란 글씨 (주간 스트립과 통일) */
 .month-day-num.selected {
-  border-color: #3b82f6;
+  background: #e6f0ff;
+  color: #3b82f6;
 }
 
 /* 해당 날짜 일정 개수 */
