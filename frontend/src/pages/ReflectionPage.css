@@ -82,6 +82,31 @@
   color: #9ca3af;
 }
 
+/* 회고 가이드 프롬프트 칩 */
+.reflection-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.reflection-prompt {
+  padding: 7px 13px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.reflection-prompt:active {
+  background: #f3f4f6;
+}
+
 .reflection-textarea-wrap {
   position: relative;
 }
