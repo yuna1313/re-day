@@ -20,6 +20,7 @@ import { useDeferSchedule } from '../hooks/useDeferSchedule'
 import { getApiErrorMessage } from '../api/client'
 import ScheduleCompleteSheet from '../components/ScheduleCompleteSheet'
 import DeferReasonSheet from '../components/DeferReasonSheet'
+import ScheduleFormSheet from '../components/ScheduleFormSheet'
 import './HomePage.css'
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
@@ -31,6 +32,34 @@ const dateKey = (d) =>
 
 const monthDay = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`
 
+// 빠른 추가 제안: 최근 사용한 제목 우선, 부족하면 기본 예시로 채움
+const SUGGESTION_LIMIT = 6
+const DEFAULT_SUGGESTIONS = ['운동', '공부', '독서', '산책']
+
+function buildTitleSuggestions(byDate) {
+  const items = Object.values(byDate).flat()
+  // 최근 날짜 순
+  const sorted = [...items].sort((a, b) => (a.date < b.date ? 1 : -1))
+  const seen = new Set()
+  const result = []
+  for (const item of sorted) {
+    const title = item.title?.trim()
+    if (title && !seen.has(title)) {
+      seen.add(title)
+      result.push(title)
+    }
+    if (result.length >= SUGGESTION_LIMIT) break
+  }
+  for (const preset of DEFAULT_SUGGESTIONS) {
+    if (result.length >= SUGGESTION_LIMIT) break
+    if (!seen.has(preset)) {
+      seen.add(preset)
+      result.push(preset)
+    }
+  }
+  return result
+}
+
 function HomePage() {
   const navigate = useNavigate()
   const [view, setView] = useState('week') // 'week' | 'month'
@@ -39,6 +68,8 @@ function HomePage() {
   const [completingSchedule, setCompletingSchedule] = useState(null)
   // '미루기' 클릭한 일정 (null 이면 미루기 시트 닫힘)
   const [deferringSchedule, setDeferringSchedule] = useState(null)
+  // 일정 등록 시트 열림 여부
+  const [showCreateSheet, setShowCreateSheet] = useState(false)
 
   // 주간용
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 })
@@ -273,7 +304,7 @@ function HomePage() {
           type="button"
           className="home-fab"
           aria-label="일정 추가"
-          onClick={() => navigate('/schedules/new')}
+          onClick={() => setShowCreateSheet(true)}
         >
           <Plus size={28} />
         </button>
@@ -306,6 +337,14 @@ function HomePage() {
               ? getApiErrorMessage(deferMutation.error)
               : null
           }
+        />
+      )}
+
+      {/* 일정 등록 시트 (FAB 클릭 시) */}
+      {showCreateSheet && (
+        <ScheduleFormSheet
+          suggestions={buildTitleSuggestions(schedulesByDate)}
+          onClose={() => setShowCreateSheet(false)}
         />
       )}
     </div>
