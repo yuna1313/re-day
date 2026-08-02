@@ -133,7 +133,11 @@ function SignupPage() {
             onClick={handleRequestCode}
             disabled={!isEmailValid || sendCodeMutation.isPending}
           >
-            인증번호 전송
+            {sendCodeMutation.isPending
+              ? '전송 중...'
+              : sendCodeMutation.isSuccess
+                ? '재전송'
+                : '인증번호 전송'}
           </button>
         </div>
 
@@ -142,9 +146,14 @@ function SignupPage() {
           <p className="signup-error">이메일 형식을 다시 한번 확인해주세요.</p>
         )}
 
-        {/* 인증코드 발송 결과 안내 */}
+        {/* 인증코드 발송 상태 안내 (전송 중 / 성공 / 실패) */}
+        {sendCodeMutation.isPending && (
+          <p className="signup-hint">인증번호를 보내는 중이에요...</p>
+        )}
         {sendCodeMutation.isSuccess && (
-          <p className="signup-hint">{sendCodeMutation.data.message}</p>
+          <p className="signup-hint">
+            인증코드를 메일로 보냈어요. 안 보이면 스팸함도 확인해주세요.
+          </p>
         )}
         {sendCodeMutation.isError && (
           <p className="signup-error">
@@ -176,7 +185,11 @@ function SignupPage() {
             onClick={handleVerifyCode}
             disabled={isEmailVerified || verifyCodeMutation.isPending || !code}
           >
-            {isEmailVerified ? '인증완료' : '확인하기'}
+            {isEmailVerified
+              ? '인증완료'
+              : verifyCodeMutation.isPending
+                ? '확인 중...'
+                : '확인하기'}
           </button>
         </div>
 
