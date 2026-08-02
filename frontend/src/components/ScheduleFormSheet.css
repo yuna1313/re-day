@@ -1,0 +1,62 @@
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* 어두운 스크림 + 뒤 배경 블러 */
+  background: rgba(17, 24, 39, 0.35);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.schedule-sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90dvh;
+  box-sizing: border-box;
+  padding: 12px 24px 24px;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  animation: sheet-up 0.25s ease-out;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* 상단 그래버 */
+.sheet-grabber {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 6px 0 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sheet-grabber-bar {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: #d1d5db;
+}
+
+.sheet-title {
+  margin: 2px 0 18px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111;
+}

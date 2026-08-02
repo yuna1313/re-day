@@ -1,0 +1,111 @@
+/* 일정 등록/수정 공용 입력 필드 스타일 (페이지·바텀시트 공유) */
+.form-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-field {
+  margin-bottom: 22px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+
+/* 빠른 추가 제안 칩 (제목) */
+.form-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.form-suggestion {
+  padding: 7px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.form-suggestion:active {
+  background: #f3f4f6;
+}
+
+/* 필드 아래 안내 문구 */
+.form-hint {
+  margin: 8px 2px 0;
+  font-size: 12.5px;
+  color: #9ca3af;
+  line-height: 1.5;
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  background: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  /* iOS 입력 시 확대 방지 */
+  font-size: 16px;
+  color: #111;
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
+/* 예상 시간 (분 단위 접미사) */
+.form-est-wrap {
+  position: relative;
+}
+
+.form-est-input {
+  padding-right: 42px;
+}
+
+.form-est-unit {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: #6b7280;
+}
+
+.form-error {
+  margin: 0 2px 12px;
+  font-size: 14px;
+  color: #ef4444;
+}
+
+.form-submit {
+  margin-top: 12px;
+  width: 100%;
+  padding: 17px;
+  border: none;
+  border-radius: 14px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.form-submit:disabled {
+  background: #bcd3f7;
+  cursor: not-allowed;
+}
