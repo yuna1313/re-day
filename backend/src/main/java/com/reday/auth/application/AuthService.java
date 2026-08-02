@@ -201,6 +201,7 @@ public class AuthService {
 	 * @param request 로그인 요청 정보
 	 * @return 발급된 토큰과 로그인 회원 정보
 	 */
+	@Transactional
 	public LoginResponse login(LoginRequest request) {
 		log.info("[login] 로그인 요청");
 		if (request == null) {
@@ -214,6 +215,9 @@ public class AuthService {
 		if (!member.isEmailVerified()) {
 			throw new BusinessException(AuthErrorCode.EMAIL_NOT_VERIFIED);
 		}
+
+		// 로그인 성공 시각 기록 (트랜잭션 dirty-checking 으로 반영)
+		member.recordLogin();
 
 		String accessToken = jwtTokenProvider.createAccessToken(authentication);
 		String refreshToken = jwtTokenProvider.createRefreshToken(authentication);

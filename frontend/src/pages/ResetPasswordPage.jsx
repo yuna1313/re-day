@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { Eye, EyeOff } from 'lucide-react'
 import { authApi } from '../api/auth'
 import { getApiErrorMessage } from '../api/client'
+import AuthHeader from '../components/AuthHeader'
 import './ResetPasswordPage.css'
 
 function ResetPasswordPage() {
@@ -48,8 +49,7 @@ function ResetPasswordPage() {
 
   return (
     <div className="reset-page">
-      <h1 className="reset-logo">RE:DAY</h1>
-      <p className="reset-desc">비밀번호 재설정을 진행해주세요.</p>
+      <AuthHeader title="비밀번호 재설정" onBack={() => navigate(-1)} />
 
       <form className="reset-form" onSubmit={handleSubmit} noValidate>
         {/* 비밀번호 */}

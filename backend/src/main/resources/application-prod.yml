@@ -11,5 +11,9 @@ spring:
       maximum-pool-size: 5
       minimum-idle: 1
 
+  mail:
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+
 jwt:
   secret: ${JWT_SECRET}

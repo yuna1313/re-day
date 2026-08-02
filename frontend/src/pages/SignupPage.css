@@ -10,23 +10,8 @@
   flex-direction: column;
 }
 
-.signup-logo {
-  margin: 24px 0 0;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  color: #111;
-}
-
-.signup-desc {
-  margin: 40px 0 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: #1f2937;
-}
-
 .signup-form {
-  margin-top: 28px;
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -59,6 +44,30 @@
 .signup-row .signup-input {
   flex: 1;
   min-width: 0;
+}
+
+/* 인증번호 입력란 + 유효시간 타이머 오버레이 */
+.signup-code-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.signup-code-input {
+  /* 우측 타이머 공간 확보 */
+  padding-right: 58px;
+}
+
+.signup-timer {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  font-size: 13px;
+  font-weight: 700;
+  color: #ef4444;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
 }
 
 .signup-side-button {
