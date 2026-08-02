@@ -8,7 +8,16 @@ import AuthHeader from '../components/AuthHeader'
 import './ForgotPasswordPage.css'
 
 // 재전송까지 대기 시간(초). 버튼 연타/반복 요청 방지용.
-const RESEND_COOLDOWN = 60
+const RESEND_COOLDOWN = 30
+// 인증번호 유효시간(초). 백엔드 TTL(5분)과 동일하게 맞춘다.
+const CODE_TTL_SECONDS = 5 * 60
+
+// 남은 초 → 'M:SS'
+const formatMMSS = (totalSeconds) => {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
 
 function ForgotPasswordPage() {
   const navigate = useNavigate()
@@ -16,6 +25,7 @@ function ForgotPasswordPage() {
   const [emailTouched, setEmailTouched] = useState(false)
   const [code, setCode] = useState('')
   const [cooldown, setCooldown] = useState(0)
+  const [codeExpiry, setCodeExpiry] = useState(0)
 
   const isEmailOk = isValidEmail(email)
   const showEmailError = emailTouched && email.length > 0 && !isEmailOk
@@ -23,7 +33,10 @@ function ForgotPasswordPage() {
   // 인증코드 발송
   const sendCodeMutation = useMutation({
     mutationFn: authApi.sendPasswordResetCode,
-    onSuccess: () => setCooldown(RESEND_COOLDOWN),
+    onSuccess: () => {
+      setCooldown(RESEND_COOLDOWN)
+      setCodeExpiry(CODE_TTL_SECONDS)
+    },
   })
 
   // 재전송 쿨다운 카운트다운 (1초마다 감소)
@@ -32,6 +45,13 @@ function ForgotPasswordPage() {
     const timer = setTimeout(() => setCooldown((prev) => prev - 1), 1000)
     return () => clearTimeout(timer)
   }, [cooldown])
+
+  // 인증번호 유효시간 카운트다운 (0이 되면 만료)
+  useEffect(() => {
+    if (codeExpiry <= 0) return
+    const timer = setTimeout(() => setCodeExpiry((prev) => prev - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [codeExpiry])
 
   const handleSendCode = () => {
     if (!isEmailOk || cooldown > 0 || sendCodeMutation.isPending) return
@@ -105,41 +125,56 @@ function ForgotPasswordPage() {
             </span>
           )}
           {!showEmailError && sendCodeMutation.isSuccess && (
-            <span className="forgot-hint">인증코드를 메일로 보냈어요.</span>
+            <span className="forgot-hint">
+              인증코드를 메일로 보냈어요. 안 보이면 스팸함도 확인해주세요.
+            </span>
           )}
         </p>
 
         {/* 인증번호 + 확인 */}
         <div className="forgot-row">
-          <input
-            type="text"
-            className="forgot-input"
-            placeholder="인증번호"
-            value={code}
-            // 숫자만, 최대 6자리
-            onChange={(event) =>
-              setCode(event.target.value.replace(/\D/g, '').slice(0, 6))
-            }
-            inputMode="numeric"
-            maxLength={6}
-          />
+          <div className="forgot-code-wrap">
+            <input
+              type="text"
+              className="forgot-input forgot-code-input"
+              placeholder="인증번호"
+              value={code}
+              // 숫자만, 최대 6자리
+              onChange={(event) =>
+                setCode(event.target.value.replace(/\D/g, '').slice(0, 6))
+              }
+              inputMode="numeric"
+              maxLength={6}
+            />
+            {/* 인증번호 유효시간 카운트다운 */}
+            {codeExpiry > 0 && (
+              <span className="forgot-timer">{formatMMSS(codeExpiry)}</span>
+            )}
+          </div>
           <button
             type="button"
             className="forgot-side-button"
             onClick={handleVerify}
             disabled={code.length !== 6 || verifyCodeMutation.isPending}
           >
-            확인하기
+            {verifyCodeMutation.isPending ? '확인 중...' : '확인하기'}
           </button>
         </div>
 
-        {/* 인증코드 확인 실패 안내 (성공 시엔 다음 화면으로 이동) */}
+        {/* 인증코드 확인 실패 / 만료 안내 (성공 시엔 다음 화면으로 이동) */}
         <p className="forgot-message" aria-live="polite">
           {verifyCodeMutation.isError && (
             <span className="forgot-error">
               {getApiErrorMessage(verifyCodeMutation.error)}
             </span>
           )}
+          {!verifyCodeMutation.isError &&
+            sendCodeMutation.isSuccess &&
+            codeExpiry === 0 && (
+              <span className="forgot-error">
+                인증번호가 만료되었어요. 다시 전송해주세요.
+              </span>
+            )}
         </p>
       </form>
     </div>
