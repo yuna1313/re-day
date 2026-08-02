@@ -26,8 +26,7 @@ function App() {
 
       {/* 로그인해야만 접근 가능한 영역 */}
       <Route element={<ProtectedRoute />}>
-        {/* 일정 등록/수정: 하단 탭 없는 전체화면 */}
-        <Route path="/schedules/new" element={<ScheduleFormPage />} />
+        {/* 일정 수정: 하단 탭 없는 전체화면 (등록은 홈의 바텀시트) */}
         <Route
           path="/schedules/:scheduleId/edit"
           element={<ScheduleFormPage />}
