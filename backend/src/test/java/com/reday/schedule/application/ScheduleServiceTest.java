@@ -3,10 +3,12 @@ package com.reday.schedule.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +31,8 @@ import com.reday.schedule.dto.ScheduleDeferRequest;
 import com.reday.schedule.dto.ScheduleDeferResponse;
 import com.reday.schedule.dto.ScheduleDetailResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
+import com.reday.schedule.dto.ScheduleOverdueResponse;
+import com.reday.schedule.dto.ScheduleSearchResponse;
 import com.reday.schedule.dto.ScheduleUpdateRequest;
 import com.reday.schedule.exception.ScheduleErrorCode;
 import com.reday.schedule.repository.ScheduleActionLogRepository;
@@ -567,5 +571,132 @@ class ScheduleServiceTest {
 			.isInstanceOf(BusinessException.class)
 			.extracting(exception -> ((BusinessException)exception).getErrorCode())
 			.isEqualTo(ScheduleErrorCode.NOT_FOUND);
+	}
+
+	/**
+	 * 검색어 앞뒤 공백을 제거하고 제목에 검색어가 포함된 일정을 반환합니다.
+	 */
+	@Test
+	void searchSchedulesReturnsMatchedSchedules() {
+		Schedule schedule = Schedule.create(
+			1,
+			"이력서 수정",
+			LocalDateTime.of(2026, 1, 9, 10, 0),
+			30,
+			null,
+			null,
+			ScheduleStatus.PENDING,
+			null,
+			0
+		);
+		ReflectionTestUtils.setField(schedule, "scheduleIdx", 103);
+		when(scheduleRepository.findTop50ByMemberIdxAndDeletedAtIsNullAndTitleContainingOrderByStartAtDesc(1, "이력서"))
+			.thenReturn(List.of(schedule));
+
+		ScheduleSearchResponse response = scheduleService.searchSchedules(1, "  이력서  ");
+
+		assertThat(response.keyword()).isEqualTo("이력서");
+		assertThat(response.hasMore()).isFalse();
+		assertThat(response.schedules()).hasSize(1);
+		assertThat(response.schedules().get(0).scheduleId()).isEqualTo(103);
+		assertThat(response.schedules().get(0).title()).isEqualTo("이력서 수정");
+		assertThat(response.schedules().get(0).startAt()).isEqualTo("2026-01-09 10:00:00");
+	}
+
+	/**
+	 * 검색 결과가 최대 조회 개수까지 차면 더 있을 수 있음을 알립니다.
+	 */
+	@Test
+	void searchSchedulesMarksHasMoreWhenResultsReachLimit() {
+		Schedule schedule = Schedule.create(
+			1,
+			"운동하기",
+			LocalDateTime.of(2026, 1, 9, 8, 0),
+			15,
+			null,
+			null,
+			ScheduleStatus.PENDING,
+			null,
+			0
+		);
+		ReflectionTestUtils.setField(schedule, "scheduleIdx", 101);
+		when(scheduleRepository.findTop50ByMemberIdxAndDeletedAtIsNullAndTitleContainingOrderByStartAtDesc(1, "운동"))
+			.thenReturn(Collections.nCopies(50, schedule));
+
+		ScheduleSearchResponse response = scheduleService.searchSchedules(1, "운동");
+
+		assertThat(response.hasMore()).isTrue();
+		assertThat(response.schedules()).hasSize(50);
+	}
+
+	/**
+	 * 오늘 이전에 시작했지만 끝내지 않은 일정을 전체 개수와 함께 반환합니다.
+	 */
+	@Test
+	void getOverdueSchedulesReturnsPendingSchedulesBeforeToday() {
+		Schedule schedule = Schedule.create(
+			1,
+			"이력서 수정",
+			LocalDateTime.of(2026, 1, 5, 10, 0),
+			30,
+			null,
+			null,
+			ScheduleStatus.PENDING,
+			null,
+			2
+		);
+		ReflectionTestUtils.setField(schedule, "scheduleIdx", 103);
+		when(scheduleRepository.findTop50ByMemberIdxAndDeletedAtIsNullAndStatusAndStartAtBeforeOrderByStartAtDesc(
+			eq(1),
+			eq(ScheduleStatus.PENDING),
+			any(LocalDateTime.class)
+		)).thenReturn(List.of(schedule));
+		when(scheduleRepository.countByMemberIdxAndDeletedAtIsNullAndStatusAndStartAtBefore(
+			eq(1),
+			eq(ScheduleStatus.PENDING),
+			any(LocalDateTime.class)
+		)).thenReturn(3L);
+
+		ScheduleOverdueResponse response = scheduleService.getOverdueSchedules(1);
+
+		assertThat(response.totalCount()).isEqualTo(3);
+		assertThat(response.hasMore()).isFalse();
+		assertThat(response.schedules()).hasSize(1);
+		assertThat(response.schedules().get(0).scheduleId()).isEqualTo(103);
+		assertThat(response.schedules().get(0).deferCount()).isEqualTo(2);
+	}
+
+	/**
+	 * 밀린 일정이 최대 조회 개수를 넘으면 더 있음을 알립니다.
+	 */
+	@Test
+	void getOverdueSchedulesMarksHasMoreWhenTotalExceedsLimit() {
+		when(scheduleRepository.findTop50ByMemberIdxAndDeletedAtIsNullAndStatusAndStartAtBeforeOrderByStartAtDesc(
+			eq(1),
+			eq(ScheduleStatus.PENDING),
+			any(LocalDateTime.class)
+		)).thenReturn(List.of());
+		when(scheduleRepository.countByMemberIdxAndDeletedAtIsNullAndStatusAndStartAtBefore(
+			eq(1),
+			eq(ScheduleStatus.PENDING),
+			any(LocalDateTime.class)
+		)).thenReturn(51L);
+
+		ScheduleOverdueResponse response = scheduleService.getOverdueSchedules(1);
+
+		assertThat(response.totalCount()).isEqualTo(51);
+		assertThat(response.hasMore()).isTrue();
+	}
+
+	/**
+	 * 검색어가 비어 있으면 검색어 오류로 처리합니다.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {"", "   "})
+	void searchSchedulesRejectsBlankKeyword(String keyword) {
+		assertThatThrownBy(() -> scheduleService.searchSchedules(1, keyword))
+			.isInstanceOf(BusinessException.class)
+			.extracting(exception -> ((BusinessException)exception).getErrorCode())
+			.isEqualTo(ScheduleErrorCode.INVALID_KEYWORD);
 	}
 }

@@ -13,8 +13,15 @@ import {
   isSameMonth,
   isToday,
 } from 'date-fns'
-import { Plus, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
+import {
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  Search,
+} from 'lucide-react'
 import { useSchedules } from '../hooks/useSchedules'
+import { useOverdueSchedules } from '../hooks/useOverdueSchedules'
 import { useCompleteSchedule } from '../hooks/useCompleteSchedule'
 import { useDeferSchedule } from '../hooks/useDeferSchedule'
 import { getApiErrorMessage } from '../api/client'
@@ -105,6 +112,10 @@ function HomePage() {
 
   const items = schedulesByDate[dateKey(selectedDate)] ?? []
 
+  // 밀린 일정: 매일 오늘 화면만 보다 보면 놓치게 되므로 홈 상단에서 알려준다.
+  const { data: overdue } = useOverdueSchedules()
+  const overdueCount = overdue?.totalCount ?? 0
+
   const completeMutation = useCompleteSchedule()
 
   const closeCompleteSheet = () => {
@@ -147,7 +158,30 @@ function HomePage() {
       {/* 헤더 */}
       <header className="home-header">
         <h1 className="home-logo">RE:DAY</h1>
+        <button
+          type="button"
+          className="home-search-btn"
+          onClick={() => navigate('/search')}
+          aria-label="일정 검색"
+        >
+          <Search size={22} />
+        </button>
       </header>
+
+      {/* 밀린 일정 배너 (없으면 아예 표시하지 않는다) */}
+      {overdueCount > 0 && (
+        <button
+          type="button"
+          className="home-overdue"
+          onClick={() => navigate('/overdue')}
+        >
+          <span className="home-overdue-dot" />
+          <span className="home-overdue-text">
+            아직 끝내지 못한 일정 {overdueCount}개
+          </span>
+          <ChevronRight size={18} className="home-overdue-chevron" />
+        </button>
+      )}
 
       {/* 주간/월간 탭 */}
       <div className="home-tabs">
@@ -227,6 +261,9 @@ function HomePage() {
       ) : (
         /* 월간 달력 */
         <>
+          {/* 이 달 요약. 달력 위에 둬야 아래 일정 목록을 밀어내지 않는다. */}
+          <MonthSummary counts={buildMonthSummary(schedulesByDate)} />
+
           <div className="month-weekdays">
             {WEEKDAYS.map((w) => (
               <span key={w} className="month-weekday">
@@ -236,7 +273,7 @@ function HomePage() {
           </div>
           <div className="month-grid">
             {monthDays.map((day) => {
-              const count = (schedulesByDate[dateKey(day)] ?? []).length
+              const dayItems = schedulesByDate[dateKey(day)] ?? []
               const isOther = !isSameMonth(day, monthStart)
               const dow = day.getDay() // 0=일, 6=토
               // 이번 달이 아니면 회색, 아니면 일=빨강/토=파랑/평일=검정
@@ -260,11 +297,15 @@ function HomePage() {
                   type="button"
                   className="month-cell"
                   onClick={() => setSelectedDate(day)}
+                  // 점은 시각 표현이라, 개수는 읽어줄 수 있게 라벨로 남긴다.
+                  aria-label={
+                    dayItems.length > 0
+                      ? `${monthDay(day)}, 일정 ${dayItems.length}개`
+                      : undefined
+                  }
                 >
                   <span className={numClass}>{day.getDate()}</span>
-                  {count > 0 && (
-                    <span className="month-day-count">{count}개</span>
-                  )}
+                  {dayItems.length > 0 && <MonthDayDots items={dayItems} />}
                 </button>
               )
             })}
@@ -347,6 +388,72 @@ function HomePage() {
           onClose={() => setShowCreateSheet(false)}
         />
       )}
+    </div>
+  )
+}
+
+// 월간 셀 아래 점 표시.
+// 셀이 좁아 최대 3개까지만 찍고 나머지는 표시하지 않는다.
+// (점은 "무엇이 있는지"를 알리는 신호일 뿐이고, 정확한 개수·내용은 날짜를 누르면 아래 목록에 나온다.
+//  모바일 캘린더의 통용 방식 — Google 캘린더도 월간에서 점 3개까지만 찍고 나머지는 생략한다.)
+const MAX_DOTS = 3
+
+// 미룬 일정 > 남은 일정 > 완료 순. 점이 잘려도 미룬 날은 반드시 눈에 띄게 한다.
+const DOT_KINDS = ['deferred', 'pending', 'done']
+
+function dotKind(item) {
+  if (item.completed) return 'done'
+  return item.deferCount > 0 ? 'deferred' : 'pending'
+}
+
+function MonthDayDots({ items }) {
+  // 3개가 넘으면 신호가 강한 것부터 고르고,
+  // 고른 뒤에는 아래 일정 목록과 순서가 어긋나지 않도록 다시 시간순으로 되돌린다.
+  const picked = [...items]
+    .sort(
+      (a, b) => DOT_KINDS.indexOf(dotKind(a)) - DOT_KINDS.indexOf(dotKind(b)),
+    )
+    .slice(0, MAX_DOTS)
+  const visible = items.filter((item) => picked.includes(item))
+
+  return (
+    <span className="month-dots" aria-hidden="true">
+      {visible.map((item) => (
+        <span key={item.id} className={`month-dot ${dotKind(item)}`} />
+      ))}
+    </span>
+  )
+}
+
+// 이 달 요약. 달력 점과 같은 기준(완료 > 미룸 > 남음)으로 세므로,
+// 숫자를 세는 동시에 점 색이 무슨 뜻인지 알려주는 범례 역할도 한다.
+// 조회 범위가 그 달이라 schedulesByDate 에는 이 달 일정만 들어 있다.
+function buildMonthSummary(byDate) {
+  const counts = { done: 0, deferred: 0, pending: 0 }
+  for (const item of Object.values(byDate).flat()) {
+    counts[dotKind(item)] += 1
+  }
+  return counts
+}
+
+function MonthSummary({ counts }) {
+  // 일정이 하나도 없는 달에는 빈 숫자를 늘어놓지 않는다.
+  if (counts.done + counts.deferred + counts.pending === 0) return null
+
+  return (
+    <div className="month-summary">
+      <span className="month-summary-item">
+        <span className="month-dot done" />
+        완료 <strong>{counts.done}</strong>
+      </span>
+      <span className="month-summary-item">
+        <span className="month-dot deferred" />
+        미룸 <strong>{counts.deferred}</strong>
+      </span>
+      <span className="month-summary-item">
+        <span className="month-dot pending" />
+        남음 <strong>{counts.pending}</strong>
+      </span>
     </div>
   )
 }

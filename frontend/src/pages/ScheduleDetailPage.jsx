@@ -3,7 +3,22 @@ import { ChevronLeft } from 'lucide-react'
 import { useSchedule } from '../hooks/useSchedule'
 import { useDeleteSchedule } from '../hooks/useDeleteSchedule'
 import { getApiErrorMessage } from '../api/client'
+import { DEFER_CUSTOM_CODE, deferReasonLabel } from '../constants/deferReasons'
 import './ScheduleDetailPage.css'
+
+// 처리 로그 시각 "2026-08-12 15:20:00" → "8월 12일 오후 03:20"
+function actionTimeLabel(actionAt) {
+  if (!actionAt) return ''
+
+  const month = Number(actionAt.slice(5, 7))
+  const day = Number(actionAt.slice(8, 10))
+  const hour24 = Number(actionAt.slice(11, 13))
+  const minute = actionAt.slice(14, 16)
+  const period = hour24 < 12 ? '오전' : '오후'
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12
+
+  return `${month}월 ${day}일 ${period} ${String(hour12).padStart(2, '0')}:${minute}`
+}
 
 function ScheduleDetailPage() {
   const navigate = useNavigate()
@@ -75,6 +90,8 @@ function ScheduleDetailBody({
 }) {
   const [year, month, day] = schedule.date.split('-')
   const startAtLabel = `${Number(year)}년 ${Number(month)}월 ${Number(day)}일 ${schedule.period} ${schedule.time}`
+  // 목록에서 넘어온 placeholder 에는 로그가 없으므로 상세 조회 전까지는 빈 배열
+  const actionLogs = schedule.deferLogs ?? []
 
   return (
     <>
@@ -124,6 +141,9 @@ function ScheduleDetailBody({
         )}
       </div>
 
+      {/* 처리 기록 (미루기/완료 이력이 있을 때만) */}
+      {actionLogs.length > 0 && <ScheduleActionLogs logs={actionLogs} />}
+
       {/* 수정 / 삭제 (완료된 일정은 기록이므로 수정 불가, 삭제만 가능) */}
       <div className="detail-actions">
         {!schedule.completed && (
@@ -143,6 +163,52 @@ function ScheduleDetailBody({
 
       {deleteError && <p className="detail-error">{deleteError}</p>}
     </>
+  )
+}
+
+// 미루기/완료 이력 타임라인. logs 는 백엔드가 처리 시각 오름차순으로 내려준다.
+function ScheduleActionLogs({ logs }) {
+  return (
+    <div className="detail-card">
+      <h2 className="detail-card-title">처리 기록</h2>
+      <hr className="detail-divider" />
+
+      <ol className="log-list">
+        {logs.map((log) => {
+          const isDone = log.actionType === 'DONE'
+          const isCustom = log.deferReasonCode === DEFER_CUSTOM_CODE
+          const detail = log.deferReasonDetail
+
+          return (
+            <li className="log-item" key={log.actionLogId}>
+              <span className={isDone ? 'log-dot done' : 'log-dot'} />
+              <div className="log-body">
+                <p className="log-head">
+                  <span className={isDone ? 'log-action done' : 'log-action'}>
+                    {isDone ? '완료함' : '미룸'}
+                  </span>
+                  <span className="log-time">
+                    {actionTimeLabel(log.actionAt)}
+                  </span>
+                </p>
+
+                {/* 직접 입력한 사유는 라벨 대신 적어둔 내용을 그대로 보여준다 */}
+                {!isDone && (
+                  <p className="log-reason">
+                    {isCustom && detail
+                      ? detail
+                      : deferReasonLabel(log.deferReasonCode)}
+                  </p>
+                )}
+                {!isDone && !isCustom && detail && (
+                  <p className="log-detail">{detail}</p>
+                )}
+              </div>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
   )
 }
 

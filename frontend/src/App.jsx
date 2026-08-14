@@ -8,6 +8,8 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import HomePage from './pages/HomePage'
 import ScheduleDetailPage from './pages/ScheduleDetailPage'
 import ScheduleFormPage from './pages/ScheduleFormPage'
+import SearchPage from './pages/SearchPage'
+import OverduePage from './pages/OverduePage'
 import ReflectionPage from './pages/ReflectionPage'
 import InsightsPage from './pages/InsightsPage'
 import MyPage from './pages/MyPage'
@@ -35,6 +37,8 @@ function App() {
         {/* 하단 탭바 공유 */}
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/overdue" element={<OverduePage />} />
           <Route
             path="/schedules/:scheduleId"
             element={<ScheduleDetailPage />}

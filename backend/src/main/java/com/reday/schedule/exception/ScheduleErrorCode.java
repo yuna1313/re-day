@@ -29,7 +29,8 @@ public enum ScheduleErrorCode implements ErrorResponseCode {
 		"SCH_DEFER_REASON_DETAIL_REQUIRED_FAIL",
 		"미루기 상세 사유를 입력해주세요."
 	),
-	INVALID_NEW_START_AT(HttpStatus.OK, "SCH_INVALID_NEW_START_AT_FAIL", "변경할 시작 일시가 올바르지 않습니다.");
+	INVALID_NEW_START_AT(HttpStatus.OK, "SCH_INVALID_NEW_START_AT_FAIL", "변경할 시작 일시가 올바르지 않습니다."),
+	INVALID_KEYWORD(HttpStatus.OK, "SCH_INVALID_KEYWORD_FAIL", "검색어가 올바르지 않습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;

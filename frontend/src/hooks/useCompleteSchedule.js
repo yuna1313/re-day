@@ -10,8 +10,8 @@ export function useCompleteSchedule() {
     onSuccess: (_data, variables) => {
       // 일정 목록
       queryClient.invalidateQueries({ queryKey: ['schedules'] })
-      // 회고 탭 "오늘 완료한 일정"
-      queryClient.invalidateQueries({ queryKey: ['reflections', 'today'] })
+      // 회고 탭 "완료한 일정" (날짜별로 캐시되므로 전체 무효화)
+      queryClient.invalidateQueries({ queryKey: ['reflections'] })
       // 해당 일정 상세
       queryClient.invalidateQueries({
         queryKey: ['schedule', String(variables.scheduleId)],

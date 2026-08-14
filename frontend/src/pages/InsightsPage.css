@@ -275,6 +275,18 @@
   min-width: 0;
 }
 
+/* 자주 미루는 일정 행은 눌러서 상세로 이동한다 */
+.deferred-main {
+  display: block;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .reason-top {
   display: flex;
   align-items: baseline;

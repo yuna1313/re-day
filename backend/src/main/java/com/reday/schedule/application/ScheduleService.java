@@ -26,6 +26,8 @@ import com.reday.schedule.dto.ScheduleDeferRequest;
 import com.reday.schedule.dto.ScheduleDeferResponse;
 import com.reday.schedule.dto.ScheduleDetailResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
+import com.reday.schedule.dto.ScheduleOverdueResponse;
+import com.reday.schedule.dto.ScheduleSearchResponse;
 import com.reday.schedule.dto.ScheduleUpdateRequest;
 import com.reday.schedule.exception.ScheduleErrorCode;
 import com.reday.schedule.repository.ScheduleActionLogRepository;
@@ -44,6 +46,10 @@ public class ScheduleService {
 	private static final int MAX_TITLE_LENGTH = 500;
 	private static final int MAX_ESTIMATED_MINUTES = 1440;
 	private static final int MAX_DEFER_REASON_DETAIL_LENGTH = 500;
+	private static final int MAX_KEYWORD_LENGTH = 100;
+	// ScheduleRepository 의 findTop50... 조회 개수와 반드시 같아야 한다.
+	private static final int MAX_SEARCH_RESULTS = 50;
+	private static final int MAX_OVERDUE_RESULTS = 50;
 	private static final String CUSTOM_DEFER_REASON_CODE = "CUSTOM";
 	private static final Set<String> ALLOWED_DEFER_REASON_CODES = Set.of(
 		"LONGER_THAN_EXPECTED",
@@ -95,6 +101,69 @@ public class ScheduleService {
 			parsedViewType.name(),
 			dateRange.startDate().format(DATE_FORMATTER),
 			dateRange.endDate().format(DATE_FORMATTER),
+			schedules.stream()
+				.map(this::toSummary)
+				.toList()
+		);
+	}
+
+	/**
+	 * 로그인한 사용자의 밀린 일정(오늘 이전에 시작했지만 아직 끝내지 않은 일정)을 최근 순으로 조회합니다.
+	 * 오늘 일정은 아직 남은 시간이 있으므로 밀린 일정으로 보지 않습니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @return 밀린 일정 조회 응답. 전체 개수와 최대 조회 개수까지 찼는지를 함께 담는다
+	 */
+	@Transactional(readOnly = true)
+	public ScheduleOverdueResponse getOverdueSchedules(Integer memberIdx) {
+		LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+		log.info("[getOverdueSchedules] 밀린 일정 조회 요청: memberIdx={}, todayStart={}", memberIdx, todayStart);
+
+		List<Schedule> schedules =
+			scheduleRepository.findTop50ByMemberIdxAndDeletedAtIsNullAndStatusAndStartAtBeforeOrderByStartAtDesc(
+				memberIdx,
+				ScheduleStatus.PENDING,
+				todayStart
+			);
+		long totalCount = scheduleRepository.countByMemberIdxAndDeletedAtIsNullAndStatusAndStartAtBefore(
+			memberIdx,
+			ScheduleStatus.PENDING,
+			todayStart
+		);
+		log.info("[getOverdueSchedules] 밀린 일정 조회 완료: memberIdx={}, totalCount={}", memberIdx, totalCount);
+
+		return new ScheduleOverdueResponse(
+			(int)totalCount,
+			totalCount > MAX_OVERDUE_RESULTS,
+			schedules.stream()
+				.map(this::toSummary)
+				.toList()
+		);
+	}
+
+	/**
+	 * 로그인한 사용자의 일정 중 제목에 검색어가 포함된 일정을 최근 순으로 조회합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param keyword 검색어
+	 * @return 일정 검색 응답. 결과가 최대 조회 개수까지 찼으면 hasMore 가 true
+	 * @throws BusinessException 검색어가 비어 있거나 허용 길이를 넘었을 때 발생
+	 */
+	@Transactional(readOnly = true)
+	public ScheduleSearchResponse searchSchedules(Integer memberIdx, String keyword) {
+		log.info("[searchSchedules] 일정 검색 요청: memberIdx={}", memberIdx);
+		String trimmedKeyword = validateKeyword(memberIdx, keyword);
+
+		List<Schedule> schedules =
+			scheduleRepository.findTop50ByMemberIdxAndDeletedAtIsNullAndTitleContainingOrderByStartAtDesc(
+				memberIdx,
+				trimmedKeyword
+			);
+		log.info("[searchSchedules] 일정 검색 완료: memberIdx={}, count={}", memberIdx, schedules.size());
+
+		return new ScheduleSearchResponse(
+			trimmedKeyword,
+			schedules.size() >= MAX_SEARCH_RESULTS,
 			schedules.stream()
 				.map(this::toSummary)
 				.toList()
@@ -412,6 +481,29 @@ public class ScheduleService {
 		}
 
 		return trimmedTitle;
+	}
+
+	/**
+	 * 일정 검색어를 검증하고 조회 가능한 값으로 정리합니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @param keyword 요청 검색어
+	 * @return 앞뒤 공백이 제거된 검색어
+	 * @throws BusinessException 검색어가 비어 있거나 허용 길이를 초과할 때 발생
+	 */
+	private String validateKeyword(Integer memberIdx, String keyword) {
+		if (!StringUtils.hasText(keyword)) {
+			log.warn("[validateKeyword] 검색어 누락: memberIdx={}", memberIdx);
+			throw new BusinessException(ScheduleErrorCode.INVALID_KEYWORD);
+		}
+
+		String trimmedKeyword = keyword.trim();
+		if (trimmedKeyword.length() > MAX_KEYWORD_LENGTH) {
+			log.warn("[validateKeyword] 검색어 길이 초과: memberIdx={}, length={}", memberIdx, trimmedKeyword.length());
+			throw new BusinessException(ScheduleErrorCode.INVALID_KEYWORD);
+		}
+
+		return trimmedKeyword;
 	}
 
 	/**
