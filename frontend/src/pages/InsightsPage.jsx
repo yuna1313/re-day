@@ -183,9 +183,6 @@ function InsightsContent({ data }) {
       {/* 자주 미루는 일정 */}
       <section className="insights-section">
         <h2 className="insights-heading">자주 미루는 일정</h2>
-        <p className="insights-caption">
-          아직 끝내지 못한 일정 기준 (기간 무관)
-        </p>
         <div className="insights-card">
           {deferred.length === 0 ? (
             <p className="insights-empty">반복해서 미룬 일정이 없어요.</p>

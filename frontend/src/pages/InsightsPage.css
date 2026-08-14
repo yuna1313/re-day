@@ -114,14 +114,6 @@
   color: #0f172a;
 }
 
-/* 제목 아래 기준 설명 (상단 '최근 30일' 칩과 다른 기준일 때 명시) */
-.insights-caption {
-  margin: -8px 0 10px;
-  padding-left: 2px;
-  font-size: 12px;
-  color: #9ca3af;
-}
-
 .insights-card {
   padding: 22px 18px;
   background: #fff;

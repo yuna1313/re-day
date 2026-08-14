@@ -72,8 +72,8 @@ class AnalyticsServiceTest {
 			any(LocalDateTime.class),
 			any(LocalDateTime.class)
 		)).thenReturn(List.of(morningDone, afternoonPending));
-		when(scheduleActionLogRepository.findByScheduleIdxInAndActionTypeAndActionAtBetween(
-			eq(List.of(101, 102)),
+		when(scheduleActionLogRepository.findMemberActionLogs(
+			eq(1),
 			eq(ScheduleActionType.DEFERRED),
 			any(LocalDateTime.class),
 			any(LocalDateTime.class)
@@ -117,11 +117,47 @@ class AnalyticsServiceTest {
 	}
 
 	/**
-	 * 조회 기간 밖에 있어도 미룬 횟수가 많은 미완료 일정을 순위와 함께 반환합니다.
-	 * (미루면 시작 일시가 미래로 옮겨져 기간 조회에서 빠지기 때문)
+	 * 미뤄서 시작 일시가 조회 기간 밖으로 밀려난 일정이라도, 기간 안에 남은 미루기 기록은 사유 집계에 포함합니다.
+	 * (일정을 기간으로 먼저 걸러 로그를 찾으면 많이 미룬 일정일수록 집계에서 빠지는 문제)
 	 */
 	@Test
-	void getInsightsReturnsTopDeferredSchedulesRegardlessOfPeriod() {
+	void getInsightsCountsDeferReasonsOfSchedulesPushedOutOfPeriod() {
+		LocalDate today = LocalDate.now();
+		// 여러 번 미뤄 시작 일시가 미래(기간 밖)로 옮겨진 일정의 로그
+		ScheduleActionLog deferLog = ScheduleActionLog.create(
+			103,
+			ScheduleActionType.DEFERRED,
+			"COULD_NOT_FOCUS",
+			null,
+			today.minusDays(11).atTime(14, 0)
+		);
+
+		// 조회 기간 안에는 일정이 하나도 없다
+		when(scheduleRepository.findByMemberIdxAndDeletedAtIsNullAndStartAtBetweenOrderByStartAtAsc(
+			eq(1),
+			any(LocalDateTime.class),
+			any(LocalDateTime.class)
+		)).thenReturn(List.of());
+		when(scheduleActionLogRepository.findMemberActionLogs(
+			eq(1),
+			eq(ScheduleActionType.DEFERRED),
+			any(LocalDateTime.class),
+			any(LocalDateTime.class)
+		)).thenReturn(List.of(deferLog));
+
+		InsightResponse response = analyticsService.getInsights(1, "LAST_30_DAYS");
+
+		assertThat(response.topDeferReasons()).hasSize(1);
+		assertThat(response.topDeferReasons().get(0).deferReasonCode()).isEqualTo("COULD_NOT_FOCUS");
+		assertThat(response.topDeferReasons().get(0).count()).isEqualTo(1);
+	}
+
+	/**
+	 * 조회 기간 안의 미루기 로그를 일정별로 묶어 많이 미룬 순으로 반환합니다.
+	 * 미루기 상위 이유와 같은 로그를 쓰므로 두 통계의 합계가 서로 어긋나지 않습니다.
+	 */
+	@Test
+	void getInsightsReturnsTopDeferredSchedulesFromSameDeferLogs() {
 		LocalDate today = LocalDate.now();
 		Schedule mostDeferred = Schedule.create(
 			1,
@@ -147,19 +183,27 @@ class AnalyticsServiceTest {
 			2
 		);
 		ReflectionTestUtils.setField(secondDeferred, "scheduleIdx", 104);
+		// 103 을 2번, 104 를 1번 미룬 로그
+		List<ScheduleActionLog> deferLogs = List.of(
+			ScheduleActionLog.create(103, ScheduleActionType.DEFERRED, "NO_TIME", null, today.atTime(9, 0)),
+			ScheduleActionLog.create(103, ScheduleActionType.DEFERRED, "TOO_BIG", null, today.atTime(10, 0)),
+			ScheduleActionLog.create(104, ScheduleActionType.DEFERRED, "NO_TIME", null, today.atTime(11, 0))
+		);
 
-		// 조회 기간 안에는 일정이 하나도 없는 상황
+		// 조회 기간 안에는 일정이 하나도 없는 상황 (미뤄서 시작 일시가 미래로 밀린 경우)
 		when(scheduleRepository.findByMemberIdxAndDeletedAtIsNullAndStartAtBetweenOrderByStartAtAsc(
 			eq(1),
 			any(LocalDateTime.class),
 			any(LocalDateTime.class)
 		)).thenReturn(List.of());
-		when(scheduleRepository
-			.findTop3ByMemberIdxAndDeletedAtIsNullAndStatusAndDeferCountGreaterThanOrderByDeferCountDescStartAtAsc(
-				1,
-				ScheduleStatus.PENDING,
-				0
-			)).thenReturn(List.of(mostDeferred, secondDeferred));
+		when(scheduleActionLogRepository.findMemberActionLogs(
+			eq(1),
+			eq(ScheduleActionType.DEFERRED),
+			any(LocalDateTime.class),
+			any(LocalDateTime.class)
+		)).thenReturn(deferLogs);
+		when(scheduleRepository.findByScheduleIdxInAndMemberIdxAndDeletedAtIsNull(List.of(103, 104), 1))
+			.thenReturn(List.of(mostDeferred, secondDeferred));
 
 		InsightResponse response = analyticsService.getInsights(1, "LAST_30_DAYS");
 
@@ -167,9 +211,19 @@ class AnalyticsServiceTest {
 		assertThat(response.topDeferredSchedules().get(0).rank()).isEqualTo(1);
 		assertThat(response.topDeferredSchedules().get(0).scheduleId()).isEqualTo(103);
 		assertThat(response.topDeferredSchedules().get(0).title()).isEqualTo("이력서 수정");
-		assertThat(response.topDeferredSchedules().get(0).deferCount()).isEqualTo(5);
+		assertThat(response.topDeferredSchedules().get(0).deferCount()).isEqualTo(2);
 		assertThat(response.topDeferredSchedules().get(1).rank()).isEqualTo(2);
-		assertThat(response.feedbackMessages()).contains("'이력서 수정'을(를) 5번 미뤘어요.");
+		assertThat(response.topDeferredSchedules().get(1).deferCount()).isEqualTo(1);
+		assertThat(response.feedbackMessages()).contains("'이력서 수정'을(를) 2번 미뤘어요.");
+
+		// 두 통계는 같은 로그에서 나오므로 합계가 일치한다
+		int reasonTotal = response.topDeferReasons().stream()
+			.mapToInt(InsightResponse.TopDeferReason::count)
+			.sum();
+		int scheduleTotal = response.topDeferredSchedules().stream()
+			.mapToInt(InsightResponse.TopDeferredSchedule::deferCount)
+			.sum();
+		assertThat(reasonTotal).isEqualTo(scheduleTotal);
 	}
 
 	/**
