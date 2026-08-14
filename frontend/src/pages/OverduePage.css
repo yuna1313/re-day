@@ -1,0 +1,167 @@
+.overdue-page {
+  padding-bottom: 24px;
+}
+
+/* 헤더: 뒤로가기(좌) + 가운데 제목 */
+.overdue-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  margin-top: 8px;
+}
+
+.overdue-back {
+  position: absolute;
+  left: -4px;
+  display: flex;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.overdue-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111;
+}
+
+/* 안내 문구 (재촉하지 않는 톤) */
+.overdue-lead {
+  margin: 16px 2px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6b7280;
+}
+
+.overdue-empty {
+  margin: 72px 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #9ca3af;
+}
+
+.overdue-error {
+  margin: 72px 0;
+  text-align: center;
+  font-size: 14px;
+  color: #ef4444;
+}
+
+/* 목록 */
+.overdue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overdue-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(17, 24, 39, 0.06);
+}
+
+.overdue-main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.overdue-item-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+  word-break: break-word;
+}
+
+.overdue-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 지난 날짜는 사실만 담담하게 (빨강 대신 회색) */
+.overdue-days {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.overdue-defer-badge {
+  padding: 3px 8px;
+  background: #fff2e8;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ea580c;
+}
+
+.overdue-actions {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+.overdue-btn-defer,
+.overdue-btn-complete {
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.overdue-btn-defer {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+}
+
+.overdue-btn-complete {
+  background: #3b82f6;
+  border: none;
+  color: #fff;
+}
+
+.overdue-more-note {
+  margin: 16px 2px 0;
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* 밀린 일정 항목 모양에 맞춘 스켈레톤 블록 크기 */
+.overdue-skel-title {
+  width: 50%;
+  height: 15px;
+}
+
+.overdue-skel-meta {
+  width: 32%;
+  height: 13px;
+}

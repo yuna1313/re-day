@@ -26,6 +26,7 @@ import com.reday.schedule.dto.ScheduleDeferRequest;
 import com.reday.schedule.dto.ScheduleDeferResponse;
 import com.reday.schedule.dto.ScheduleDetailResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
+import com.reday.schedule.dto.ScheduleOverdueResponse;
 import com.reday.schedule.dto.ScheduleSearchResponse;
 import com.reday.schedule.dto.ScheduleUpdateRequest;
 import com.reday.schedule.exception.ScheduleErrorCode;
@@ -48,6 +49,7 @@ public class ScheduleService {
 	private static final int MAX_KEYWORD_LENGTH = 100;
 	// ScheduleRepository 의 findTop50... 조회 개수와 반드시 같아야 한다.
 	private static final int MAX_SEARCH_RESULTS = 50;
+	private static final int MAX_OVERDUE_RESULTS = 50;
 	private static final String CUSTOM_DEFER_REASON_CODE = "CUSTOM";
 	private static final Set<String> ALLOWED_DEFER_REASON_CODES = Set.of(
 		"LONGER_THAN_EXPECTED",
@@ -99,6 +101,40 @@ public class ScheduleService {
 			parsedViewType.name(),
 			dateRange.startDate().format(DATE_FORMATTER),
 			dateRange.endDate().format(DATE_FORMATTER),
+			schedules.stream()
+				.map(this::toSummary)
+				.toList()
+		);
+	}
+
+	/**
+	 * 로그인한 사용자의 밀린 일정(오늘 이전에 시작했지만 아직 끝내지 않은 일정)을 최근 순으로 조회합니다.
+	 * 오늘 일정은 아직 남은 시간이 있으므로 밀린 일정으로 보지 않습니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @return 밀린 일정 조회 응답. 전체 개수와 최대 조회 개수까지 찼는지를 함께 담는다
+	 */
+	@Transactional(readOnly = true)
+	public ScheduleOverdueResponse getOverdueSchedules(Integer memberIdx) {
+		LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+		log.info("[getOverdueSchedules] 밀린 일정 조회 요청: memberIdx={}, todayStart={}", memberIdx, todayStart);
+
+		List<Schedule> schedules =
+			scheduleRepository.findTop50ByMemberIdxAndDeletedAtIsNullAndStatusAndStartAtBeforeOrderByStartAtDesc(
+				memberIdx,
+				ScheduleStatus.PENDING,
+				todayStart
+			);
+		long totalCount = scheduleRepository.countByMemberIdxAndDeletedAtIsNullAndStatusAndStartAtBefore(
+			memberIdx,
+			ScheduleStatus.PENDING,
+			todayStart
+		);
+		log.info("[getOverdueSchedules] 밀린 일정 조회 완료: memberIdx={}, totalCount={}", memberIdx, totalCount);
+
+		return new ScheduleOverdueResponse(
+			(int)totalCount,
+			totalCount > MAX_OVERDUE_RESULTS,
 			schedules.stream()
 				.map(this::toSummary)
 				.toList()

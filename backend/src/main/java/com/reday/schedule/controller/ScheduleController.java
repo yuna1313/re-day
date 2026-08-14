@@ -21,6 +21,7 @@ import com.reday.schedule.dto.ScheduleDeferRequest;
 import com.reday.schedule.dto.ScheduleDeferResponse;
 import com.reday.schedule.dto.ScheduleDetailResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
+import com.reday.schedule.dto.ScheduleOverdueResponse;
 import com.reday.schedule.dto.ScheduleSearchResponse;
 import com.reday.schedule.dto.ScheduleUpdateRequest;
 import com.reday.schedule.response.ScheduleResponseCode;
@@ -56,6 +57,21 @@ public class ScheduleController {
 			endDate
 		);
 		return ApiResponse.success(ScheduleResponseCode.LIST_SUCCESS, response);
+	}
+
+	/**
+	 * 로그인한 사용자의 밀린 일정을 조회합니다.
+	 * ('overdue' 는 고정 경로라 /schedules/{scheduleId} 보다 우선 매칭됩니다)
+	 *
+	 * @param userPrincipal JWT 인증 필터가 SecurityContext에 저장한 사용자 정보
+	 * @return 밀린 일정 조회 성공 응답
+	 */
+	@GetMapping("/api/v1/schedules/overdue")
+	public ApiResponse<ScheduleOverdueResponse> getOverdueSchedules(
+		@AuthenticationPrincipal UserPrincipal userPrincipal
+	) {
+		ScheduleOverdueResponse response = scheduleService.getOverdueSchedules(userPrincipal.getMemberIdx());
+		return ApiResponse.success(ScheduleResponseCode.OVERDUE_SUCCESS, response);
 	}
 
 	/**

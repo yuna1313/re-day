@@ -12,6 +12,13 @@ export const scheduleApi = {
     return throwIfFailed(data, '일정 목록 조회에 실패했습니다.').data
   },
 
+  // 밀린 일정 조회 (오늘 이전에 시작했지만 아직 끝내지 않은 일정, 최근 순 최대 50건)
+  // 반환: { totalCount, hasMore, schedules: [...] }
+  getOverdueSchedules: async () => {
+    const { data } = await client.get('/schedules/overdue')
+    return throwIfFailed(data, '밀린 일정 조회에 실패했습니다.').data
+  },
+
   // 일정 제목 키워드 검색 (최근 시작일시 순, 최대 50건)
   // 반환: { keyword, hasMore, schedules: [...] }
   searchSchedules: async ({ keyword }) => {
