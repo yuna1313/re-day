@@ -79,25 +79,19 @@ public class ReflectionService {
 
 	/**
 	 * 로그인한 사용자의 특정 날짜 회고와 해당 날짜에 완료한 일정 목록을 조회합니다.
+	 * 회고를 작성하지 않은 날짜도 조회할 수 있도록, 회고가 없으면 오류 대신 빈 회고로 응답합니다.
 	 *
 	 * @param memberIdx 로그인 사용자 식별자
 	 * @param date 조회할 날짜 문자열
-	 * @return 날짜별 회고 조회 응답
-	 * @throws BusinessException 날짜 형식이 올바르지 않거나 해당 날짜의 회고가 없는 경우 발생
+	 * @return 날짜별 회고 조회 응답. 회고가 없으면 식별자와 내용이 null
+	 * @throws BusinessException 날짜 형식이 올바르지 않은 경우 발생
 	 */
 	@Transactional(readOnly = true)
 	public ReflectionDetailResponse getReflectionByDate(Integer memberIdx, String date) {
 		log.info("[getReflectionByDate] 날짜별 회고 조회 요청: memberIdx={}, date={}", memberIdx, date);
 		LocalDate reflectionDate = parseReflectionDate(memberIdx, date);
 		Reflection reflection = reflectionRepository.findByMemberIdxAndReflectionDate(memberIdx, reflectionDate)
-			.orElseThrow(() -> {
-				log.warn(
-					"[getReflectionByDate] 회고 없음: memberIdx={}, reflectionDate={}",
-					memberIdx,
-					reflectionDate
-				);
-				return new BusinessException(ReflectionErrorCode.NOT_FOUND);
-			});
+			.orElse(null);
 
 		List<Schedule> completedSchedules =
 			scheduleRepository.findByMemberIdxAndDeletedAtIsNullAndStatusAndCompletedAtBetweenOrderByCompletedAtAsc(
@@ -108,16 +102,18 @@ public class ReflectionService {
 			);
 
 		log.info(
-			"[getReflectionByDate] 날짜별 회고 조회 완료: memberIdx={}, reflectionDate={}, completedScheduleCount={}",
+			"[getReflectionByDate] 날짜별 회고 조회 완료: memberIdx={}, reflectionDate={}, hasReflection={},"
+				+ " completedScheduleCount={}",
 			memberIdx,
 			reflectionDate,
+			reflection != null,
 			completedSchedules.size()
 		);
 
 		return new ReflectionDetailResponse(
-			reflection.getReflectionIdx(),
-			reflection.getReflectionDate().format(DATE_FORMATTER),
-			reflection.getContent(),
+			reflection == null ? null : reflection.getReflectionIdx(),
+			reflectionDate.format(DATE_FORMATTER),
+			reflection == null ? null : reflection.getContent(),
 			completedSchedules.stream()
 				.map(this::toDetailCompletedScheduleSummary)
 				.toList()
