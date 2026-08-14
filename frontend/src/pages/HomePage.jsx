@@ -236,7 +236,7 @@ function HomePage() {
           </div>
           <div className="month-grid">
             {monthDays.map((day) => {
-              const count = (schedulesByDate[dateKey(day)] ?? []).length
+              const dayItems = schedulesByDate[dateKey(day)] ?? []
               const isOther = !isSameMonth(day, monthStart)
               const dow = day.getDay() // 0=일, 6=토
               // 이번 달이 아니면 회색, 아니면 일=빨강/토=파랑/평일=검정
@@ -260,11 +260,15 @@ function HomePage() {
                   type="button"
                   className="month-cell"
                   onClick={() => setSelectedDate(day)}
+                  // 점은 시각 표현이라, 개수는 읽어줄 수 있게 라벨로 남긴다.
+                  aria-label={
+                    dayItems.length > 0
+                      ? `${monthDay(day)}, 일정 ${dayItems.length}개`
+                      : undefined
+                  }
                 >
                   <span className={numClass}>{day.getDate()}</span>
-                  {count > 0 && (
-                    <span className="month-day-count">{count}개</span>
-                  )}
+                  {dayItems.length > 0 && <MonthDayDots items={dayItems} />}
                 </button>
               )
             })}
@@ -348,6 +352,39 @@ function HomePage() {
         />
       )}
     </div>
+  )
+}
+
+// 월간 셀 아래 점 표시.
+// 셀이 좁아 최대 3개까지만 찍고 나머지는 표시하지 않는다.
+// (점은 "무엇이 있는지"를 알리는 신호일 뿐이고, 정확한 개수·내용은 날짜를 누르면 아래 목록에 나온다.
+//  모바일 캘린더의 통용 방식 — Google 캘린더도 월간에서 점 3개까지만 찍고 나머지는 생략한다.)
+const MAX_DOTS = 3
+
+// 미룬 일정 > 남은 일정 > 완료 순. 점이 잘려도 미룬 날은 반드시 눈에 띄게 한다.
+const DOT_KINDS = ['deferred', 'pending', 'done']
+
+function dotKind(item) {
+  if (item.completed) return 'done'
+  return item.deferCount > 0 ? 'deferred' : 'pending'
+}
+
+function MonthDayDots({ items }) {
+  // 3개가 넘으면 신호가 강한 것부터 고르고,
+  // 고른 뒤에는 아래 일정 목록과 순서가 어긋나지 않도록 다시 시간순으로 되돌린다.
+  const picked = [...items]
+    .sort(
+      (a, b) => DOT_KINDS.indexOf(dotKind(a)) - DOT_KINDS.indexOf(dotKind(b)),
+    )
+    .slice(0, MAX_DOTS)
+  const visible = items.filter((item) => picked.includes(item))
+
+  return (
+    <span className="month-dots" aria-hidden="true">
+      {visible.map((item) => (
+        <span key={item.id} className={`month-dot ${dotKind(item)}`} />
+      ))}
+    </span>
   )
 }
 
