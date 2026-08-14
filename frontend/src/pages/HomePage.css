@@ -234,12 +234,31 @@
   color: #3b82f6;
 }
 
-/* 해당 날짜 일정 개수 */
-.month-day-count {
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1;
-  color: #3b82f6;
+/* 해당 날짜 일정 표시 점.
+   완료=파랑 / 미완료=회색 은 상세·회고 화면의 상태 색과 동일하게 맞춘 것이다. */
+.month-dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 6px;
+}
+
+.month-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.month-dot.done {
+  background: #3b82f6;
+}
+
+.month-dot.pending {
+  background: #9ca3af;
+}
+
+.month-dot.deferred {
+  background: #ea580c;
 }
 
 /* 일정 리스트 */

@@ -115,6 +115,17 @@ function getResolvedSchedules() {
       completedAt: null,
       deferCount: 0,
     },
+    // 같은 날 4개 → 월간 점이 3개 + '+' 로 줄어드는 경우
+    {
+      scheduleId: 107,
+      title: '포트폴리오 정리',
+      startAt: `${ymd(shiftDays(today, 4))} 21:00:00`,
+      estimatedMinutes: 40,
+      actualMinutes: null,
+      status: 'PENDING',
+      completedAt: null,
+      deferCount: 0,
+    },
     {
       scheduleId: 106,
       title: '스터디',
