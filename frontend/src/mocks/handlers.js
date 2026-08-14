@@ -26,7 +26,16 @@ const deletedScheduleIds = new Set()
 const actionLogsBySchedule = {}
 let nextActionLogId = 900
 // 작성된 회고: 'yyyy-MM-dd' -> { reflectionId, reflectionDate, content }
-const reflectionsByDate = {}
+// 지난 날짜 회고 열람을 확인할 수 있도록 이틀 전 회고를 하나 심어둔다.
+const seededReflectionDate = ymd(shiftDays(new Date(), -2))
+const reflectionsByDate = {
+  [seededReflectionDate]: {
+    reflectionId: 10,
+    reflectionDate: seededReflectionDate,
+    content:
+      '오늘 잘한 점: 미루던 이력서를 드디어 시작했다.\n아쉬웠던 점: 밤에 몰아서 하느라 집중이 잘 안 됐다.\n내일 딱 하나: 저녁 먹기 전에 30분만 앉아보기.',
+  },
+}
 let nextReflectionId = 11
 const nowStr = () => {
   const d = new Date()
@@ -38,6 +47,17 @@ const nowStr = () => {
 function getResolvedSchedules() {
   const today = new Date()
   const base = [
+    // 지난 날짜 회고 화면의 "이날 완료한 일정" 확인용
+    {
+      scheduleId: 100,
+      title: '이력서 초안 쓰기',
+      startAt: `${ymd(shiftDays(today, -2))} 20:00:00`,
+      estimatedMinutes: 60,
+      actualMinutes: 75,
+      status: 'DONE',
+      completedAt: `${ymd(shiftDays(today, -2))} 21:15:00`,
+      deferCount: 0,
+    },
     {
       scheduleId: 101,
       title: '운동하기',
@@ -358,6 +378,29 @@ export const handlers = [
       code: 'REFLECTION_TODAY_SUCCESS',
       message: '오늘 회고 조회에 성공했습니다.',
       data: { reflection, completedSchedules: completedList },
+    })
+  }),
+
+  // 날짜별 회고 조회: GET /api/v1/reflections/:date
+  // (반드시 /reflections/today 핸들러 뒤에 둘 것 — 먼저 두면 :date 가 'today' 까지 가로챈다)
+  // 회고를 쓰지 않은 날짜도 조회 가능: reflectionId·content 가 null 로 내려온다.
+  http.get('/api/v1/reflections/:date', ({ params }) => {
+    const date = params.date
+    const saved = reflectionsByDate[date] ?? null
+    const completedList = getResolvedSchedules()
+      .filter((s) => s.startAt.slice(0, 10) === date && s.status === 'DONE')
+      .map((s) => ({ scheduleId: s.scheduleId, title: s.title }))
+
+    return HttpResponse.json({
+      success: true,
+      code: 'REFLECTION_DETAIL_SUCCESS',
+      message: '회고 조회에 성공했습니다.',
+      data: {
+        reflectionId: saved?.reflectionId ?? null,
+        reflectionDate: date,
+        content: saved?.content ?? null,
+        completedSchedules: completedList,
+      },
     })
   }),
 

@@ -136,18 +136,39 @@ class ReflectionServiceTest {
 	}
 
 	/**
-	 * 특정 날짜의 회고가 없으면 회고 없음 오류로 처리합니다.
+	 * 특정 날짜의 회고가 없어도 오류 없이 빈 회고와 그날 완료한 일정 목록을 반환합니다.
 	 */
 	@Test
-	void getReflectionByDateRejectsMissingReflection() {
+	void getReflectionByDateReturnsEmptyReflectionWhenMissing() {
 		LocalDate reflectionDate = LocalDate.of(2026, 1, 9);
+		Schedule schedule = Schedule.create(
+			1,
+			"운동하기",
+			LocalDateTime.of(reflectionDate, LocalTime.of(8, 0)),
+			15,
+			20,
+			null,
+			ScheduleStatus.DONE,
+			LocalDateTime.of(reflectionDate, LocalTime.of(8, 25)),
+			0
+		);
+		ReflectionTestUtils.setField(schedule, "scheduleIdx", 101);
 		when(reflectionRepository.findByMemberIdxAndReflectionDate(1, reflectionDate))
 			.thenReturn(Optional.empty());
+		when(scheduleRepository.findByMemberIdxAndDeletedAtIsNullAndStatusAndCompletedAtBetweenOrderByCompletedAtAsc(
+			1,
+			ScheduleStatus.DONE,
+			reflectionDate.atStartOfDay(),
+			LocalDateTime.of(reflectionDate, LocalTime.MAX)
+		)).thenReturn(List.of(schedule));
 
-		assertThatThrownBy(() -> reflectionService.getReflectionByDate(1, "2026-01-09"))
-			.isInstanceOf(BusinessException.class)
-			.extracting(exception -> ((BusinessException)exception).getErrorCode())
-			.isEqualTo(ReflectionErrorCode.NOT_FOUND);
+		ReflectionDetailResponse response = reflectionService.getReflectionByDate(1, "2026-01-09");
+
+		assertThat(response.reflectionId()).isNull();
+		assertThat(response.content()).isNull();
+		assertThat(response.reflectionDate()).isEqualTo("2026-01-09");
+		assertThat(response.completedSchedules()).hasSize(1);
+		assertThat(response.completedSchedules().get(0).title()).isEqualTo("운동하기");
 	}
 
 	/**
