@@ -21,6 +21,7 @@ import {
   Search,
 } from 'lucide-react'
 import { useSchedules } from '../hooks/useSchedules'
+import { useOverdueSchedules } from '../hooks/useOverdueSchedules'
 import { useCompleteSchedule } from '../hooks/useCompleteSchedule'
 import { useDeferSchedule } from '../hooks/useDeferSchedule'
 import { getApiErrorMessage } from '../api/client'
@@ -111,6 +112,10 @@ function HomePage() {
 
   const items = schedulesByDate[dateKey(selectedDate)] ?? []
 
+  // 밀린 일정: 매일 오늘 화면만 보다 보면 놓치게 되므로 홈 상단에서 알려준다.
+  const { data: overdue } = useOverdueSchedules()
+  const overdueCount = overdue?.totalCount ?? 0
+
   const completeMutation = useCompleteSchedule()
 
   const closeCompleteSheet = () => {
@@ -162,6 +167,21 @@ function HomePage() {
           <Search size={22} />
         </button>
       </header>
+
+      {/* 밀린 일정 배너 (없으면 아예 표시하지 않는다) */}
+      {overdueCount > 0 && (
+        <button
+          type="button"
+          className="home-overdue"
+          onClick={() => navigate('/overdue')}
+        >
+          <span className="home-overdue-dot" />
+          <span className="home-overdue-text">
+            아직 끝내지 못한 일정 {overdueCount}개
+          </span>
+          <ChevronRight size={18} className="home-overdue-chevron" />
+        </button>
+      )}
 
       {/* 주간/월간 탭 */}
       <div className="home-tabs">

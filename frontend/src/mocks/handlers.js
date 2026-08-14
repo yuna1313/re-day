@@ -47,6 +47,27 @@ const nowStr = () => {
 function getResolvedSchedules() {
   const today = new Date()
   const base = [
+    // 밀린 일정(과거인데 아직 PENDING) 확인용
+    {
+      scheduleId: 98,
+      title: '병원 예약하기',
+      startAt: `${ymd(shiftDays(today, -9))} 11:00:00`,
+      estimatedMinutes: 10,
+      actualMinutes: null,
+      status: 'PENDING',
+      completedAt: null,
+      deferCount: 3,
+    },
+    {
+      scheduleId: 99,
+      title: '방 정리',
+      startAt: `${ymd(shiftDays(today, -4))} 15:00:00`,
+      estimatedMinutes: 45,
+      actualMinutes: null,
+      status: 'PENDING',
+      completedAt: null,
+      deferCount: 0,
+    },
     // 지난 날짜 회고 화면의 "이날 완료한 일정" 확인용
     {
       scheduleId: 100,
@@ -195,6 +216,27 @@ export const handlers = [
       code: 'SCHEDULE_LIST_SUCCESS',
       message: '일정 목록 조회에 성공했습니다.',
       data: { viewType, startDate, endDate, schedules },
+    })
+  }),
+
+  // 밀린 일정 조회: GET /api/v1/schedules/overdue
+  // (반드시 /schedules/:scheduleId 핸들러 앞에 둘 것)
+  // 오늘 이전에 시작했지만 아직 끝내지 않은 일정만
+  http.get('/api/v1/schedules/overdue', () => {
+    const todayKey = ymd(new Date())
+    const overdue = getResolvedSchedules()
+      .filter((s) => s.startAt.slice(0, 10) < todayKey && s.status !== 'DONE')
+      .sort((a, b) => (a.startAt < b.startAt ? 1 : -1))
+
+    return HttpResponse.json({
+      success: true,
+      code: 'SCHEDULE_OVERDUE_SUCCESS',
+      message: '밀린 일정 조회에 성공했습니다.',
+      data: {
+        totalCount: overdue.length,
+        hasMore: overdue.length > 50,
+        schedules: overdue.slice(0, 50),
+      },
     })
   }),
 

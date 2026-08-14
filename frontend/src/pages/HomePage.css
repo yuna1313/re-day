@@ -33,6 +33,43 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 밀린 일정 배너: 미루기 계열이라 주황 톤, 다만 경고처럼 보이지 않게 옅게 */
+.home-overdue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-overdue-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ea580c;
+}
+
+.home-overdue-text {
+  flex: 1;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+  color: #9a3412;
+}
+
+.home-overdue-chevron {
+  flex: none;
+  color: #ea580c;
+}
+
 /* 주간/월간 탭 */
 .home-tabs {
   display: flex;
