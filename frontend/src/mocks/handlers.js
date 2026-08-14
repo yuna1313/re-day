@@ -22,6 +22,9 @@ const createdSchedules = []
 const updatedSchedules = {}
 // 삭제(soft delete)된 일정 id
 const deletedScheduleIds = new Set()
+// 미루기/완료 처리 로그: scheduleId -> [{ actionLogId, actionType, ... }] (기본 예시 로그 뒤에 붙는다)
+const actionLogsBySchedule = {}
+let nextActionLogId = 900
 // 작성된 회고: 'yyyy-MM-dd' -> { reflectionId, reflectionDate, content }
 const reflectionsByDate = {}
 let nextReflectionId = 11
@@ -45,6 +48,15 @@ function getResolvedSchedules() {
       completedAt: `${ymd(today)} 08:25:00`,
       deferCount: 0,
       memo: '아침 스트레칭 위주로',
+      deferLogs: [
+        {
+          actionLogId: 801,
+          actionType: 'DONE',
+          deferReasonCode: null,
+          deferReasonDetail: null,
+          actionAt: `${ymd(today)} 08:25:00`,
+        },
+      ],
     },
     {
       scheduleId: 102,
@@ -54,8 +66,24 @@ function getResolvedSchedules() {
       actualMinutes: null,
       status: 'PENDING',
       completedAt: null,
-      deferCount: 1,
+      deferCount: 2,
       memo: null,
+      deferLogs: [
+        {
+          actionLogId: 802,
+          actionType: 'DEFERRED',
+          deferReasonCode: 'NO_TIME',
+          deferReasonDetail: null,
+          actionAt: `${ymd(shiftDays(today, -2))} 21:40:00`,
+        },
+        {
+          actionLogId: 803,
+          actionType: 'DEFERRED',
+          deferReasonCode: 'CUSTOM',
+          deferReasonDetail: '문제집을 두고 와서 시작을 못 했어요',
+          actionAt: `${ymd(shiftDays(today, -1))} 22:05:00`,
+        },
+      ],
     },
     {
       scheduleId: 103,
@@ -169,7 +197,11 @@ export const handlers = [
         createdAt: s.createdAt ?? '2026-01-08 22:10:00',
         updatedAt: s.updatedAt ?? s.startAt,
         deferCount: s.deferCount ?? 0,
-        deferLogs: s.deferLogs ?? [],
+        // 기본 예시 로그 + 이번 세션에 미루기/완료한 로그 (처리 시각 오름차순)
+        deferLogs: [
+          ...(s.deferLogs ?? []),
+          ...(actionLogsBySchedule[scheduleId] ?? []),
+        ],
       },
     })
   }),
@@ -237,7 +269,8 @@ export const handlers = [
     '/api/v1/schedules/:scheduleId/defer',
     async ({ request, params }) => {
       const scheduleId = Number(params.scheduleId)
-      const { newStartAt } = await request.json()
+      const { deferReasonCode, deferReasonDetail, newStartAt } =
+        await request.json()
 
       // 현재 상태 기준으로 미루기 횟수 +1, 새 시작일시 반영
       const current = getResolvedSchedules().find(
@@ -250,6 +283,14 @@ export const handlers = [
         ...(newStartAt ? { startAt: newStartAt } : {}),
         deferCount: nextDeferCount,
       }
+      // 상세 화면의 처리 기록에 남도록 로그 추가
+      ;(actionLogsBySchedule[scheduleId] ??= []).push({
+        actionLogId: nextActionLogId++,
+        actionType: 'DEFERRED',
+        deferReasonCode,
+        deferReasonDetail: deferReasonDetail || null,
+        actionAt: nowStr(),
+      })
 
       return HttpResponse.json({
         success: true,
@@ -275,6 +316,13 @@ export const handlers = [
 
       // 상태 저장 → 이후 목록 조회에 DONE 으로 반영됨
       completedSchedules[scheduleId] = { actualMinutes, completedAt }
+      ;(actionLogsBySchedule[scheduleId] ??= []).push({
+        actionLogId: nextActionLogId++,
+        actionType: 'DONE',
+        deferReasonCode: null,
+        deferReasonDetail: null,
+        actionAt: completedAt,
+      })
 
       return HttpResponse.json({
         success: true,

@@ -106,6 +106,90 @@
   color: #c0c4cc;
 }
 
+/* 처리 기록 타임라인 */
+.log-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.log-item {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding-bottom: 18px;
+}
+
+.log-item:last-child {
+  padding-bottom: 0;
+}
+
+/* 점끼리 잇는 세로선 (마지막 항목은 아래로 이어지지 않음) */
+.log-item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 4px;
+  width: 1px;
+  height: calc(100% - 14px);
+  background: #eceef1;
+}
+
+/* 미룸=주황 / 완료=파랑 (일정 목록 배지와 동일 팔레트) */
+.log-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #ea580c;
+}
+
+.log-dot.done {
+  background: #3b82f6;
+}
+
+.log-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.log-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.log-action {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ea580c;
+}
+
+.log-action.done {
+  color: #3b82f6;
+}
+
+.log-time {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.log-reason {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #374151;
+  word-break: break-word;
+}
+
+.log-detail {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+  word-break: break-word;
+}
+
 /* 수정/삭제 버튼 */
 .detail-actions {
   display: flex;
