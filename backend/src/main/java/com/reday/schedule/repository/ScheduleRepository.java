@@ -65,6 +65,21 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 	);
 
 	/**
+	 * 특정 회원이 아직 끝내지 않은 일정 중 미룬 횟수가 많은 순으로 상위 3건을 조회합니다.
+	 * 미루면 시작 일시가 미래로 옮겨져 기간 조회에서 빠지므로, 이 조회는 기간을 제한하지 않습니다.
+	 *
+	 * @param memberIdx 일정 소유 회원 식별자
+	 * @param status 조회할 일정 상태
+	 * @param deferCount 이 값을 초과하는 미루기 횟수만 조회 (0을 넘기면 한 번이라도 미룬 일정)
+	 * @return 미룬 횟수 상위 일정 목록
+	 */
+	List<Schedule> findTop3ByMemberIdxAndDeletedAtIsNullAndStatusAndDeferCountGreaterThanOrderByDeferCountDescStartAtAsc(
+		Integer memberIdx,
+		ScheduleStatus status,
+		Integer deferCount
+	);
+
+	/**
 	 * 특정 회원의 밀린 일정 전체 개수를 조회합니다.
 	 *
 	 * @param memberIdx 일정 소유 회원 식별자

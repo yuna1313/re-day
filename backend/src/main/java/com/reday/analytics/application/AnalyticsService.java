@@ -62,8 +62,14 @@ public class AnalyticsService {
 		List<ScheduleActionLog> deferLogs = findDeferLogs(schedules, startAt, endAt);
 		List<InsightResponse.TimeSlotCompletionRate> completionRates = calculateCompletionRates(schedules);
 		List<InsightResponse.TopDeferReason> topDeferReasons = calculateTopDeferReasons(deferLogs);
+		List<InsightResponse.TopDeferredSchedule> topDeferredSchedules = findTopDeferredSchedules(memberIdx);
 		InsightResponse.EstimatedVsActual estimatedVsActual = calculateEstimatedVsActual(schedules);
-		List<String> feedbackMessages = createFeedbackMessages(completionRates, topDeferReasons, estimatedVsActual);
+		List<String> feedbackMessages = createFeedbackMessages(
+			completionRates,
+			topDeferReasons,
+			topDeferredSchedules,
+			estimatedVsActual
+		);
 
 		log.info(
 			"[getInsights] 인사이트 조회 완료: memberIdx={}, periodType={}, scheduleCount={}, deferLogCount={}",
@@ -77,9 +83,40 @@ public class AnalyticsService {
 			parsedPeriodType.name(),
 			completionRates,
 			topDeferReasons,
+			topDeferredSchedules,
 			estimatedVsActual,
 			feedbackMessages
 		);
+	}
+
+	/**
+	 * 아직 끝내지 않은 일정 중 미룬 횟수가 많은 상위 일정을 조회합니다.
+	 * 미루면 시작 일시가 미래로 옮겨져 기간 조회에서 빠지므로 조회 기간을 적용하지 않습니다.
+	 *
+	 * @param memberIdx 로그인 사용자 식별자
+	 * @return 미룬 횟수 상위 일정 목록
+	 */
+	private List<InsightResponse.TopDeferredSchedule> findTopDeferredSchedules(Integer memberIdx) {
+		List<Schedule> schedules =
+			scheduleRepository
+				.findTop3ByMemberIdxAndDeletedAtIsNullAndStatusAndDeferCountGreaterThanOrderByDeferCountDescStartAtAsc(
+					memberIdx,
+					ScheduleStatus.PENDING,
+					0
+				);
+
+		List<InsightResponse.TopDeferredSchedule> responses = new ArrayList<>();
+		for (int index = 0; index < schedules.size(); index++) {
+			Schedule schedule = schedules.get(index);
+			responses.add(new InsightResponse.TopDeferredSchedule(
+				index + 1,
+				schedule.getScheduleIdx(),
+				schedule.getTitle(),
+				schedule.getDeferCount()
+			));
+		}
+
+		return responses;
 	}
 
 	/**
@@ -202,12 +239,14 @@ public class AnalyticsService {
 	 *
 	 * @param completionRates 시간대별 완료율 목록
 	 * @param topDeferReasons 미루기 사유 상위 목록
+	 * @param topDeferredSchedules 미룬 횟수 상위 일정 목록
 	 * @param estimatedVsActual 예상 대비 실제 소요 시간 평균
 	 * @return 피드백 문구 목록
 	 */
 	private List<String> createFeedbackMessages(
 		List<InsightResponse.TimeSlotCompletionRate> completionRates,
 		List<InsightResponse.TopDeferReason> topDeferReasons,
+		List<InsightResponse.TopDeferredSchedule> topDeferredSchedules,
 		InsightResponse.EstimatedVsActual estimatedVsActual
 	) {
 		List<String> messages = new ArrayList<>();
@@ -218,6 +257,11 @@ public class AnalyticsService {
 
 		if (!topDeferReasons.isEmpty()) {
 			messages.add(topDeferReasons.get(0).label() + " 사유로 미루는 경우가 가장 많아요.");
+		}
+
+		if (!topDeferredSchedules.isEmpty()) {
+			InsightResponse.TopDeferredSchedule mostDeferred = topDeferredSchedules.get(0);
+			messages.add("'" + mostDeferred.title() + "'을(를) " + mostDeferred.deferCount() + "번 미뤘어요.");
 		}
 
 		if (estimatedVsActual.averageDiffMinutes() > 0) {

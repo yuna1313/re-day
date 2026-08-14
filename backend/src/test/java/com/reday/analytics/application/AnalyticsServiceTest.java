@@ -117,6 +117,62 @@ class AnalyticsServiceTest {
 	}
 
 	/**
+	 * 조회 기간 밖에 있어도 미룬 횟수가 많은 미완료 일정을 순위와 함께 반환합니다.
+	 * (미루면 시작 일시가 미래로 옮겨져 기간 조회에서 빠지기 때문)
+	 */
+	@Test
+	void getInsightsReturnsTopDeferredSchedulesRegardlessOfPeriod() {
+		LocalDate today = LocalDate.now();
+		Schedule mostDeferred = Schedule.create(
+			1,
+			"이력서 수정",
+			today.plusDays(10).atTime(10, 0),
+			30,
+			null,
+			null,
+			ScheduleStatus.PENDING,
+			null,
+			5
+		);
+		ReflectionTestUtils.setField(mostDeferred, "scheduleIdx", 103);
+		Schedule secondDeferred = Schedule.create(
+			1,
+			"방 정리",
+			today.plusDays(3).atTime(15, 0),
+			45,
+			null,
+			null,
+			ScheduleStatus.PENDING,
+			null,
+			2
+		);
+		ReflectionTestUtils.setField(secondDeferred, "scheduleIdx", 104);
+
+		// 조회 기간 안에는 일정이 하나도 없는 상황
+		when(scheduleRepository.findByMemberIdxAndDeletedAtIsNullAndStartAtBetweenOrderByStartAtAsc(
+			eq(1),
+			any(LocalDateTime.class),
+			any(LocalDateTime.class)
+		)).thenReturn(List.of());
+		when(scheduleRepository
+			.findTop3ByMemberIdxAndDeletedAtIsNullAndStatusAndDeferCountGreaterThanOrderByDeferCountDescStartAtAsc(
+				1,
+				ScheduleStatus.PENDING,
+				0
+			)).thenReturn(List.of(mostDeferred, secondDeferred));
+
+		InsightResponse response = analyticsService.getInsights(1, "LAST_30_DAYS");
+
+		assertThat(response.topDeferredSchedules()).hasSize(2);
+		assertThat(response.topDeferredSchedules().get(0).rank()).isEqualTo(1);
+		assertThat(response.topDeferredSchedules().get(0).scheduleId()).isEqualTo(103);
+		assertThat(response.topDeferredSchedules().get(0).title()).isEqualTo("이력서 수정");
+		assertThat(response.topDeferredSchedules().get(0).deferCount()).isEqualTo(5);
+		assertThat(response.topDeferredSchedules().get(1).rank()).isEqualTo(2);
+		assertThat(response.feedbackMessages()).contains("'이력서 수정'을(를) 5번 미뤘어요.");
+	}
+
+	/**
 	 * 지원하지 않는 조회 기간 유형이면 오류로 처리합니다.
 	 */
 	@Test
