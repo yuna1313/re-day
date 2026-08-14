@@ -261,6 +261,9 @@ function HomePage() {
       ) : (
         /* 월간 달력 */
         <>
+          {/* 이 달 요약. 달력 위에 둬야 아래 일정 목록을 밀어내지 않는다. */}
+          <MonthSummary counts={buildMonthSummary(schedulesByDate)} />
+
           <div className="month-weekdays">
             {WEEKDAYS.map((w) => (
               <span key={w} className="month-weekday">
@@ -419,6 +422,39 @@ function MonthDayDots({ items }) {
         <span key={item.id} className={`month-dot ${dotKind(item)}`} />
       ))}
     </span>
+  )
+}
+
+// 이 달 요약. 달력 점과 같은 기준(완료 > 미룸 > 남음)으로 세므로,
+// 숫자를 세는 동시에 점 색이 무슨 뜻인지 알려주는 범례 역할도 한다.
+// 조회 범위가 그 달이라 schedulesByDate 에는 이 달 일정만 들어 있다.
+function buildMonthSummary(byDate) {
+  const counts = { done: 0, deferred: 0, pending: 0 }
+  for (const item of Object.values(byDate).flat()) {
+    counts[dotKind(item)] += 1
+  }
+  return counts
+}
+
+function MonthSummary({ counts }) {
+  // 일정이 하나도 없는 달에는 빈 숫자를 늘어놓지 않는다.
+  if (counts.done + counts.deferred + counts.pending === 0) return null
+
+  return (
+    <div className="month-summary">
+      <span className="month-summary-item">
+        <span className="month-dot done" />
+        완료 <strong>{counts.done}</strong>
+      </span>
+      <span className="month-summary-item">
+        <span className="month-dot deferred" />
+        미룸 <strong>{counts.deferred}</strong>
+      </span>
+      <span className="month-summary-item">
+        <span className="month-dot pending" />
+        남음 <strong>{counts.pending}</strong>
+      </span>
+    </div>
   )
 }
 
