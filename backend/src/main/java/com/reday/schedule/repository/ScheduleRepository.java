@@ -65,6 +65,18 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 	);
 
 	/**
+	 * 특정 회원의 일정 중 식별자 목록에 해당하는 일정을 조회합니다.
+	 *
+	 * @param scheduleIdxes 일정 식별자 목록
+	 * @param memberIdx 일정 소유 회원 식별자
+	 * @return 삭제되지 않은 사용자 소유 일정 목록
+	 */
+	List<Schedule> findByScheduleIdxInAndMemberIdxAndDeletedAtIsNull(
+		List<Integer> scheduleIdxes,
+		Integer memberIdx
+	);
+
+	/**
 	 * 특정 회원의 밀린 일정 전체 개수를 조회합니다.
 	 *
 	 * @param memberIdx 일정 소유 회원 식별자

@@ -562,12 +562,21 @@ export const handlers = [
             count: 1,
           },
         ],
+        // 위 미루기 상위 이유와 같은 로그를 일정별로 묶은 것 (합계 15로 동일)
+        topDeferredSchedules: [
+          { rank: 1, scheduleId: 98, title: '병원 예약하기', deferCount: 7 },
+          { rank: 2, scheduleId: 102, title: 'NCS 문제 풀기', deferCount: 5 },
+          { rank: 3, scheduleId: 99, title: '방 정리', deferCount: 3 },
+        ],
         estimatedVsActual: {
           averageEstimatedMinutes: 30,
           averageActualMinutes: 50,
           averageDiffMinutes: 20,
         },
-        feedbackMessages: ['오후 일정 완료율이 가장 높아요.'],
+        feedbackMessages: [
+          '오후 일정 완료율이 가장 높아요.',
+          "'병원 예약하기'을(를) 7번 미뤘어요.",
+        ],
       },
     })
   }),
