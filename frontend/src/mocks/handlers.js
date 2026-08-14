@@ -198,6 +198,36 @@ export const handlers = [
     })
   }),
 
+  // 일정 검색: GET /api/v1/schedules/search?keyword=
+  // (반드시 /schedules/:scheduleId 핸들러 앞에 둘 것 — 뒤에 두면 'search' 를 id 로 해석한다)
+  http.get('/api/v1/schedules/search', ({ request }) => {
+    const keyword = (
+      new URL(request.url).searchParams.get('keyword') ?? ''
+    ).trim()
+
+    if (!keyword) {
+      return HttpResponse.json({
+        success: false,
+        code: 'SCH_INVALID_KEYWORD_FAIL',
+        message: '검색어가 올바르지 않습니다.',
+        data: null,
+      })
+    }
+
+    // 제목에 키워드가 포함된 일정을 최근 시작일시 순으로
+    const matched = getResolvedSchedules()
+      .filter((s) => s.title.includes(keyword))
+      .sort((a, b) => (a.startAt < b.startAt ? 1 : -1))
+      .slice(0, 50)
+
+    return HttpResponse.json({
+      success: true,
+      code: 'SCHEDULE_SEARCH_SUCCESS',
+      message: '일정 검색에 성공했습니다.',
+      data: { keyword, hasMore: matched.length >= 50, schedules: matched },
+    })
+  }),
+
   // 일정 상세 조회: GET /api/v1/schedules/:scheduleId
   http.get('/api/v1/schedules/:scheduleId', ({ params }) => {
     const scheduleId = Number(params.scheduleId)

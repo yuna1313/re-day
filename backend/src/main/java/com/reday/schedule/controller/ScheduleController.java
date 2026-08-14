@@ -21,6 +21,7 @@ import com.reday.schedule.dto.ScheduleDeferRequest;
 import com.reday.schedule.dto.ScheduleDeferResponse;
 import com.reday.schedule.dto.ScheduleDetailResponse;
 import com.reday.schedule.dto.ScheduleListResponse;
+import com.reday.schedule.dto.ScheduleSearchResponse;
 import com.reday.schedule.dto.ScheduleUpdateRequest;
 import com.reday.schedule.response.ScheduleResponseCode;
 
@@ -55,6 +56,23 @@ public class ScheduleController {
 			endDate
 		);
 		return ApiResponse.success(ScheduleResponseCode.LIST_SUCCESS, response);
+	}
+
+	/**
+	 * 로그인한 사용자의 일정을 제목 키워드로 검색합니다.
+	 * ('search' 는 고정 경로라 /schedules/{scheduleId} 보다 우선 매칭됩니다)
+	 *
+	 * @param userPrincipal JWT 인증 필터가 SecurityContext에 저장한 사용자 정보
+	 * @param keyword 제목에 포함될 검색어
+	 * @return 일정 검색 성공 응답
+	 */
+	@GetMapping("/api/v1/schedules/search")
+	public ApiResponse<ScheduleSearchResponse> searchSchedules(
+		@AuthenticationPrincipal UserPrincipal userPrincipal,
+		@RequestParam String keyword
+	) {
+		ScheduleSearchResponse response = scheduleService.searchSchedules(userPrincipal.getMemberIdx(), keyword);
+		return ApiResponse.success(ScheduleResponseCode.SEARCH_SUCCESS, response);
 	}
 
 	/**

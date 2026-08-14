@@ -13,7 +13,13 @@ import {
   isSameMonth,
   isToday,
 } from 'date-fns'
-import { Plus, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
+import {
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  Search,
+} from 'lucide-react'
 import { useSchedules } from '../hooks/useSchedules'
 import { useCompleteSchedule } from '../hooks/useCompleteSchedule'
 import { useDeferSchedule } from '../hooks/useDeferSchedule'
@@ -147,6 +153,14 @@ function HomePage() {
       {/* 헤더 */}
       <header className="home-header">
         <h1 className="home-logo">RE:DAY</h1>
+        <button
+          type="button"
+          className="home-search-btn"
+          onClick={() => navigate('/search')}
+          aria-label="일정 검색"
+        >
+          <Search size={22} />
+        </button>
       </header>
 
       {/* 주간/월간 탭 */}

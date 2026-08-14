@@ -35,6 +35,20 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 	Optional<Schedule> findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(Integer scheduleIdx, Integer memberIdx);
 
 	/**
+	 * 특정 회원의 일정 중 제목에 키워드가 포함된 일정을 최근 시작 일시 순으로 조회합니다.
+	 * 결과가 지나치게 커지지 않도록 최대 50건까지만 조회합니다.
+	 * (개수를 바꿀 때는 ScheduleService.MAX_SEARCH_RESULTS 도 함께 맞춰야 합니다)
+	 *
+	 * @param memberIdx 일정 소유 회원 식별자
+	 * @param title 제목에 포함될 검색 키워드
+	 * @return 키워드가 포함된 일정 목록
+	 */
+	List<Schedule> findTop50ByMemberIdxAndDeletedAtIsNullAndTitleContainingOrderByStartAtDesc(
+		Integer memberIdx,
+		String title
+	);
+
+	/**
 	 * 특정 회원의 특정 완료 일시 범위 안에 완료된 일정을 완료 일시 오름차순으로 조회합니다.
 	 *
 	 * @param memberIdx 일정 소유 회원 식별자
