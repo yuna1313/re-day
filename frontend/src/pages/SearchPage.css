@@ -1,0 +1,180 @@
+.search-page {
+  padding-bottom: 24px;
+}
+
+/* 헤더: 뒤로가기 + 검색 입력 */
+.search-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 48px;
+  margin-top: 8px;
+}
+
+.search-back {
+  display: flex;
+  flex: none;
+  margin-left: -4px;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+  height: 40px;
+  background: #f3f4f6;
+  border-radius: 12px;
+}
+
+.search-field-icon {
+  flex: none;
+  color: #9ca3af;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  font-size: 15px;
+  color: #111;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+/* 브라우저 기본 검색 취소 버튼은 숨기고 직접 만든 버튼을 쓴다 */
+.search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-clear {
+  display: flex;
+  flex: none;
+  padding: 2px;
+  background: #d1d5db;
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 안내 · 결과 없음 */
+.search-guide {
+  margin: 64px 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #9ca3af;
+  word-break: break-word;
+}
+
+.search-error {
+  margin: 64px 0;
+  text-align: center;
+  font-size: 14px;
+  color: #ef4444;
+}
+
+.search-count {
+  margin: 20px 2px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* 결과 목록 */
+.search-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.search-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  width: 100%;
+  padding: 14px 16px;
+  background: #fff;
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(17, 24, 39, 0.06);
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.search-item-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+  word-break: break-word;
+}
+
+.search-item-meta {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.search-item-badges {
+  display: flex;
+  gap: 6px;
+  empty-cells: hide;
+}
+
+.search-badge {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* 완료=파랑 / 미룸=주황 (월간 점·상세 상태 색과 동일) */
+.search-badge.done {
+  background: #e6efff;
+  color: #3b82f6;
+}
+
+.search-badge.deferred {
+  background: #fff2e8;
+  color: #ea580c;
+}
+
+.search-more-note {
+  margin: 16px 2px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* 검색 결과 모양에 맞춘 스켈레톤 블록 크기 */
+.search-skel-title {
+  width: 45%;
+  height: 15px;
+}
+
+.search-skel-meta {
+  width: 62%;
+  height: 13px;
+}
