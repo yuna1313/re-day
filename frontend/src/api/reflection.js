@@ -10,6 +10,15 @@ export const reflectionApi = {
     return throwIfFailed(data, '오늘 회고 조회에 실패했습니다.').data
   },
 
+  // 특정 날짜의 회고 + 그날 완료한 일정 조회
+  // date: 'yyyy-MM-dd'
+  // 반환: { reflectionId, reflectionDate, content, completedSchedules: [...] }
+  //       회고를 쓰지 않은 날짜면 reflectionId·content 가 null 로 내려온다.
+  getReflectionByDate: async ({ date }) => {
+    const { data } = await client.get(`/reflections/${date}`)
+    return throwIfFailed(data, '회고 조회에 실패했습니다.').data
+  },
+
   // 오늘의 회고 작성 (회원별 같은 날짜에는 1개만 작성 가능)
   // reflectionDate: 'yyyy-MM-dd' / 반환: { reflectionId }
   createReflection: async ({ reflectionDate, content }) => {
