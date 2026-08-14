@@ -114,6 +114,14 @@
   color: #0f172a;
 }
 
+/* 제목 아래 기준 설명 (상단 '최근 30일' 칩과 다른 기준일 때 명시) */
+.insights-caption {
+  margin: -8px 0 10px;
+  padding-left: 2px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
 .insights-card {
   padding: 22px 18px;
   background: #fff;
@@ -273,6 +281,18 @@
 .reason-main {
   flex: 1;
   min-width: 0;
+}
+
+/* 자주 미루는 일정 행은 눌러서 상세로 이동한다 */
+.deferred-main {
+  display: block;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .reason-top {

@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { TrendingUp, Clock3, Sparkles, Lightbulb } from 'lucide-react'
 import { useInsights } from '../hooks/useInsights'
 import { getApiErrorMessage } from '../api/client'
@@ -69,8 +70,10 @@ function InsightsPage() {
 }
 
 function InsightsContent({ data }) {
+  const navigate = useNavigate()
   const timeSlots = data.timeSlotCompletionRates ?? []
   const reasons = data.topDeferReasons ?? []
+  const deferred = data.topDeferredSchedules ?? []
   const est = data.estimatedVsActual ?? {}
   const feedback = data.feedbackMessages ?? []
 
@@ -78,6 +81,9 @@ function InsightsContent({ data }) {
     ? Math.max(...timeSlots.map((t) => t.completionRate))
     : 0
   const maxCount = reasons.length ? Math.max(...reasons.map((r) => r.count)) : 0
+  const maxDeferCount = deferred.length
+    ? Math.max(...deferred.map((d) => d.deferCount))
+    : 0
   const estMin = est.averageEstimatedMinutes ?? 0
   const actMin = est.averageActualMinutes ?? 0
   const diff = est.averageDiffMinutes ?? actMin - estMin
@@ -167,6 +173,45 @@ function InsightsContent({ data }) {
                       />
                     </div>
                   </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      {/* 자주 미루는 일정 */}
+      <section className="insights-section">
+        <h2 className="insights-heading">자주 미루는 일정</h2>
+        <p className="insights-caption">
+          아직 끝내지 못한 일정 기준 (기간 무관)
+        </p>
+        <div className="insights-card">
+          {deferred.length === 0 ? (
+            <p className="insights-empty">반복해서 미룬 일정이 없어요.</p>
+          ) : (
+            <ul className="reason-list">
+              {deferred.map((d) => (
+                <li className="reason-row" key={d.scheduleId}>
+                  <span className={`reason-rank rank-${d.rank}`}>{d.rank}</span>
+                  <button
+                    type="button"
+                    className="reason-main deferred-main"
+                    onClick={() => navigate(`/schedules/${d.scheduleId}`)}
+                  >
+                    <div className="reason-top">
+                      <span className="reason-label">{d.title}</span>
+                      <span className="reason-count">{d.deferCount}번</span>
+                    </div>
+                    <div className="reason-track">
+                      <div
+                        className={`reason-fill rank-${d.rank}`}
+                        style={{
+                          width: `${(d.deferCount / maxDeferCount) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </button>
                 </li>
               ))}
             </ul>

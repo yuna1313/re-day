@@ -562,12 +562,20 @@ export const handlers = [
             count: 1,
           },
         ],
+        // 아직 끝내지 못한 일정 중 미룬 횟수 상위 (기간 무관)
+        topDeferredSchedules: [
+          { rank: 1, scheduleId: 98, title: '병원 예약하기', deferCount: 3 },
+          { rank: 2, scheduleId: 102, title: 'NCS 문제 풀기', deferCount: 2 },
+        ],
         estimatedVsActual: {
           averageEstimatedMinutes: 30,
           averageActualMinutes: 50,
           averageDiffMinutes: 20,
         },
-        feedbackMessages: ['오후 일정 완료율이 가장 높아요.'],
+        feedbackMessages: [
+          '오후 일정 완료율이 가장 높아요.',
+          "'병원 예약하기'을(를) 3번 미뤘어요.",
+        ],
       },
     })
   }),
