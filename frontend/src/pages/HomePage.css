@@ -5,6 +5,7 @@
 }
 
 /* 헤더 */
+/* 상단 여백은 랜딩·로그인 화면과 같은 값을 쓴다 (로고 위치 고정) */
 .home-header {
   display: flex;
   align-items: center;

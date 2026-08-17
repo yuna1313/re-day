@@ -7,8 +7,9 @@
   display: flex;
   flex-direction: column;
   background: #fff;
-  /* 앱 전체 좌우 패딩은 최상단 한 곳(여기)에서만 관리 */
-  padding: 0 1rem;
+  /* 앱 전체 좌우 패딩은 최상단 한 곳(여기)에서만 관리.
+     로그인 전 화면(랜딩·로그인 등)도 같은 값을 써서 로고 위치를 맞춘다. */
+  padding: 0 1.5rem;
 }
 
 .app-main {
@@ -17,6 +18,8 @@
   overflow-y: auto;
   /* 스크롤은 유지하되 스크롤바는 숨김 (Firefox) */
   scrollbar-width: none;
+  /* 화면 상·하 여백 */
+  padding: 2rem 0;
 }
 
 /* 스크롤바 숨김 (Chrome/Safari 등 WebKit) */
@@ -31,8 +34,8 @@
   display: flex;
   background: #fff;
   border-top: 1px solid #eee;
-  /* app-shell 의 좌우 1rem 패딩을 상쇄해 탭바는 전체 폭으로 */
-  margin: 0 -1rem;
+  /* app-shell 의 좌우 패딩을 상쇄해 탭바는 전체 폭으로 */
+  margin: 0 -1.5rem;
 }
 
 .bottom-nav-item {
