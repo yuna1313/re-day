@@ -56,6 +56,9 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  /* 바텀시트 안 스크롤바는 감춘다 (스크롤은 그대로 된다) */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .complete-title {
@@ -144,4 +147,8 @@
   margin: 0 2px 12px;
   font-size: 14px;
   color: #ef4444;
+}
+
+.complete-body::-webkit-scrollbar {
+  display: none;
 }
