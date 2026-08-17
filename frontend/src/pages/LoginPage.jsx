@@ -45,7 +45,10 @@ function LoginPage() {
 
   return (
     <div className="login-page">
-      <h1 className="login-logo">RE:DAY</h1>
+      {/* 로고를 누르면 서비스 소개로 돌아간다 (웹의 일반적인 방식) */}
+      <h1 className="login-logo">
+        <Link to="/welcome">RE:DAY</Link>
+      </h1>
 
       <p className="login-greeting">
         안녕하세요 :)

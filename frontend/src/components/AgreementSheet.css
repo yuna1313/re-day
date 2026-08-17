@@ -57,9 +57,17 @@
 
 .sheet-body {
   overflow-y: auto;
+  /* 바텀시트 안 스크롤바는 감춘다 (스크롤은 그대로 된다) */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   font-size: 14px;
   line-height: 1.7;
   color: #374151;
   /* content 문자열의 줄바꿈을 그대로 렌더 */
+  /* (스크롤바 숨김 규칙은 아래 ::-webkit-scrollbar 참고) */
   white-space: pre-line;
+}
+
+.sheet-body::-webkit-scrollbar {
+  display: none;
 }

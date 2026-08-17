@@ -7,17 +7,26 @@
   margin: 0 auto;
   min-height: 100dvh;
   box-sizing: border-box;
-  padding: 24px;
+  /* 좌우·상단 여백을 앱 셸(.app-shell + .app-main)과 동일하게 맞춘다 */
+  padding: 2rem 1.5rem 24px;
   display: flex;
   flex-direction: column;
 }
 
+/* 로고 크기·굵기·위치를 랜딩·홈 화면과 동일하게 맞춘다 */
 .login-logo {
-  margin: 24px 0 0;
-  font-size: 28px;
+  margin: 8px 0 2px;
+  font-size: 23px;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: #111;
+}
+
+/* 서비스 소개로 돌아가는 링크지만 로고 모양은 그대로 유지한다 */
+.login-logo a {
+  color: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .login-greeting {

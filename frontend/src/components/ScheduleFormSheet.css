@@ -22,6 +22,9 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  /* 바텀시트 안 스크롤바는 감춘다 (스크롤은 그대로 된다) */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   animation: sheet-up 0.25s ease-out;
 }
 
@@ -59,4 +62,8 @@
   font-size: 18px;
   font-weight: 700;
   color: #111;
+}
+
+.schedule-sheet::-webkit-scrollbar {
+  display: none;
 }
