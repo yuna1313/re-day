@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
@@ -15,12 +16,12 @@ import InsightsPage from './pages/InsightsPage'
 import MyPage from './pages/MyPage'
 import ChangePasswordPage from './pages/ChangePasswordPage'
 import NotFoundPage from './pages/NotFoundPage'
-import './App.css'
 
 function App() {
   return (
     <Routes>
-      {/* 로그인/회원가입/비밀번호 재설정은 공통 레이아웃(하단 탭) 밖의 독립 화면 */}
+      {/* 로그인 전 화면들은 공통 레이아웃(하단 탭) 밖의 독립 화면 */}
+      <Route path="/welcome" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
