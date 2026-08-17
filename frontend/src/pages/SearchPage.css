@@ -80,7 +80,7 @@
   font-size: 14px;
   line-height: 1.7;
   color: #9ca3af;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .search-error {
@@ -128,7 +128,7 @@
   font-size: 15px;
   font-weight: 700;
   color: #111;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .search-item-meta {
