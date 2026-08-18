@@ -680,6 +680,31 @@ export const handlers = [
     )
   }),
 
+  // 로그아웃: POST /api/v1/auth/logout
+  http.post('/api/v1/auth/logout', async ({ request }) => {
+    const { refreshToken } = await request.json()
+
+    // refreshToken 이 있으면 폐기 성공, 없으면 401
+    if (refreshToken) {
+      return HttpResponse.json({
+        success: true,
+        code: 'AUTH_LOGOUT_SUCCESS',
+        message: '로그아웃되었습니다.',
+        data: null,
+      })
+    }
+
+    return HttpResponse.json(
+      {
+        success: false,
+        code: 'AUTH_INVALID_REFRESH_TOKEN_FAIL',
+        message: '유효하지 않은 리프레시 토큰입니다.',
+        data: null,
+      },
+      { status: 401 },
+    )
+  }),
+
   // 이메일 인증코드 발송: POST /api/v1/auth/email/send-verification
   // 실패도 HTTP 200 + success:false 로 내려온다.
   http.post('/api/v1/auth/email/send-verification', async ({ request }) => {
