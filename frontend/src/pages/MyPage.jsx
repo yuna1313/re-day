@@ -11,8 +11,8 @@ function MyPage() {
   const { data } = useMe()
   const profile = data ?? member
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     navigate('/login', { replace: true })
   }
 
