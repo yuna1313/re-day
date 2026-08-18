@@ -7,6 +7,11 @@ export const authApi = {
   login: ({ email, password }) =>
     client.post('/auth/login', { email, password }).then((res) => res.data),
 
+  // 로그아웃: 서버에 저장된 refresh token 을 폐기한다.
+  // 토큰을 지우는 것만으로는 서버의 refresh token 이 만료까지 살아있어 재발급이 가능하다.
+  logout: ({ refreshToken }) =>
+    client.post('/auth/logout', { refreshToken }).then((res) => res.data),
+
   // 이메일 인증코드 발송 (실패도 200 + success:false)
   sendEmailVerification: async ({ email }) => {
     const { data } = await client.post('/auth/email/send-verification', {
