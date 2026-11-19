@@ -8,7 +8,10 @@ export const authApi = {
       data,
       '게스트 모드를 시작하지 못했습니다.',
     ).data
-    return { ...session, member: { ...session.member, isGuest: true } }
+    return {
+      ...session,
+      member: { ...session.member, isGuest: true, isDemo: demo },
+    }
   },
 
   // 로그인 (실패 시 HTTP 401 → axios 가 에러를 던짐)

@@ -12,6 +12,39 @@
   padding: 0 1.5rem;
 }
 
+.guest-banner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 0.75rem;
+  padding: 0 0.75rem;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 13px;
+}
+
+.guest-banner-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: #1d4ed8;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.guest-banner-action:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
 .app-main {
   flex: 1;
   /* 본문만 스크롤 → 탭바는 절대 콘텐츠를 가리지 않음 */

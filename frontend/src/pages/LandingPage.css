@@ -190,6 +190,8 @@
   font-size: 16px;
   font-weight: 700;
   color: #fff;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }

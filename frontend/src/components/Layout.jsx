@@ -1,5 +1,7 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { Home, CalendarDays, BarChart3, User } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 import './Layout.css'
 
 // 하단 탭바 (모든 메인 화면 공통)
@@ -11,8 +13,44 @@ const TABS = [
 ]
 
 function Layout() {
+  const { member, logout } = useAuth()
+  const navigate = useNavigate()
+  const [isExitingDemo, setIsExitingDemo] = useState(false)
+  const isDemo = member?.isDemo === true
+  const isLegacyGuest = member?.isGuest && member.isDemo === undefined
+
+  const exitDemo = async () => {
+    setIsExitingDemo(true)
+    const restoredGuest = await logout()
+    setIsExitingDemo(false)
+    navigate(restoredGuest ? '/' : '/welcome', { replace: true })
+  }
+
   return (
     <div className="app-shell">
+      {(isDemo || isLegacyGuest) && (
+        <div className="guest-banner">
+          <span>{isDemo ? '데모 모드 · 예시 일정' : '게스트 모드'}</span>
+          {isDemo ? (
+            <button
+              type="button"
+              className="guest-banner-action"
+              disabled={isExitingDemo}
+              onClick={exitDemo}
+            >
+              {isExitingDemo ? '나가는 중…' : '데모 나가기'}
+            </button>
+          ) : (
+            <Link
+              to="/welcome"
+              state={{ fromGuest: true }}
+              className="guest-banner-action"
+            >
+              서비스 소개
+            </Link>
+          )}
+        </div>
+      )}
       <main className="app-main">
         <Outlet />
       </main>

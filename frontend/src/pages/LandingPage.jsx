@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { CalendarClock, History, LineChart } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -45,12 +45,17 @@ const SCREENSHOTS = [
 
 function LandingPage({ demo = false }) {
   const navigate = useNavigate()
-  const { isAuthenticated, login } = useAuth()
+  const { state } = useLocation()
+  const { isAuthenticated, member, login, logout } = useAuth()
+  const isDemo = member?.isDemo === true
+  const viewingIntro =
+    member?.isGuest && member.isDemo === undefined && state?.fromGuest === true
   const guestMutation = useMutation({
     mutationFn: authApi.startGuestSession,
-    onSuccess: (session) => {
+    onSuccess: async (session) => {
+      if (isDemo) await logout()
       login(session)
-      navigate('/', { replace: true })
+      navigate('/', { replace: !session.member.isDemo })
     },
   })
   const pendingDemo = guestMutation.isPending
@@ -60,9 +65,19 @@ function LandingPage({ demo = false }) {
   const [brokenShots, setBrokenShots] = useState([])
   const shots = SCREENSHOTS.filter((shot) => !brokenShots.includes(shot.src))
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !isDemo && !viewingIntro) {
     return <Navigate to="/" replace />
   }
+
+  const start = (withDemo) => {
+    if (isDemo && withDemo) {
+      navigate('/')
+      return
+    }
+    guestMutation.mutate({ demo: withDemo })
+  }
+
+  const demoLabel = isDemo ? '데모 계속하기' : '데모 체험하기'
 
   return (
     <div className="landing">
@@ -139,30 +154,38 @@ function LandingPage({ demo = false }) {
             )}
           </p>
         )}
-        <button
-          type="button"
-          className="landing-start"
-          disabled={guestMutation.isPending}
-          onClick={() => guestMutation.mutate({ demo })}
-        >
-          {pendingDemo === demo
-            ? '시작하는 중…'
-            : demo
-              ? '데모 체험하기'
-              : '로그인 없이 시작'}
-        </button>
-        <button
-          type="button"
-          className="landing-start landing-start--secondary"
-          disabled={guestMutation.isPending}
-          onClick={() => guestMutation.mutate({ demo: !demo })}
-        >
-          {pendingDemo === !demo
-            ? '시작하는 중…'
-            : demo
-              ? '빈 캘린더로 시작'
-              : '데모 체험하기'}
-        </button>
+        {viewingIntro ? (
+          <Link className="landing-start" to="/">
+            캘린더로 돌아가기
+          </Link>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="landing-start"
+              disabled={guestMutation.isPending}
+              onClick={() => start(demo)}
+            >
+              {pendingDemo === demo
+                ? '시작하는 중…'
+                : demo
+                  ? demoLabel
+                  : '로그인 없이 시작'}
+            </button>
+            <button
+              type="button"
+              className="landing-start landing-start--secondary"
+              disabled={guestMutation.isPending}
+              onClick={() => start(!demo)}
+            >
+              {pendingDemo === !demo
+                ? '시작하는 중…'
+                : demo
+                  ? '빈 캘린더로 시작'
+                  : demoLabel}
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
