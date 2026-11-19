@@ -5,6 +5,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,6 +20,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.reday.auth.application.port.EmailVerificationStore;
+import com.reday.auth.domain.Email;
+import com.reday.auth.domain.EmailVerification;
+import com.reday.auth.domain.VerificationCode;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -22,6 +31,9 @@ class GuestSessionTest {
 
 	@Autowired
 	private MockMvc mvc;
+
+	@Autowired
+	private EmailVerificationStore emailVerificationStore;
 
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -56,6 +68,58 @@ class GuestSessionTest {
 		mvc.perform(get("/api/v1/schedules/{id}", scheduleId).header(HttpHeaders.AUTHORIZATION, bearer(renewedToken)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.title").value("게스트 일정"));
+	}
+
+	@Test
+	void 게스트_가입_후에도_일정과_회고가_유지되고_이전_토큰은_만료된다() throws Exception {
+		JsonNode guest = startGuestSession();
+		String guestToken = guest.get("accessToken").asText();
+		int scheduleId = createSchedule(guestToken);
+		String today = LocalDate.now().toString();
+		mvc.perform(post("/api/v1/reflections")
+				.header(HttpHeaders.AUTHORIZATION, bearer(guestToken))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{"reflectionDate":"%s","content":"게스트 회고"}
+					""".formatted(today)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.success").value(true));
+
+		Email email = Email.of("guest-" + UUID.randomUUID() + "@example.com");
+		String signup = """
+			{"nickname":"새 회원","email":"%s","password":"Valid1234!","passwordConfirm":"Valid1234!","agreeTerms":true}
+			""".formatted(email.value());
+		mvc.perform(post("/api/v1/auth/guest/upgrade")
+				.header(HttpHeaders.AUTHORIZATION, bearer(guestToken))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(signup))
+			.andExpect(status().isForbidden());
+
+		emailVerificationStore.save(EmailVerification.create(
+			email, VerificationCode.of("123456"), LocalDateTime.now(), Duration.ofMinutes(5)
+		));
+		emailVerificationStore.complete(email);
+		String upgraded = mvc.perform(post("/api/v1/auth/guest/upgrade")
+				.header(HttpHeaders.AUTHORIZATION, bearer(guestToken))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(signup))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.member.memberId").value(guest.at("/member/memberId").asInt()))
+			.andReturn().getResponse().getContentAsString();
+		String memberToken = objectMapper.readTree(upgraded).at("/data/accessToken").asText();
+
+		mvc.perform(get("/api/v1/members/me").header(HttpHeaders.AUTHORIZATION, bearer(memberToken)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.email").value(email.value()));
+		mvc.perform(get("/api/v1/schedules/{id}", scheduleId).header(HttpHeaders.AUTHORIZATION, bearer(memberToken)))
+			.andExpect(jsonPath("$.data.title").value("게스트 일정"));
+		mvc.perform(get("/api/v1/reflections/{date}", today).header(HttpHeaders.AUTHORIZATION, bearer(memberToken)))
+			.andExpect(jsonPath("$.data.content").value("게스트 회고"));
+		mvc.perform(get("/api/v1/schedules/{id}", scheduleId).header(HttpHeaders.AUTHORIZATION, bearer(guestToken)))
+			.andExpect(status().isUnauthorized());
+		mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"refreshToken\":\"" + guest.get("refreshToken").asText() + "\"}"))
+			.andExpect(status().isUnauthorized());
 	}
 
 	private int createSchedule(String accessToken) throws Exception {

@@ -78,6 +78,7 @@ public class SecurityConfig {
 					"/v3/api-docs/**",
 					"/error"
 				).permitAll()
+				.requestMatchers("/api/v1/auth/guest/upgrade").hasRole("GUEST")
 				.requestMatchers("/api/v1/members/**").hasRole("USER")
 				.anyRequest().authenticated()
 			)

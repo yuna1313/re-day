@@ -69,15 +69,17 @@ export const authApi = {
   },
 
   // 회원가입 (실패도 200 + success:false)
-  // 응답 data: { memberId, email }
+  // 게스트 가입에서는 같은 기록을 이어받고 새 로그인 토큰을 반환한다.
   signup: async ({
     nickname,
     email,
     password,
     passwordConfirm,
     agreeTerms,
+    keepGuestRecords,
   }) => {
-    const { data } = await client.post('/auth/signup', {
+    const path = keepGuestRecords ? '/auth/guest/upgrade' : '/auth/signup'
+    const { data } = await client.post(path, {
       nickname,
       email,
       password,

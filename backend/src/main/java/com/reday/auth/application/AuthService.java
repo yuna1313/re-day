@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -67,6 +68,27 @@ public class AuthService {
 		return issueSession(guest);
 	}
 
+	@Transactional
+	public LoginResponse upgradeGuest(String subject, SignupRequest request) {
+		SignupFields fields = validateSignupRequest(request);
+		Member guest = memberRepository.findLockedByEmail(subject)
+			.filter(Member::isGuest)
+			.orElseThrow(() -> new BusinessException(AuthErrorCode.GUEST_SESSION_REQUIRED));
+		verifySignupEmail(fields.email());
+		guest.registerGuest(
+			fields.nickname().value(), fields.email().value(), passwordEncoder.encode(fields.password().value())
+		);
+		try {
+			// 같은 회원 ID로 저장해 일정, 회고, 행동 로그의 소유권을 보존한다.
+			memberRepository.flush();
+		} catch (DataIntegrityViolationException exception) {
+			throw new BusinessException(AuthErrorCode.EMAIL_DUPLICATED);
+		}
+
+		// 새 refresh token을 저장하면 같은 회원 ID의 기존 토큰은 폐기된다.
+		return issueSession(guest);
+	}
+
 	/**
 	 * 회원가입 요청을 검증하고 신규 회원을 저장합니다.
 	 *
@@ -83,12 +105,7 @@ public class AuthService {
 		String password = signupFields.password().value();
 
 		log.info("[signup] 이메일 존재하는지 여부 확인");
-		if (memberRepository.existsByEmail(email)) {
-			throw new BusinessException(AuthErrorCode.EMAIL_DUPLICATED);
-		}
-		if (!emailVerificationStore.isVerified(signupFields.email())) {
-			throw new BusinessException(AuthErrorCode.EMAIL_NOT_VERIFIED);
-		}
+		verifySignupEmail(signupFields.email());
 
 		Member member = Member.create(
 			nickname,
@@ -243,6 +260,7 @@ public class AuthService {
 	 * @param request 토큰 재발급 요청
 	 * @return 재발급된 access token과 refresh token
 	 */
+	@Transactional
 	public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
 		log.info("[refreshToken] 토큰 재발급 요청");
 		if (request == null || !StringUtils.hasText(request.refreshToken())) {
@@ -258,6 +276,7 @@ public class AuthService {
 		}
 
 		String email = jwtTokenProvider.getEmail(requestedRefreshToken);
+		lockGuestSession(email);
 		if (!refreshTokenStore.matches(email, requestedRefreshToken)) {
 			throw new BusinessException(AuthErrorCode.REFRESH_TOKEN_REVOKED);
 		}
@@ -278,6 +297,7 @@ public class AuthService {
 	 *
 	 * @param request 로그아웃 요청
 	 */
+	@Transactional
 	public void logout(LogoutRequest request) {
 		log.info("[logout] 로그아웃 요청");
 		if (request == null || !StringUtils.hasText(request.refreshToken())) {
@@ -290,6 +310,7 @@ public class AuthService {
 		}
 
 		String email = jwtTokenProvider.getEmail(refreshToken);
+		lockGuestSession(email);
 		if (!refreshTokenStore.matches(email, refreshToken)) {
 			throw new BusinessException(AuthErrorCode.REFRESH_TOKEN_REVOKED);
 		}
@@ -308,6 +329,22 @@ public class AuthService {
 			refreshToken,
 			new LoginResponse.MemberInfo(member.getMemberIdx(), member.getNickname(), member.isGuest() ? null : subject)
 		);
+	}
+
+	private void verifySignupEmail(Email email) {
+		if (memberRepository.existsByEmail(email.value())) {
+			throw new BusinessException(AuthErrorCode.EMAIL_DUPLICATED);
+		}
+		if (!emailVerificationStore.isVerified(email)) {
+			throw new BusinessException(AuthErrorCode.EMAIL_NOT_VERIFIED);
+		}
+	}
+
+	private void lockGuestSession(String subject) {
+		// 계정 전환과 이전 게스트 토큰의 갱신·폐기를 같은 회원 행에서 직렬화한다.
+		if (Member.isGuestSubject(subject) && memberRepository.findLockedByEmail(subject).isEmpty()) {
+			throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+		}
 	}
 
 	/**

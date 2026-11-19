@@ -631,6 +631,20 @@ export const handlers = [
     }),
   ),
 
+  http.post('/api/v1/auth/guest/upgrade', async ({ request }) => {
+    const { nickname, email } = await request.json()
+    return HttpResponse.json({
+      success: true,
+      code: 'AUTH_GUEST_UPGRADED',
+      message: '게스트 기록을 이어받아 가입했습니다.',
+      data: {
+        accessToken: 'mock-upgraded-access-token',
+        refreshToken: 'mock-upgraded-refresh-token',
+        member: { memberId: 2, nickname, email },
+      },
+    })
+  }),
+
   // 로그인: POST /api/v1/auth/login
   http.post('/api/v1/auth/login', async ({ request }) => {
     const { email, password } = await request.json()

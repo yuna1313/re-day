@@ -1,5 +1,6 @@
 package com.reday.auth.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +20,7 @@ import com.reday.auth.dto.TokenRefreshRequest;
 import com.reday.auth.dto.TokenRefreshResponse;
 import com.reday.auth.response.AuthResponseCode;
 import com.reday.global.response.ApiResponse;
+import com.reday.global.security.UserPrincipal;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +33,14 @@ public class AuthController {
 	@PostMapping("/api/v1/auth/guest")
 	public ApiResponse<LoginResponse> startGuestSession() {
 		return ApiResponse.success(AuthResponseCode.GUEST_SESSION_STARTED, authService.startGuestSession());
+	}
+
+	@PostMapping("/api/v1/auth/guest/upgrade")
+	public ApiResponse<LoginResponse> upgradeGuest(
+		@AuthenticationPrincipal UserPrincipal guest,
+		@RequestBody SignupRequest request
+	) {
+		return ApiResponse.success(AuthResponseCode.GUEST_UPGRADED, authService.upgradeGuest(guest.getUsername(), request));
 	}
 
 	@PostMapping("/api/v1/auth/signup")

@@ -72,7 +72,8 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-const isPublicAuthRequest = (url) => url?.startsWith('/auth/')
+const isPublicAuthRequest = (url) =>
+  url?.startsWith('/auth/') && url !== '/auth/guest/upgrade'
 
 // 요청 인터셉터: 저장된 JWT access token 을 Authorization 헤더에 자동 첨부한다.
 client.interceptors.request.use((config) => {

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 public enum AuthErrorCode implements ErrorResponseCode {
 
 	SIGNUP_FAIL(HttpStatus.OK, "AUTH_SIGNUP_FAIL", "회원가입에 실패하였습니다."),
+	GUEST_SESSION_REQUIRED(HttpStatus.UNAUTHORIZED, "AUTH_GUEST_SESSION_REQUIRED_FAIL", "게스트 세션이 만료되었습니다."),
 	LOGIN_FAIL(HttpStatus.UNAUTHORIZED, "AUTH_LOGIN_FAIL", "로그인에 실패하였습니다."),
 	TOKEN_REFRESH_FAIL(HttpStatus.UNAUTHORIZED, "AUTH_TOKEN_REFRESH_FAIL", "토큰 재발급에 실패하였습니다."),
 	LOGOUT_FAIL(HttpStatus.UNAUTHORIZED, "AUTH_LOGOUT_FAIL", "로그아웃에 실패하였습니다."),

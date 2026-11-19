@@ -1,5 +1,11 @@
 import { useNavigate } from 'react-router-dom'
-import { User, Lock, LogIn, ChevronRight } from 'lucide-react'
+import {
+  User,
+  Lock,
+  LogIn,
+  UserPlus,
+  ChevronRight,
+} from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useMe } from '../hooks/useMe'
 import './MyPage.css'
@@ -45,6 +51,23 @@ function MyPage() {
         </div>
 
         <div className="mypage-divider" />
+
+        {isGuest && (
+          <>
+            <button
+              type="button"
+              className="menu-row"
+              onClick={() => navigate('/signup')}
+            >
+              <span className="menu-left">
+                <UserPlus size={18} className="menu-lock" />
+                회원가입하고 기록 이어가기
+              </span>
+              <ChevronRight size={18} className="menu-chevron" />
+            </button>
+            <div className="mypage-divider" />
+          </>
+        )}
 
         <button
           type="button"

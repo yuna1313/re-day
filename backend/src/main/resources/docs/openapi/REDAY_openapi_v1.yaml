@@ -777,6 +777,36 @@ paths:
                     memberId: 1
                     nickname: 게스트
                     email: null
+  /auth/guest/upgrade:
+    post:
+      summary: 게스트 기록을 이어서 회원가입
+      description: 이메일 인증을 마친 뒤 같은 회원 ID로 계정을 전환하고 새 accessToken과 refreshToken을 발급합니다.
+      security:
+      - bearerAuth: []
+      requestBody:
+        $ref: '#/paths/~1auth~1signup/post/requestBody'
+      responses:
+        '200':
+          description: 가입 성공 또는 입력 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                code: AUTH_GUEST_UPGRADED
+                message: 게스트 기록을 이어받아 가입했습니다.
+                data:
+                  accessToken: jwt-access-token
+                  refreshToken: jwt-refresh-token
+                  member:
+                    memberId: 1
+                    nickname: 망고미
+                    email: manggom@example.com
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
   /auth/refresh:
     post:
       summary: 토큰 재발급

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { Eye, EyeOff } from 'lucide-react'
 import AuthHeader from '../components/AuthHeader'
+import { useAuth } from '../contexts/AuthContext'
 import { authApi } from '../api/auth'
 import { getApiErrorMessage } from '../api/client'
 import { AGREEMENTS } from '../constants/agreements'
@@ -24,6 +25,7 @@ const formatMMSS = (totalSeconds) => {
 
 function SignupPage() {
   const navigate = useNavigate()
+  const { isGuest, login } = useAuth()
   const [nickname, setNickname] = useState('')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
@@ -111,8 +113,12 @@ function SignupPage() {
   // 회원가입
   const signupMutation = useMutation({
     mutationFn: authApi.signup,
-    onSuccess: () => {
-      // 가입 완료 후 로그인 화면으로 이동 (가입 응답에는 토큰이 없음)
+    onSuccess: ({ data }) => {
+      if (data.accessToken) {
+        login(data)
+        navigate('/', { replace: true })
+        return
+      }
       navigate('/login', { replace: true })
     },
   })
@@ -126,6 +132,7 @@ function SignupPage() {
       passwordConfirm,
       // API 의 agreeTerms 는 단일 boolean → 필수 약관 동의 여부를 전달
       agreeTerms: isAllRequiredAgreed,
+      keepGuestRecords: isGuest,
     })
   }
 
@@ -141,6 +148,11 @@ function SignupPage() {
   return (
     <div className="signup-page">
       <AuthHeader title="회원가입" onBack={() => navigate(-1)} />
+      {isGuest && (
+        <p className="signup-guest-note">
+          게스트로 작성한 일정과 회고를 새 계정에서도 이어서 쓸 수 있어요.
+        </p>
+      )}
 
       <form className="signup-form" onSubmit={handleSubmit} noValidate>
         {/* 닉네임 */}

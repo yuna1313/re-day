@@ -93,6 +93,14 @@ public class Member {
 		return subject.startsWith(GUEST_SUBJECT_PREFIX);
 	}
 
+	public void registerGuest(String nickname, String email, String encodedPassword) {
+		this.nickname = nickname;
+		this.email = email;
+		this.password = encodedPassword;
+		this.emailVerified = true;
+		recordLogin();
+	}
+
 	/**
 	 * 회원의 비밀번호를 새로 암호화된 비밀번호로 변경합니다.
 	 *
