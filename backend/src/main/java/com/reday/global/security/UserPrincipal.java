@@ -24,10 +24,6 @@ public class UserPrincipal implements UserDetails {
 	/**
 	 * DB에서 조회한 Member 엔티티를 Spring Security가 이해할 수 있는 UserPrincipal로 변환합니다.
 	 *
-	 * 현재 프로젝트는 관리자 권한 없이 일반 사용자만 사용하므로 모든 회원에게 ROLE_USER를 부여합니다.
-	 * 나중에 관리자나 유료 사용자 같은 권한이 생기면 이 메소드에서 Member의 권한 정보를 읽어
-	 * authorities 목록을 다르게 만들어주면 됩니다.
-	 *
 	 * @param member DB에서 조회한 회원 엔티티
 	 * @return Spring Security 인증 과정에서 사용할 사용자 정보
 	 */
@@ -36,7 +32,7 @@ public class UserPrincipal implements UserDetails {
 			member.getMemberIdx(),
 			member.getEmail(),
 			member.getPassword(),
-			List.of(new SimpleGrantedAuthority("ROLE_USER"))
+			List.of(new SimpleGrantedAuthority(member.isGuest() ? "ROLE_GUEST" : "ROLE_USER"))
 		);
 	}
 

@@ -61,6 +61,12 @@ public class AuthService {
 	private final AuthenticationManager authenticationManager;
 	private final JwtTokenProvider jwtTokenProvider;
 
+	@Transactional
+	public LoginResponse startGuestSession() {
+		Member guest = memberRepository.save(Member.createGuest());
+		return issueSession(guest);
+	}
+
 	/**
 	 * 회원가입 요청을 검증하고 신규 회원을 저장합니다.
 	 *
@@ -290,6 +296,18 @@ public class AuthService {
 
 		refreshTokenStore.revoke(email);
 		log.info("[logout] 로그아웃 완료: {}", email);
+	}
+
+	private LoginResponse issueSession(Member member) {
+		String subject = member.getEmail();
+		String accessToken = jwtTokenProvider.createAccessToken(subject);
+		String refreshToken = jwtTokenProvider.createRefreshToken(subject);
+		refreshTokenStore.save(subject, refreshToken, jwtTokenProvider.getExpiresAt(refreshToken));
+		return new LoginResponse(
+			accessToken,
+			refreshToken,
+			new LoginResponse.MemberInfo(member.getMemberIdx(), member.getNickname(), member.isGuest() ? null : subject)
+		);
 	}
 
 	/**

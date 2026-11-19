@@ -28,6 +28,11 @@ public class AuthController {
 
 	private final AuthService authService;
 
+	@PostMapping("/api/v1/auth/guest")
+	public ApiResponse<LoginResponse> startGuestSession() {
+		return ApiResponse.success(AuthResponseCode.GUEST_SESSION_STARTED, authService.startGuestSession());
+	}
+
 	@PostMapping("/api/v1/auth/signup")
 	public ApiResponse<SignupResponse> signup(@RequestBody SignupRequest request) {
 		SignupResponse response = authService.signup(request);

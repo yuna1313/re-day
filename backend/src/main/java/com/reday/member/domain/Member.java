@@ -1,6 +1,7 @@
 package com.reday.member.domain;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,6 +19,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "member")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member {
+
+	private static final String GUEST_SUBJECT_PREFIX = "guest:";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -75,6 +78,19 @@ public class Member {
 	 */
 	public static Member createUnverified(String nickname, String email, String encodedPassword) {
 		return new Member(nickname, email, encodedPassword, false);
+	}
+
+	public static Member createGuest() {
+		// 게스트는 이메일 로그인을 사용할 수 없다. 기존 소유권과 토큰 저장 방식은 공유한다.
+		return new Member("게스트", GUEST_SUBJECT_PREFIX + UUID.randomUUID(), "", false);
+	}
+
+	public boolean isGuest() {
+		return isGuestSubject(email);
+	}
+
+	public static boolean isGuestSubject(String subject) {
+		return subject.startsWith(GUEST_SUBJECT_PREFIX);
 	}
 
 	/**

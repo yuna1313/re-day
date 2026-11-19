@@ -40,7 +40,7 @@ public class SecurityConfig {
 	 *
 	 * /api/auth/** 는 회원가입, 로그인, 토큰 재발급처럼 로그인 전에도 접근해야 하는 API입니다.
 	 * /swagger-ui.html, /swagger-ui/**, /v3/api-docs/** 는 API 문서를 확인하기 위한 Swagger 경로입니다.
-	 * 위 경로를 제외한 Todo 관련 API는 반드시 로그인한 사용자만 접근할 수 있도록 authenticated()로 막습니다.
+	 * 일정, 회고, 인사이트는 인증된 회원과 게스트가 접근할 수 있습니다.
 	 *
 	 * @param http Spring Security의 HTTP 보안 설정 객체
 	 * @return Spring Security가 사용할 보안 필터 체인
@@ -69,6 +69,7 @@ public class SecurityConfig {
 					"/api/v1/auth/password-reset/email/verify",
 					"/api/v1/auth/password-reset",
 					"/api/v1/auth/login",
+					"/api/v1/auth/guest",
 					"/api/v1/auth/refresh",
 					"/api/v1/auth/logout",
 					"/docs/openapi/**",
@@ -77,6 +78,7 @@ public class SecurityConfig {
 					"/v3/api-docs/**",
 					"/error"
 				).permitAll()
+				.requestMatchers("/api/v1/members/**").hasRole("USER")
 				.anyRequest().authenticated()
 			)
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

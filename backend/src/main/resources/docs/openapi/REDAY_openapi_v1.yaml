@@ -755,6 +755,28 @@ paths:
         '403':
           $ref: '#/components/responses/LoginForbidden'
       description: 이메일과 비밀번호로 로그인하고 accessToken과 refreshToken을 발급합니다.
+  /auth/guest:
+    post:
+      summary: 게스트 세션 시작
+      description: 로그인 없이 일정, 회고, 인사이트를 사용할 수 있는 게스트 토큰을 발급합니다.
+      responses:
+        '200':
+          description: 게스트 세션 발급 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                code: AUTH_GUEST_SESSION_STARTED
+                message: 게스트 사용을 시작합니다.
+                data:
+                  accessToken: jwt-access-token
+                  refreshToken: jwt-refresh-token
+                  member:
+                    memberId: 1
+                    nickname: 게스트
+                    email: null
   /auth/refresh:
     post:
       summary: 토큰 재발급
