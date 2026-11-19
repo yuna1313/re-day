@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
@@ -18,6 +19,31 @@ import ChangePasswordPage from './pages/ChangePasswordPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
+  const [installPrompt, setInstallPrompt] = useState(null)
+
+  useEffect(() => {
+    const showInstallAction = (event) => {
+      event.preventDefault()
+      setInstallPrompt(event)
+    }
+    const hideInstallAction = () => setInstallPrompt(null)
+    window.addEventListener('beforeinstallprompt', showInstallAction)
+    window.addEventListener('appinstalled', hideInstallAction)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', showInstallAction)
+      window.removeEventListener('appinstalled', hideInstallAction)
+    }
+  }, [])
+
+  const installApp = installPrompt
+    ? () => {
+        setInstallPrompt(null)
+        installPrompt.prompt().catch((error) => {
+          console.warn('RE:DAY 설치 창을 열지 못했습니다.', error)
+        })
+      }
+    : null
+
   return (
     <Routes>
       {/* 로그인 전 화면들은 공통 레이아웃(하단 탭) 밖의 독립 화면 */}
@@ -47,7 +73,7 @@ function App() {
           />
           <Route path="/reflection" element={<ReflectionPage />} />
           <Route path="/insights" element={<InsightsPage />} />
-          <Route path="/mypage" element={<MyPage />} />
+          <Route path="/mypage" element={<MyPage installApp={installApp} />} />
           <Route element={<ProtectedRoute memberOnly />}>
             <Route path="/mypage/password" element={<ChangePasswordPage />} />
           </Route>

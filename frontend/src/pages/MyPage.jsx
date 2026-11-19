@@ -4,13 +4,14 @@ import {
   Lock,
   LogIn,
   UserPlus,
+  Download,
   ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useMe } from '../hooks/useMe'
 import './MyPage.css'
 
-function MyPage() {
+function MyPage({ installApp }) {
   const navigate = useNavigate()
   const { member, isGuest, logout } = useAuth()
   // 저장된 정보로 즉시 표시하고, 최신 정보를 조회해 갱신한다.
@@ -85,6 +86,17 @@ function MyPage() {
           <ChevronRight size={18} className="menu-chevron" />
         </button>
       </div>
+
+      {installApp && (
+        <div className="mypage-card">
+          <button type="button" className="menu-row" onClick={installApp}>
+            <span className="menu-left">
+              <Download size={18} className="menu-lock" />홈 화면에 설치
+            </span>
+            <ChevronRight size={18} className="menu-chevron" />
+          </button>
+        </div>
+      )}
 
       {/* 로그아웃 */}
       {!isGuest && (
