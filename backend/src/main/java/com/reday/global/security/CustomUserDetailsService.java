@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.reday.member.domain.Member;
 import com.reday.member.repository.MemberRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 	@Transactional(readOnly = true)
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 		return memberRepository.findByEmail(email)
+			.filter(Member::isActive)
 			.map(UserPrincipal::from)
 			.orElseThrow(() -> new UsernameNotFoundException("Member not found: " + email));
 	}

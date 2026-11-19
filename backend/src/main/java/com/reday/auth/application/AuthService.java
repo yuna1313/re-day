@@ -65,7 +65,7 @@ public class AuthService {
 
 	@Transactional
 	public LoginResponse startGuestSession(boolean demo) {
-		Member guest = memberRepository.save(Member.createGuest());
+		Member guest = memberRepository.save(Member.createGuest(demo));
 		if (demo) {
 			guestDemoData.createSchedules(guest.getMemberIdx());
 		}
@@ -77,6 +77,7 @@ public class AuthService {
 		SignupFields fields = validateSignupRequest(request);
 		Member guest = memberRepository.findLockedByEmail(subject)
 			.filter(Member::isGuest)
+			.filter(Member::isActive)
 			.orElseThrow(() -> new BusinessException(AuthErrorCode.GUEST_SESSION_REQUIRED));
 		verifySignupEmail(fields.email());
 		guest.registerGuest(
@@ -346,7 +347,7 @@ public class AuthService {
 
 	private void lockGuestSession(String subject) {
 		// 계정 전환과 이전 게스트 토큰의 갱신·폐기를 같은 회원 행에서 직렬화한다.
-		if (Member.isGuestSubject(subject) && memberRepository.findLockedByEmail(subject).isEmpty()) {
+		if (Member.isGuestSubject(subject) && memberRepository.findLockedByEmail(subject).filter(Member::isActive).isEmpty()) {
 			throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
 		}
 	}

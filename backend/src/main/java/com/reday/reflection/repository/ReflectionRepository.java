@@ -1,6 +1,8 @@
 package com.reday.reflection.repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +10,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.reday.reflection.domain.Reflection;
 
 public interface ReflectionRepository extends JpaRepository<Reflection, Long> {
+
+	List<Reflection> findAllByMemberIdx(Integer memberIdx);
+
+	List<Reflection> findAllByMemberIdxAndReflectionDateIn(Integer memberIdx, Collection<LocalDate> reflectionDates);
+
 
 	/**
 	 * 특정 회원이 특정 날짜에 작성한 회고를 조회합니다.

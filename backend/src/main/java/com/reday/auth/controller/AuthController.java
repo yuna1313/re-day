@@ -6,8 +6,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.reday.auth.application.AuthService;
+import com.reday.auth.application.GuestRecordImportService;
 import com.reday.auth.dto.EmailVerificationSendRequest;
 import com.reday.auth.dto.EmailVerificationVerifyRequest;
+import com.reday.auth.dto.GuestRecordImportRequest;
 import com.reday.auth.dto.GuestSessionRequest;
 import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
@@ -30,6 +32,15 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
 	private final AuthService authService;
+	private final GuestRecordImportService guestRecordImportService;
+
+	@PostMapping("/api/v1/auth/guest/records/import")
+	public ApiResponse<Void> importGuestRecords(
+		@AuthenticationPrincipal UserPrincipal recipient,
+		@RequestBody GuestRecordImportRequest request
+	) {
+		return ApiResponse.success(guestRecordImportService.importRecords(recipient.getMemberIdx(), request.guestRefreshToken()));
+	}
 
 	@PostMapping("/api/v1/auth/guest")
 	public ApiResponse<LoginResponse> startGuestSession(@RequestBody(required = false) GuestSessionRequest request) {

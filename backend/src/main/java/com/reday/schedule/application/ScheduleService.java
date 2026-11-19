@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import com.reday.global.exception.BusinessException;
+import com.reday.member.application.MemberRecordAccess;
 import com.reday.schedule.domain.Schedule;
 import com.reday.schedule.domain.ScheduleActionLog;
 import com.reday.schedule.domain.ScheduleActionType;
@@ -62,6 +63,7 @@ public class ScheduleService {
 
 	private final ScheduleRepository scheduleRepository;
 	private final ScheduleActionLogRepository scheduleActionLogRepository;
+	private final MemberRecordAccess memberRecordAccess;
 
 	/**
 	 * 로그인한 사용자의 일정 목록을 조회합니다.
@@ -180,6 +182,7 @@ public class ScheduleService {
 	 */
 	@Transactional
 	public ScheduleCreateResponse createSchedule(Integer memberIdx, ScheduleCreateRequest request) {
+		memberRecordAccess.lockActiveOwner(memberIdx);
 		log.info("[createSchedule] 일정 생성 요청: memberIdx={}", memberIdx);
 		if (request == null) {
 			log.warn("[createSchedule] 요청 본문 누락: memberIdx={}", memberIdx);
@@ -240,6 +243,7 @@ public class ScheduleService {
 	 */
 	@Transactional
 	public void updateSchedule(Integer memberIdx, Integer scheduleId, ScheduleUpdateRequest request) {
+		memberRecordAccess.lockActiveOwner(memberIdx);
 		log.info("[updateSchedule] 일정 수정 요청: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
 		if (request == null) {
 			log.warn("[updateSchedule] 요청 본문 누락: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
@@ -269,6 +273,7 @@ public class ScheduleService {
 	 */
 	@Transactional
 	public void deleteSchedule(Integer memberIdx, Integer scheduleId) {
+		memberRecordAccess.lockActiveOwner(memberIdx);
 		log.info("[deleteSchedule] 일정 삭제 요청: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
 		Schedule schedule = scheduleRepository.findByScheduleIdxAndMemberIdxAndDeletedAtIsNull(scheduleId, memberIdx)
 			.orElseThrow(() -> {
@@ -295,6 +300,7 @@ public class ScheduleService {
 		Integer scheduleId,
 		ScheduleCompleteRequest request
 	) {
+		memberRecordAccess.lockActiveOwner(memberIdx);
 		log.info("[completeSchedule] 일정 완료 요청: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
 		if (request == null) {
 			log.warn("[completeSchedule] 요청 본문 누락: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
@@ -351,6 +357,7 @@ public class ScheduleService {
 		Integer scheduleId,
 		ScheduleDeferRequest request
 	) {
+		memberRecordAccess.lockActiveOwner(memberIdx);
 		log.info("[deferSchedule] 일정 미루기 요청: memberIdx={}, scheduleId={}", memberIdx, scheduleId);
 		if (request == null) {
 			log.warn("[deferSchedule] 요청 본문 누락: memberIdx={}, scheduleId={}", memberIdx, scheduleId);

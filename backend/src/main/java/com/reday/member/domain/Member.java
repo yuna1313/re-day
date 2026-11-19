@@ -21,6 +21,7 @@ import lombok.NoArgsConstructor;
 public class Member {
 
 	private static final String GUEST_SUBJECT_PREFIX = "guest:";
+	private static final String DEMO_SUBJECT_PREFIX = "demo:";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -80,9 +81,10 @@ public class Member {
 		return new Member(nickname, email, encodedPassword, false);
 	}
 
-	public static Member createGuest() {
+	public static Member createGuest(boolean demo) {
 		// 게스트는 이메일 로그인을 사용할 수 없다. 기존 소유권과 토큰 저장 방식은 공유한다.
-		return new Member("게스트", GUEST_SUBJECT_PREFIX + UUID.randomUUID(), "", false);
+		String prefix = demo ? DEMO_SUBJECT_PREFIX : GUEST_SUBJECT_PREFIX;
+		return new Member("게스트", prefix + UUID.randomUUID(), "", false);
 	}
 
 	public boolean isGuest() {
@@ -90,7 +92,19 @@ public class Member {
 	}
 
 	public static boolean isGuestSubject(String subject) {
-		return subject.startsWith(GUEST_SUBJECT_PREFIX);
+		return subject.startsWith(GUEST_SUBJECT_PREFIX) || subject.startsWith(DEMO_SUBJECT_PREFIX);
+	}
+
+	public boolean isDemo() {
+		return email.startsWith(DEMO_SUBJECT_PREFIX);
+	}
+
+	public boolean isActive() {
+		return deletedAt == null;
+	}
+
+	public void retireAfterRecordImport() {
+		this.deletedAt = LocalDateTime.now();
 	}
 
 	public void registerGuest(String nickname, String email, String encodedPassword) {

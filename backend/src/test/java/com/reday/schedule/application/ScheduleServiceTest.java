@@ -19,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.reday.global.exception.BusinessException;
+import com.reday.member.application.MemberRecordAccess;
 import com.reday.schedule.domain.Schedule;
 import com.reday.schedule.domain.ScheduleActionLog;
 import com.reday.schedule.domain.ScheduleActionType;
@@ -73,7 +74,10 @@ class ScheduleServiceTest {
 	private final ScheduleRepository scheduleRepository = org.mockito.Mockito.mock(ScheduleRepository.class);
 	private final ScheduleActionLogRepository scheduleActionLogRepository =
 		org.mockito.Mockito.mock(ScheduleActionLogRepository.class);
-	private final ScheduleService scheduleService = new ScheduleService(scheduleRepository, scheduleActionLogRepository);
+	private final MemberRecordAccess memberRecordAccess = org.mockito.Mockito.mock(MemberRecordAccess.class);
+	private final ScheduleService scheduleService = new ScheduleService(
+		scheduleRepository, scheduleActionLogRepository, memberRecordAccess
+	);
 
 	/**
 	 * 조회 기간에 포함된 로그인 사용자의 일정 목록을 시작 일시 오름차순으로 조회합니다.

@@ -17,6 +17,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.reday.global.exception.BusinessException;
+import com.reday.member.application.MemberRecordAccess;
 import com.reday.reflection.domain.Reflection;
 import com.reday.reflection.dto.ReflectionCreateRequest;
 import com.reday.reflection.dto.ReflectionCreateResponse;
@@ -33,7 +34,10 @@ class ReflectionServiceTest {
 
 	private final ReflectionRepository reflectionRepository = org.mockito.Mockito.mock(ReflectionRepository.class);
 	private final ScheduleRepository scheduleRepository = org.mockito.Mockito.mock(ScheduleRepository.class);
-	private final ReflectionService reflectionService = new ReflectionService(reflectionRepository, scheduleRepository);
+	private final MemberRecordAccess memberRecordAccess = org.mockito.Mockito.mock(MemberRecordAccess.class);
+	private final ReflectionService reflectionService = new ReflectionService(
+		reflectionRepository, scheduleRepository, memberRecordAccess
+	);
 
 	/**
 	 * 오늘 작성한 회고와 오늘 완료한 일정 목록을 함께 조회합니다.

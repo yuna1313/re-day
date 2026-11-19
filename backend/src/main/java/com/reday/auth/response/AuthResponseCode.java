@@ -13,6 +13,8 @@ public enum AuthResponseCode implements ResponseCode {
 	LOGIN_SUCCESS("AUTH_LOGIN_SUCCESS", "로그인에 성공했습니다."),
 	GUEST_SESSION_STARTED("AUTH_GUEST_SESSION_STARTED", "게스트 사용을 시작합니다."),
 	GUEST_UPGRADED("AUTH_GUEST_UPGRADED", "게스트 기록을 이어받아 가입했습니다."),
+	GUEST_RECORDS_IMPORTED("AUTH_GUEST_RECORDS_IMPORTED", "게스트 기록을 계정에 추가했습니다."),
+	GUEST_RECORDS_ALREADY_IMPORTED("AUTH_GUEST_RECORDS_ALREADY_IMPORTED", "이미 가져온 게스트 기록입니다."),
 	TOKEN_REFRESHED("AUTH_TOKEN_REFRESHED", "토큰이 재발급되었습니다."),
 	LOGOUT_SUCCESS("AUTH_LOGOUT_SUCCESS", "로그아웃되었습니다."),
 	EMAIL_SENT("AUTH_EMAIL_SENT", "인증코드를 발송했습니다."),

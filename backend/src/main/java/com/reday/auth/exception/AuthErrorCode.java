@@ -13,6 +13,12 @@ public enum AuthErrorCode implements ErrorResponseCode {
 
 	SIGNUP_FAIL(HttpStatus.OK, "AUTH_SIGNUP_FAIL", "회원가입에 실패하였습니다."),
 	GUEST_SESSION_REQUIRED(HttpStatus.UNAUTHORIZED, "AUTH_GUEST_SESSION_REQUIRED_FAIL", "게스트 세션이 만료되었습니다."),
+	GUEST_RECORD_IMPORT_UNAVAILABLE(
+		HttpStatus.FORBIDDEN, "AUTH_GUEST_RECORD_IMPORT_UNAVAILABLE", "가져올 수 있는 게스트 세션을 확인할 수 없습니다."
+	),
+	GUEST_REFLECTION_TOO_LONG(
+		HttpStatus.CONFLICT, "AUTH_GUEST_REFLECTION_TOO_LONG", "같은 날짜의 회고를 합치면 저장 가능한 길이를 넘습니다."
+	),
 	LOGIN_FAIL(HttpStatus.UNAUTHORIZED, "AUTH_LOGIN_FAIL", "로그인에 실패하였습니다."),
 	TOKEN_REFRESH_FAIL(HttpStatus.UNAUTHORIZED, "AUTH_TOKEN_REFRESH_FAIL", "토큰 재발급에 실패하였습니다."),
 	LOGOUT_FAIL(HttpStatus.UNAUTHORIZED, "AUTH_LOGOUT_FAIL", "로그아웃에 실패하였습니다."),

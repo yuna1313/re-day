@@ -16,5 +16,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	Optional<Member> findLockedByEmail(String email);
 
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	Optional<Member> findLockedByMemberIdx(Integer memberIdx);
+
 	boolean existsByEmail(String email);
 }

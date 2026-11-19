@@ -79,6 +79,7 @@ public class SecurityConfig {
 					"/error"
 				).permitAll()
 				.requestMatchers("/api/v1/auth/guest/upgrade").hasRole("GUEST")
+				.requestMatchers("/api/v1/auth/guest/records/import").hasRole("USER")
 				.requestMatchers("/api/v1/members/**").hasRole("USER")
 				.anyRequest().authenticated()
 			)

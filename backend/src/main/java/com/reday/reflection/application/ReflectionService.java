@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import com.reday.global.exception.BusinessException;
+import com.reday.member.application.MemberRecordAccess;
 import com.reday.reflection.domain.Reflection;
 import com.reday.reflection.dto.ReflectionCreateRequest;
 import com.reday.reflection.dto.ReflectionCreateResponse;
@@ -36,6 +37,7 @@ public class ReflectionService {
 
 	private final ReflectionRepository reflectionRepository;
 	private final ScheduleRepository scheduleRepository;
+	private final MemberRecordAccess memberRecordAccess;
 
 	/**
 	 * 로그인한 사용자의 오늘 회고와 오늘 완료한 일정 목록을 조회합니다.
@@ -130,6 +132,7 @@ public class ReflectionService {
 	 */
 	@Transactional
 	public ReflectionCreateResponse createReflection(Integer memberIdx, ReflectionCreateRequest request) {
+		memberRecordAccess.lockActiveOwner(memberIdx);
 		log.info("[createReflection] 회고 작성 요청: memberIdx={}", memberIdx);
 		if (request == null) {
 			log.warn("[createReflection] 요청 본문 누락: memberIdx={}", memberIdx);
@@ -164,6 +167,7 @@ public class ReflectionService {
 	 */
 	@Transactional
 	public void updateReflection(Integer memberIdx, Integer reflectionId, ReflectionUpdateRequest request) {
+		memberRecordAccess.lockActiveOwner(memberIdx);
 		log.info("[updateReflection] 회고 수정 요청: memberIdx={}, reflectionId={}", memberIdx, reflectionId);
 		if (request == null) {
 			log.warn("[updateReflection] 요청 본문 누락: memberIdx={}, reflectionId={}", memberIdx, reflectionId);

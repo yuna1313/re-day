@@ -68,4 +68,8 @@ public class Reflection {
 		this.content = content;
 		this.updatedAt = LocalDateTime.now();
 	}
+
+	public void transferOwnership(Integer newMemberIdx) {
+		this.memberIdx = newMemberIdx;
+	}
 }

@@ -818,6 +818,36 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+  /auth/guest/records/import:
+    post:
+      summary: 게스트 기록을 기존 계정에 추가
+      description: 인증된 회원이 게스트 refresh token으로 일정과 회고를 가져옵니다. 같은 날짜의 회고는 기존 내용 뒤에 덧붙입니다.
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                guestRefreshToken:
+                  type: string
+              required:
+              - guestRefreshToken
+      responses:
+        '200':
+          description: 기록 추가 성공 또는 이미 완료된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: 회원 권한이 없거나 게스트 세션을 가져올 수 없음
+        '409':
+          description: 같은 날짜 회고를 합친 내용이 저장 한도를 초과함
   /auth/refresh:
     post:
       summary: 토큰 재발급

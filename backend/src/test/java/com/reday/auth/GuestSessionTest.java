@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,16 +25,26 @@ import com.reday.auth.application.port.EmailVerificationStore;
 import com.reday.auth.domain.Email;
 import com.reday.auth.domain.EmailVerification;
 import com.reday.auth.domain.VerificationCode;
+import com.reday.member.domain.Member;
+import com.reday.member.repository.MemberRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class GuestSessionTest {
+
+	private static final String IMPORT_PATH = "/api/v1/auth/guest/records/import";
 
 	@Autowired
 	private MockMvc mvc;
 
 	@Autowired
 	private EmailVerificationStore emailVerificationStore;
+
+	@Autowired
+	private MemberRepository memberRepository;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -140,6 +151,119 @@ class GuestSessionTest {
 		mvc.perform(get("/api/v1/analytics/insights?periodType=LAST_7_DAYS")
 				.header(HttpHeaders.AUTHORIZATION, bearer(demoToken)))
 			.andExpect(jsonPath("$.data.topDeferReasons[0].deferReasonCode").value("NO_TIME"));
+	}
+
+	@Test
+	void 기존_계정에_게스트_일정과_회고를_한_번만_추가한다() throws Exception {
+		JsonNode guest = startGuestSession();
+		String guestAccess = guest.get("accessToken").asText();
+		String guestRefresh = guest.get("refreshToken").asText();
+		String accountAccess = loginExistingAccount().get("accessToken").asText();
+		int existingSchedule = createSchedule(accountAccess);
+		int guestSchedule = createSchedule(guestAccess);
+		LocalDate today = LocalDate.now();
+		createReflection(accountAccess, today, "기존 회고");
+		createReflection(guestAccess, today, "게스트 회고");
+		createReflection(guestAccess, today.minusDays(1), "게스트의 어제 회고");
+		mvc.perform(post("/api/v1/schedules/{id}/defer", guestSchedule)
+				.header(HttpHeaders.AUTHORIZATION, bearer(guestAccess))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{"deferReasonCode":"NO_TIME","newStartAt":"2026-01-11 09:00:00"}
+					"""))
+			.andExpect(jsonPath("$.success").value(true));
+
+		mvc.perform(post(IMPORT_PATH).header(HttpHeaders.AUTHORIZATION, bearer(accountAccess))
+				.contentType(MediaType.APPLICATION_JSON).content(importBody(guestRefresh)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.code").value("AUTH_GUEST_RECORDS_IMPORTED"));
+		mvc.perform(post(IMPORT_PATH).header(HttpHeaders.AUTHORIZATION, bearer(accountAccess))
+				.contentType(MediaType.APPLICATION_JSON).content(importBody(guestRefresh)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.code").value("AUTH_GUEST_RECORDS_ALREADY_IMPORTED"));
+
+		mvc.perform(get("/api/v1/schedules/{id}", existingSchedule)
+				.header(HttpHeaders.AUTHORIZATION, bearer(accountAccess)))
+			.andExpect(jsonPath("$.success").value(true));
+		mvc.perform(get("/api/v1/schedules/{id}", guestSchedule)
+				.header(HttpHeaders.AUTHORIZATION, bearer(accountAccess)))
+			.andExpect(jsonPath("$.data.deferLogs[0].deferReasonCode").value("NO_TIME"));
+		mvc.perform(get("/api/v1/reflections/{date}", today)
+				.header(HttpHeaders.AUTHORIZATION, bearer(accountAccess)))
+			.andExpect(jsonPath("$.data.content").value("기존 회고\n\n게스트 모드에서 작성한 회고\n게스트 회고"));
+		mvc.perform(get("/api/v1/reflections/{date}", today.minusDays(1))
+				.header(HttpHeaders.AUTHORIZATION, bearer(accountAccess)))
+			.andExpect(jsonPath("$.data.content").value("게스트의 어제 회고"));
+		mvc.perform(get("/api/v1/schedules/{id}", guestSchedule)
+				.header(HttpHeaders.AUTHORIZATION, bearer(guestAccess)))
+			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void 기존_계정과_유효한_일반_게스트_세션이_있어야_기록을_가져온다() throws Exception {
+		JsonNode account = loginExistingAccount();
+		JsonNode guest = startGuestSession();
+		String demoResponse = mvc.perform(post("/api/v1/auth/guest")
+				.contentType(MediaType.APPLICATION_JSON).content("{\"demo\":true}"))
+			.andReturn().getResponse().getContentAsString();
+		String demoRefresh = objectMapper.readTree(demoResponse).at("/data/refreshToken").asText();
+		String accountAccess = account.get("accessToken").asText();
+		mvc.perform(post(IMPORT_PATH).header(HttpHeaders.AUTHORIZATION, bearer(guest.get("accessToken").asText()))
+				.contentType(MediaType.APPLICATION_JSON).content(importBody(guest.get("refreshToken").asText())))
+			.andExpect(status().isForbidden());
+		for (String invalidSource : new String[] {"invalid", account.get("refreshToken").asText(), demoRefresh}) {
+			mvc.perform(post(IMPORT_PATH).header(HttpHeaders.AUTHORIZATION, bearer(accountAccess))
+					.contentType(MediaType.APPLICATION_JSON).content(importBody(invalidSource)))
+				.andExpect(status().isForbidden());
+		}
+	}
+
+	@Test
+	void 회고를_합칠_수_없으면_이동을_취소하고_게스트_기록을_보존한다() throws Exception {
+		JsonNode guest = startGuestSession();
+		String guestAccess = guest.get("accessToken").asText();
+		String accountAccess = loginExistingAccount().get("accessToken").asText();
+		int guestSchedule = createSchedule(guestAccess);
+		LocalDate today = LocalDate.now();
+		createReflection(accountAccess, today, "a".repeat(40_000));
+		createReflection(guestAccess, today, "b".repeat(40_000));
+
+		mvc.perform(post(IMPORT_PATH).header(HttpHeaders.AUTHORIZATION, bearer(accountAccess))
+				.contentType(MediaType.APPLICATION_JSON).content(importBody(guest.get("refreshToken").asText())))
+			.andExpect(status().isConflict());
+		mvc.perform(get("/api/v1/schedules/{id}", guestSchedule).header(HttpHeaders.AUTHORIZATION, bearer(guestAccess)))
+			.andExpect(jsonPath("$.success").value(true));
+		mvc.perform(get("/api/v1/schedules/{id}", guestSchedule).header(HttpHeaders.AUTHORIZATION, bearer(accountAccess)))
+			.andExpect(jsonPath("$.success").value(false));
+		mvc.perform(get("/api/v1/reflections/{date}", today).header(HttpHeaders.AUTHORIZATION, bearer(accountAccess)))
+			.andExpect(jsonPath("$.data.content").value("a".repeat(40_000)));
+	}
+
+	private JsonNode loginExistingAccount() throws Exception {
+		String email = "member-" + UUID.randomUUID() + "@example.com";
+		memberRepository.save(Member.create("기존 회원", email, passwordEncoder.encode("Valid1234!")));
+		String response = mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{"email":"%s","password":"Valid1234!"}
+					""".formatted(email)))
+			.andExpect(jsonPath("$.success").value(true))
+			.andReturn().getResponse().getContentAsString();
+		return objectMapper.readTree(response).get("data");
+	}
+
+	private String importBody(String refreshToken) {
+		return objectMapper.createObjectNode().put("guestRefreshToken", refreshToken).toString();
+	}
+
+	private void createReflection(String accessToken, LocalDate date, String content) throws Exception {
+		String request = objectMapper.createObjectNode()
+			.put("reflectionDate", date.toString())
+			.put("content", content)
+			.toString();
+		mvc.perform(post("/api/v1/reflections")
+				.header(HttpHeaders.AUTHORIZATION, bearer(accessToken))
+				.contentType(MediaType.APPLICATION_JSON).content(request))
+			.andExpect(jsonPath("$.success").value(true));
 	}
 
 	private int createSchedule(String accessToken) throws Exception {

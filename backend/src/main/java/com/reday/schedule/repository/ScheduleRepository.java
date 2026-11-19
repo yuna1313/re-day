@@ -5,11 +5,19 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.reday.schedule.domain.Schedule;
 import com.reday.schedule.domain.ScheduleStatus;
 
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
+
+	@Modifying
+	@Query("update Schedule s set s.memberIdx = :recipientId where s.memberIdx = :guestId")
+	void transferOwnership(@Param("guestId") Integer guestId, @Param("recipientId") Integer recipientId);
+
 
 	/**
 	 * 특정 회원의 일정 중 시작 일시가 조회 기간에 포함되는 일정을 시작 일시 오름차순으로 조회합니다.
