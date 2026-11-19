@@ -2,6 +2,15 @@ import client, { throwIfFailed } from './client'
 
 // 인증 관련 API (백엔드: /api/v1/auth/**)
 export const authApi = {
+  startGuestSession: async () => {
+    const { data } = await client.post('/auth/guest')
+    const session = throwIfFailed(
+      data,
+      '게스트 모드를 시작하지 못했습니다.',
+    ).data
+    return { ...session, member: { ...session.member, isGuest: true } }
+  },
+
   // 로그인 (실패 시 HTTP 401 → axios 가 에러를 던짐)
   // 응답 본문: { success, code, message, data: { accessToken, refreshToken, member } }
   login: ({ email, password }) =>

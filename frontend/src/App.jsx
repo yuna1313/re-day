@@ -27,7 +27,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      {/* 로그인해야만 접근 가능한 영역 */}
+      {/* 게스트 또는 회원 세션으로 접근하는 영역 */}
       <Route element={<ProtectedRoute />}>
         {/* 일정 수정: 하단 탭 없는 전체화면 (등록은 홈의 바텀시트) */}
         <Route
@@ -47,7 +47,9 @@ function App() {
           <Route path="/reflection" element={<ReflectionPage />} />
           <Route path="/insights" element={<InsightsPage />} />
           <Route path="/mypage" element={<MyPage />} />
-          <Route path="/mypage/password" element={<ChangePasswordPage />} />
+          <Route element={<ProtectedRoute memberOnly />}>
+            <Route path="/mypage/password" element={<ChangePasswordPage />} />
+          </Route>
           {/* 위에 매칭되지 않는 모든 경로는 404 */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>

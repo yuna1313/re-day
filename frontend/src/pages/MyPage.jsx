@@ -1,19 +1,19 @@
 import { useNavigate } from 'react-router-dom'
-import { User, Lock, ChevronRight } from 'lucide-react'
+import { User, Lock, LogIn, ChevronRight } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useMe } from '../hooks/useMe'
 import './MyPage.css'
 
 function MyPage() {
   const navigate = useNavigate()
-  const { member, logout } = useAuth()
+  const { member, isGuest, logout } = useAuth()
   // 저장된 정보로 즉시 표시하고, 최신 정보를 조회해 갱신한다.
-  const { data } = useMe()
-  const profile = data ?? member
+  const { data } = useMe(!isGuest)
+  const profile = isGuest ? member : (data ?? member)
 
   const handleLogout = async () => {
-    await logout()
-    navigate('/login', { replace: true })
+    const restoredGuest = await logout()
+    navigate(restoredGuest ? '/' : '/login', { replace: true })
   }
 
   const handlePasswordChange = () => {
@@ -36,7 +36,11 @@ function MyPage() {
             <span className="profile-name">
               {profile?.nickname ?? '사용자'}
             </span>
-            <span className="profile-email">{profile?.email ?? ''}</span>
+            <span className="profile-email">
+              {isGuest
+                ? '이 브라우저에서 게스트로 사용 중이에요.'
+                : profile?.email}
+            </span>
           </div>
         </div>
 
@@ -45,22 +49,28 @@ function MyPage() {
         <button
           type="button"
           className="menu-row"
-          onClick={handlePasswordChange}
+          onClick={isGuest ? () => navigate('/login') : handlePasswordChange}
         >
           <span className="menu-left">
-            <Lock size={18} className="menu-lock" />
-            비밀번호 변경
+            {isGuest ? (
+              <LogIn size={18} className="menu-lock" />
+            ) : (
+              <Lock size={18} className="menu-lock" />
+            )}
+            {isGuest ? '기존 계정으로 로그인' : '비밀번호 변경'}
           </span>
           <ChevronRight size={18} className="menu-chevron" />
         </button>
       </div>
 
       {/* 로그아웃 */}
-      <div className="mypage-card">
-        <button type="button" className="logout-btn" onClick={handleLogout}>
-          로그아웃
-        </button>
-      </div>
+      {!isGuest && (
+        <div className="mypage-card">
+          <button type="button" className="logout-btn" onClick={handleLogout}>
+            로그아웃
+          </button>
+        </div>
+      )}
     </div>
   )
 }

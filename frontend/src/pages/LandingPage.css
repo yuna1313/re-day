@@ -170,14 +170,14 @@
   color: #6b7280;
 }
 
-/* 가입 유도: 화면 하단에 붙어 스크롤 내내 보이다가, 페이지 끝에서 제자리에 놓인다 */
+/* 시작 버튼을 스크롤하는 동안 화면 하단에 유지한다. */
 .landing-cta {
   position: sticky;
   bottom: 0;
   margin-top: 30px;
   padding: 18px 0 12px;
   /* 아래로 지나가는 내용이 버튼에 겹쳐 보이지 않도록 흰색으로 덮는다 */
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #fff 34%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #fff 18px);
 }
 
 .landing-start {
@@ -185,14 +185,29 @@
   width: 100%;
   padding: 16px 0;
   background: #3b82f6;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 14px;
   font-size: 16px;
   font-weight: 700;
   color: #fff;
   cursor: pointer;
-  outline: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+.landing-start:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+.landing-start:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.landing-error {
+  margin: 0 0 8px;
+  color: #b91c1c;
+  font-size: 13px;
 }
 
 .landing-note {

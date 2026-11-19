@@ -9,7 +9,7 @@ import './LoginPage.css'
 
 function LoginPage() {
   const navigate = useNavigate()
-  const { isAuthenticated, login } = useAuth()
+  const { isAuthenticated, isGuest, login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -24,7 +24,7 @@ function LoginPage() {
   })
 
   // 이미 로그인된 상태라면 로그인 화면 대신 메인으로 보낸다.
-  if (isAuthenticated) {
+  if (isAuthenticated && !isGuest) {
     return <Navigate to="/" replace />
   }
 
@@ -53,7 +53,7 @@ function LoginPage() {
       <p className="login-greeting">
         안녕하세요 :)
         <br />
-        RE:DAY 사용을 위해 로그인을 먼저 해주세요.
+        이메일로 로그인해주세요.
       </p>
 
       <form className="login-form" onSubmit={handleSubmit} noValidate>

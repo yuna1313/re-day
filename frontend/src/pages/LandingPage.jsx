@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
 import { CalendarClock, History, LineChart } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { authApi } from '../api/auth'
+import { getApiErrorMessage } from '../api/client'
 import './LandingPage.css'
 
 const POINTS = [
@@ -42,12 +45,18 @@ const SCREENSHOTS = [
 
 function LandingPage() {
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, login } = useAuth()
+  const guestMutation = useMutation({
+    mutationFn: authApi.startGuestSession,
+    onSuccess: (session) => {
+      login(session)
+      navigate('/', { replace: true })
+    },
+  })
   // 스크린샷 파일을 아직 안 넣었을 때 깨진 이미지가 보이지 않도록 걸러낸다.
   const [brokenShots, setBrokenShots] = useState([])
   const shots = SCREENSHOTS.filter((shot) => !brokenShots.includes(shot.src))
 
-  // 이미 로그인한 사용자는 소개를 볼 필요가 없다.
   if (isAuthenticated) {
     return <Navigate to="/" replace />
   }
@@ -114,14 +123,22 @@ function LandingPage() {
 
       <p className="landing-note">설치 없이 브라우저에서 바로 쓸 수 있어요.</p>
 
-      {/* 페이지가 짧아 CTA 를 반복하는 대신, 하나를 화면 하단에 붙여 스크롤 내내 보이게 한다 */}
       <div className="landing-cta">
+        {guestMutation.isError && (
+          <p className="landing-error" role="alert">
+            {getApiErrorMessage(
+              guestMutation.error,
+              '게스트 모드를 시작하지 못했어요. 다시 시도해주세요.',
+            )}
+          </p>
+        )}
         <button
           type="button"
           className="landing-start"
-          onClick={() => navigate('/signup')}
+          disabled={guestMutation.isPending}
+          onClick={() => guestMutation.mutate()}
         >
-          시작하기
+          {guestMutation.isPending ? '시작하는 중…' : '로그인 없이 시작'}
         </button>
       </div>
     </div>

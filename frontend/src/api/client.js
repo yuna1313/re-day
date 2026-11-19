@@ -6,6 +6,16 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 
 const ACCESS_TOKEN_KEY = 'accessToken'
 const REFRESH_TOKEN_KEY = 'refreshToken'
+const MEMBER_KEY = 'member'
+const SAVED_GUEST_KEY = 'savedGuestSession'
+
+function readStoredJson(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key))
+  } catch {
+    return null
+  }
+}
 
 export const tokenStorage = {
   getAccessToken: () => localStorage.getItem(ACCESS_TOKEN_KEY),
@@ -20,14 +30,58 @@ export const tokenStorage = {
   },
 }
 
+export const authStorage = {
+  getMember: () => readStoredJson(MEMBER_KEY),
+  subscribe: (onChange) => {
+    const handleStorage = ({ key }) => {
+      if (key === MEMBER_KEY || key === null) onChange(authStorage.getMember())
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  },
+  setSession: ({ accessToken, refreshToken, member }) => {
+    tokenStorage.set({ accessToken, refreshToken })
+    localStorage.setItem(MEMBER_KEY, JSON.stringify(member))
+  },
+  saveGuest: (member) => {
+    localStorage.setItem(
+      SAVED_GUEST_KEY,
+      JSON.stringify({
+        member,
+        accessToken: tokenStorage.getAccessToken(),
+        refreshToken: tokenStorage.getRefreshToken(),
+      }),
+    )
+  },
+  endSession: () => {
+    tokenStorage.clear()
+    localStorage.removeItem(MEMBER_KEY)
+    const guest = readStoredJson(SAVED_GUEST_KEY)
+    localStorage.removeItem(SAVED_GUEST_KEY)
+    if (guest?.refreshToken) {
+      authStorage.setSession(guest)
+      return guest.member
+    }
+    return null
+  },
+}
+
 const client = axios.create({
   baseURL,
   timeout: 10000,
   headers: { 'Content-Type': 'application/json' },
 })
 
+const isPublicAuthRequest = (url) => url?.startsWith('/auth/')
+
 // 요청 인터셉터: 저장된 JWT access token 을 Authorization 헤더에 자동 첨부한다.
 client.interceptors.request.use((config) => {
+  if (isPublicAuthRequest(config.url)) return config
+  const memberId = authStorage.getMember()?.memberId
+  if (config._retry && config._sessionMemberId !== memberId) {
+    throw new axios.CanceledError('세션이 변경되었습니다.')
+  }
+  config._sessionMemberId = memberId
   const token = tokenStorage.getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -36,16 +90,14 @@ client.interceptors.request.use((config) => {
 })
 
 const REFRESH_URL = '/auth/refresh'
-const MEMBER_KEY = 'member'
 
 // 만료 시 로그아웃: 토큰·회원정보 정리 후 로그인 화면으로.
 // (인터셉터는 React 밖이라 라우터 대신 location 이동을 사용)
 function forceLogout() {
-  tokenStorage.clear()
-  localStorage.removeItem(MEMBER_KEY)
-  if (window.location.pathname !== '/login') {
-    window.location.href = '/login'
-  }
+  const wasGuest = authStorage.getMember()?.isGuest
+  const restoredGuest = authStorage.endSession()
+  const destination = restoredGuest ? '/' : wasGuest ? '/welcome' : '/login'
+  window.location.replace(destination)
 }
 
 // 동시에 여러 요청이 401 이 나도 재발급은 1번만 하도록 공유 Promise 로 묶는다.
@@ -59,6 +111,9 @@ function refreshAccessToken() {
       .then((res) => {
         const { data } = res
         if (!data.success) throw new Error(data.message || '토큰 재발급 실패')
+        if (tokenStorage.getRefreshToken() !== refreshToken) {
+          throw new Error('세션이 변경되었습니다.')
+        }
         tokenStorage.set({
           accessToken: data.data.accessToken,
           refreshToken: data.data.refreshToken,
@@ -79,27 +134,42 @@ client.interceptors.response.use(
     const { response, config } = error
 
     // 인증(auth) 요청 자체의 401(로그인 실패·refresh 만료 등)은 재발급 대상이 아님
-    const isAuthRequest = config?.url?.includes('/auth/')
-
     if (
       response?.status === 401 &&
       config &&
       !config._retry &&
-      !isAuthRequest
+      !isPublicAuthRequest(config.url)
     ) {
-      if (!tokenStorage.getRefreshToken()) {
-        forceLogout()
+      // 이전 세션에서 이미 보낸 요청은 새 사용자 토큰으로 재시도하지 않는다.
+      if (config._sessionMemberId !== authStorage.getMember()?.memberId) {
         return Promise.reject(error)
       }
       config._retry = true
+      const currentToken = tokenStorage.getAccessToken()
+      if (
+        currentToken &&
+        config.headers.Authorization !== `Bearer ${currentToken}`
+      ) {
+        return client(config)
+      }
+      const refreshToken = tokenStorage.getRefreshToken()
+      if (!refreshToken) {
+        forceLogout()
+        return Promise.reject(error)
+      }
       try {
         const newAccessToken = await refreshAccessToken()
         // 새 토큰으로 원래 요청 재시도
         config.headers.Authorization = `Bearer ${newAccessToken}`
         return client(config)
       } catch (refreshError) {
-        // refresh 도 실패 → 세션 만료로 간주하고 로그아웃
-        forceLogout()
+        const status = refreshError.response?.status
+        if (
+          (status === 401 || status === 403) &&
+          tokenStorage.getRefreshToken() === refreshToken
+        ) {
+          forceLogout()
+        }
         return Promise.reject(refreshError)
       }
     }

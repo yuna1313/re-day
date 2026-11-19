@@ -618,6 +618,19 @@ export const handlers = [
     })
   }),
 
+  http.post('/api/v1/auth/guest', () =>
+    HttpResponse.json({
+      success: true,
+      code: 'AUTH_GUEST_SESSION_STARTED',
+      message: '게스트 사용을 시작합니다.',
+      data: {
+        accessToken: 'mock-guest-access-token',
+        refreshToken: 'mock-guest-refresh-token',
+        member: { memberId: 2, nickname: '게스트', email: null },
+      },
+    }),
+  ),
+
   // 로그인: POST /api/v1/auth/login
   http.post('/api/v1/auth/login', async ({ request }) => {
     const { email, password } = await request.json()
