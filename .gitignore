@@ -41,4 +41,5 @@ src/main/resources/application-local.yml
 
 ### AI workspace ###
 .ai/
+/AGENTS.md
 backend/src/main/resources/application-local.yml
