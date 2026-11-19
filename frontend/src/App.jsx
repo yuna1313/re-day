@@ -22,6 +22,7 @@ function App() {
     <Routes>
       {/* 로그인 전 화면들은 공통 레이아웃(하단 탭) 밖의 독립 화면 */}
       <Route path="/welcome" element={<LandingPage />} />
+      <Route path="/demo" element={<LandingPage demo />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

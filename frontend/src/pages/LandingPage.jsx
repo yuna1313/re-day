@@ -43,7 +43,7 @@ const SCREENSHOTS = [
   { src: '/screenshots/reflection.png', alt: '하루를 돌아보는 회고 화면' },
 ]
 
-function LandingPage() {
+function LandingPage({ demo = false }) {
   const navigate = useNavigate()
   const { isAuthenticated, login } = useAuth()
   const guestMutation = useMutation({
@@ -53,6 +53,9 @@ function LandingPage() {
       navigate('/', { replace: true })
     },
   })
+  const pendingDemo = guestMutation.isPending
+    ? guestMutation.variables.demo
+    : null
   // 스크린샷 파일을 아직 안 넣었을 때 깨진 이미지가 보이지 않도록 걸러낸다.
   const [brokenShots, setBrokenShots] = useState([])
   const shots = SCREENSHOTS.filter((shot) => !brokenShots.includes(shot.src))
@@ -121,7 +124,11 @@ function LandingPage() {
         ))}
       </section>
 
-      <p className="landing-note">설치 없이 브라우저에서 바로 쓸 수 있어요.</p>
+      <p className="landing-note">
+        {demo
+          ? '예시 일정으로 미루기와 인사이트를 체험할 수 있어요.'
+          : '설치 없이 브라우저에서 바로 쓸 수 있어요.'}
+      </p>
 
       <div className="landing-cta">
         {guestMutation.isError && (
@@ -136,9 +143,25 @@ function LandingPage() {
           type="button"
           className="landing-start"
           disabled={guestMutation.isPending}
-          onClick={() => guestMutation.mutate()}
+          onClick={() => guestMutation.mutate({ demo })}
         >
-          {guestMutation.isPending ? '시작하는 중…' : '로그인 없이 시작'}
+          {pendingDemo === demo
+            ? '시작하는 중…'
+            : demo
+              ? '데모 체험하기'
+              : '로그인 없이 시작'}
+        </button>
+        <button
+          type="button"
+          className="landing-start landing-start--secondary"
+          disabled={guestMutation.isPending}
+          onClick={() => guestMutation.mutate({ demo: !demo })}
+        >
+          {pendingDemo === !demo
+            ? '시작하는 중…'
+            : demo
+              ? '빈 캘린더로 시작'
+              : '데모 체험하기'}
         </button>
       </div>
     </div>

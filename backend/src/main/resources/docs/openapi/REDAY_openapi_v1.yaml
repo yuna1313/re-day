@@ -759,6 +759,17 @@ paths:
     post:
       summary: 게스트 세션 시작
       description: 로그인 없이 일정, 회고, 인사이트를 사용할 수 있는 게스트 토큰을 발급합니다.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                demo:
+                  type: boolean
+                  default: false
+                  description: true이면 새 게스트 세션에 예시 일정을 추가합니다.
       responses:
         '200':
           description: 게스트 세션 발급 성공

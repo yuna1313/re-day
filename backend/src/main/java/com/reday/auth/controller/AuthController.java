@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.reday.auth.application.AuthService;
 import com.reday.auth.dto.EmailVerificationSendRequest;
 import com.reday.auth.dto.EmailVerificationVerifyRequest;
+import com.reday.auth.dto.GuestSessionRequest;
 import com.reday.auth.dto.LoginRequest;
 import com.reday.auth.dto.LoginResponse;
 import com.reday.auth.dto.LogoutRequest;
@@ -31,8 +32,9 @@ public class AuthController {
 	private final AuthService authService;
 
 	@PostMapping("/api/v1/auth/guest")
-	public ApiResponse<LoginResponse> startGuestSession() {
-		return ApiResponse.success(AuthResponseCode.GUEST_SESSION_STARTED, authService.startGuestSession());
+	public ApiResponse<LoginResponse> startGuestSession(@RequestBody(required = false) GuestSessionRequest request) {
+		boolean demo = request != null && Boolean.TRUE.equals(request.demo());
+		return ApiResponse.success(AuthResponseCode.GUEST_SESSION_STARTED, authService.startGuestSession(demo));
 	}
 
 	@PostMapping("/api/v1/auth/guest/upgrade")

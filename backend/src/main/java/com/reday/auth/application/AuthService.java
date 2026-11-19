@@ -61,10 +61,14 @@ public class AuthService {
 	private final RefreshTokenStore refreshTokenStore;
 	private final AuthenticationManager authenticationManager;
 	private final JwtTokenProvider jwtTokenProvider;
+	private final GuestDemoData guestDemoData;
 
 	@Transactional
-	public LoginResponse startGuestSession() {
+	public LoginResponse startGuestSession(boolean demo) {
 		Member guest = memberRepository.save(Member.createGuest());
+		if (demo) {
+			guestDemoData.createSchedules(guest.getMemberIdx());
+		}
 		return issueSession(guest);
 	}
 

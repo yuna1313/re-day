@@ -55,6 +55,7 @@ class AuthServiceTest {
 	private final RefreshTokenStore refreshTokenStore = org.mockito.Mockito.mock(RefreshTokenStore.class);
 	private final AuthenticationManager authenticationManager = org.mockito.Mockito.mock(AuthenticationManager.class);
 	private final JwtTokenProvider jwtTokenProvider = org.mockito.Mockito.mock(JwtTokenProvider.class);
+	private final GuestDemoData guestDemoData = org.mockito.Mockito.mock(GuestDemoData.class);
 	private final AuthService authService = new AuthService(
 		memberRepository,
 		passwordEncoder,
@@ -64,7 +65,8 @@ class AuthServiceTest {
 		verificationCodeGenerator,
 		refreshTokenStore,
 		authenticationManager,
-		jwtTokenProvider
+		jwtTokenProvider,
+		guestDemoData
 	);
 
 	/**

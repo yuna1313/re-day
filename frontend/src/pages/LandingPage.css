@@ -194,6 +194,13 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.landing-start--secondary {
+  margin-top: 8px;
+  background: #fff;
+  border-color: #cbd5e1;
+  color: #1d4ed8;
+}
+
 .landing-start:focus-visible {
   outline: 2px solid #1d4ed8;
   outline-offset: 2px;

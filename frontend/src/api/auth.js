@@ -2,8 +2,8 @@ import client, { throwIfFailed } from './client'
 
 // 인증 관련 API (백엔드: /api/v1/auth/**)
 export const authApi = {
-  startGuestSession: async () => {
-    const { data } = await client.post('/auth/guest')
+  startGuestSession: async ({ demo }) => {
+    const { data } = await client.post('/auth/guest', { demo })
     const session = throwIfFailed(
       data,
       '게스트 모드를 시작하지 못했습니다.',

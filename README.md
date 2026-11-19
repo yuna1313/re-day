@@ -21,13 +21,11 @@
 | API 서버 (Backend) | https://reday-api.duckdns.org |
 | API 문서 (Swagger) | https://reday-api.duckdns.org/swagger-ui/index.html |
 
-## 데모 계정
+## 게스트와 데모
 
-회원가입 없이 바로 로그인 가능
-
-| ID | PW |
-| --- | --- |
-| manggom@test.com | Test1234! |
+- 첫 화면에서 **로그인 없이 시작**을 누르면 빈 캘린더에서 일정, 회고, 인사이트를 사용할 수 있습니다.
+- [데모 화면](https://re-day-one.vercel.app/demo)을 공유하면 새 방문자가 예시 일정을 완료하거나 미루고 인사이트를 확인할 수 있습니다.
+- 게스트 세션은 시작한 브라우저에 저장됩니다. 마이페이지에서 회원가입하면 같은 일정과 회고를 새 계정으로 이어갈 수 있습니다.
 
 ## 📖 소개
 

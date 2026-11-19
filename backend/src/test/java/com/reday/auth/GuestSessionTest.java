@@ -122,6 +122,26 @@ class GuestSessionTest {
 			.andExpect(status().isUnauthorized());
 	}
 
+	@Test
+	void 데모_세션에만_예시_일정과_미루기_인사이트가_있다() throws Exception {
+		String response = mvc.perform(post("/api/v1/auth/guest")
+				.contentType(MediaType.APPLICATION_JSON).content("{\"demo\":true}"))
+			.andExpect(status().isOk())
+			.andReturn().getResponse().getContentAsString();
+		String demoToken = objectMapper.readTree(response).at("/data/accessToken").asText();
+		String guestToken = startGuestSession().get("accessToken").asText();
+		String today = LocalDate.now().toString();
+		var schedules = "/api/v1/schedules?viewType=WEEK&startDate=" + today + "&endDate=" + today;
+
+		mvc.perform(get(schedules).header(HttpHeaders.AUTHORIZATION, bearer(demoToken)))
+			.andExpect(jsonPath("$.data.schedules.length()").value(3));
+		mvc.perform(get(schedules).header(HttpHeaders.AUTHORIZATION, bearer(guestToken)))
+			.andExpect(jsonPath("$.data.schedules").isEmpty());
+		mvc.perform(get("/api/v1/analytics/insights?periodType=LAST_7_DAYS")
+				.header(HttpHeaders.AUTHORIZATION, bearer(demoToken)))
+			.andExpect(jsonPath("$.data.topDeferReasons[0].deferReasonCode").value("NO_TIME"));
+	}
+
 	private int createSchedule(String accessToken) throws Exception {
 		String created = mvc.perform(post("/api/v1/schedules")
 				.header(HttpHeaders.AUTHORIZATION, bearer(accessToken))

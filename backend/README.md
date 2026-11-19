@@ -48,7 +48,7 @@ Base path: `/api/v1` · 응답은 공통 envelope `{ success, code, message, dat
 | 도메인 | 메서드 · 경로 |
 | --- | --- |
 | **Auth** | `POST /auth/signup`, `/auth/login`, `/auth/logout`, `/auth/refresh` |
-| | `POST /auth/guest` (게스트 시작), `/auth/guest/upgrade` (게스트 기록 이어서 가입) |
+| | `POST /auth/guest` (게스트 시작, `demo: true`로 예시 일정 추가), `/auth/guest/upgrade` (게스트 기록 이어서 가입) |
 | | `POST /auth/email/send-verification`, `/auth/email/verify` |
 | | `POST /auth/password-reset/email/send-verification`, `/auth/password-reset/email/verify`, `/auth/password-reset` |
 | **Member** | `GET /members/me`, `PATCH /members/me/password` |
