@@ -39,6 +39,7 @@ function ReflectionPage() {
   // 선택한 날짜의 회고 + 그날 완료한 일정 조회
   const { data, isLoading, isError, error } = useReflection(selectedKey)
   const reflection = data?.reflection ?? null
+  const maxLength = Math.max(MAX_LENGTH, reflection?.content?.length ?? 0)
   const completed = data?.completedSchedules ?? []
   const hasReflection = Boolean(reflection)
 
@@ -238,11 +239,11 @@ function ReflectionPage() {
                 className="reflection-textarea"
                 placeholder="잘한 점, 아쉬운 점, 내일 시도할 것을 편하게 적어보세요. 완벽하지 않아도 괜찮아요."
                 value={content}
-                maxLength={MAX_LENGTH}
+                maxLength={maxLength}
                 onChange={(event) => setContent(event.target.value)}
               />
               <span className="reflection-counter">
-                {content.length} / {MAX_LENGTH}
+                {content.length} / {maxLength}
               </span>
             </div>
 

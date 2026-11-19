@@ -5,8 +5,10 @@ import {
   LogIn,
   UserPlus,
   Download,
+  History,
   ChevronRight,
 } from 'lucide-react'
+import { authStorage } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
 import { useMe } from '../hooks/useMe'
 import './MyPage.css'
@@ -17,6 +19,7 @@ function MyPage({ installApp }) {
   // 저장된 정보로 즉시 표시하고, 최신 정보를 조회해 갱신한다.
   const { data } = useMe(!isGuest)
   const profile = isGuest ? member : (data ?? member)
+  const canImportGuestRecords = !isGuest && authStorage.getGuestImportToken()
 
   const handleLogout = async () => {
     const restoredGuest = await logout()
@@ -86,6 +89,24 @@ function MyPage({ installApp }) {
           <ChevronRight size={18} className="menu-chevron" />
         </button>
       </div>
+
+      {canImportGuestRecords && (
+        <div className="mypage-card">
+          <button
+            type="button"
+            className="menu-row"
+            onClick={() =>
+              navigate('/mypage/guest-records', { state: { fromMyPage: true } })
+            }
+          >
+            <span className="menu-left">
+              <History size={18} className="menu-lock" />
+              게스트 기록 가져오기
+            </span>
+            <ChevronRight size={18} className="menu-chevron" />
+          </button>
+        </div>
+      )}
 
       {installApp && (
         <div className="mypage-card">

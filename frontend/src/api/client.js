@@ -53,6 +53,18 @@ export const authStorage = {
       }),
     )
   },
+  getGuestImportToken: () => {
+    const guest = readStoredJson(SAVED_GUEST_KEY)
+    return guest?.member?.isGuest && !guest.member.isDemo
+      ? guest.refreshToken
+      : null
+  },
+  removeSavedGuest: (refreshToken) => {
+    const guest = readStoredJson(SAVED_GUEST_KEY)
+    if (guest?.refreshToken === refreshToken) {
+      localStorage.removeItem(SAVED_GUEST_KEY)
+    }
+  },
   endSession: () => {
     tokenStorage.clear()
     localStorage.removeItem(MEMBER_KEY)
@@ -73,7 +85,7 @@ const client = axios.create({
 })
 
 const isPublicAuthRequest = (url) =>
-  url?.startsWith('/auth/') && url !== '/auth/guest/upgrade'
+  url?.startsWith('/auth/') && !url.startsWith('/auth/guest/')
 
 // 요청 인터셉터: 저장된 JWT access token 을 Authorization 헤더에 자동 첨부한다.
 client.interceptors.request.use((config) => {

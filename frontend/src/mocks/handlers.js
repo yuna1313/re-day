@@ -645,6 +645,15 @@ export const handlers = [
     })
   }),
 
+  http.post('/api/v1/auth/guest/records/import', () =>
+    HttpResponse.json({
+      success: true,
+      code: 'AUTH_GUEST_RECORDS_IMPORTED',
+      message: '게스트 기록을 계정에 추가했습니다.',
+      data: null,
+    }),
+  ),
+
   // 로그인: POST /api/v1/auth/login
   http.post('/api/v1/auth/login', async ({ request }) => {
     const { email, password } = await request.json()

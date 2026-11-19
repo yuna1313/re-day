@@ -1,31 +1,34 @@
 import { useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { authApi } from '../api/auth'
-import { getApiErrorMessage } from '../api/client'
+import { authStorage, getApiErrorMessage } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
 import { Eye, EyeOff } from 'lucide-react'
 import './LoginPage.css'
 
 function LoginPage() {
-  const navigate = useNavigate()
   const { isAuthenticated, isGuest, login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [didSignIn, setDidSignIn] = useState(false)
 
   const loginMutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: (res) => {
       // res.data = { accessToken, refreshToken, member }
+      setDidSignIn(true)
       login(res.data)
-      navigate('/', { replace: true })
     },
   })
 
-  // 이미 로그인된 상태라면 로그인 화면 대신 메인으로 보낸다.
   if (isAuthenticated && !isGuest) {
-    return <Navigate to="/" replace />
+    const destination =
+      didSignIn && authStorage.getGuestImportToken()
+        ? '/mypage/guest-records'
+        : '/'
+    return <Navigate to={destination} replace />
   }
 
   const handleSubmit = (event) => {

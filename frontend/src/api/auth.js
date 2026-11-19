@@ -14,6 +14,13 @@ export const authApi = {
     }
   },
 
+  importGuestRecords: async (guestRefreshToken) => {
+    const { data } = await client.post('/auth/guest/records/import', {
+      guestRefreshToken,
+    })
+    return throwIfFailed(data, '게스트 기록을 가져오지 못했습니다.')
+  },
+
   // 로그인 (실패 시 HTTP 401 → axios 가 에러를 던짐)
   // 응답 본문: { success, code, message, data: { accessToken, refreshToken, member } }
   login: ({ email, password }) =>

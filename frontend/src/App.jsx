@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
+import GuestRecordImportPage from './pages/GuestRecordImportPage'
 import SignupPage from './pages/SignupPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
@@ -56,6 +57,12 @@ function App() {
 
       {/* 게스트 또는 회원 세션으로 접근하는 영역 */}
       <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute memberOnly />}>
+          <Route
+            path="/mypage/guest-records"
+            element={<GuestRecordImportPage />}
+          />
+        </Route>
         {/* 일정 수정: 하단 탭 없는 전체화면 (등록은 홈의 바텀시트) */}
         <Route
           path="/schedules/:scheduleId/edit"
